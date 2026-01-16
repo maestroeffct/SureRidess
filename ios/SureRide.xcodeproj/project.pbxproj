@@ -7,23 +7,58 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B6A955CA2534328901CE1C6 /* Inter-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 53C7A3E7D6EE464CAA51B59F /* Inter-Thin.ttf */; };
 		0C80B921A6F3F58F76C31292 /* libPods-SureRide.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-SureRide.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		1EA2D20F88514EBABB8A7D7F /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E3F9D331D47E41FE98383046 /* Inter-Regular.ttf */; };
+		304E5CCCCF6C4A1CACABC398 /* Geomanist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA1A9BCC63FF4EFEA0AC6BAE /* Geomanist-Bold.ttf */; };
+		3619511173E782BE0499F13C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		44379DB3E81F47799B2ACBD3 /* Geomanist-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 15233C4DE1864891A36F09CD /* Geomanist-Thin.ttf */; };
+		4512A7253DA64621A87A4757 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9C6709281CEB4F749284FB33 /* Inter-Medium.ttf */; };
+		50EBBBA896F346E1B1248A41 /* Geomanist-Ultra.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7FA2A1AD0512406AB930FB7E /* Geomanist-Ultra.ttf */; };
+		5BEEFF6E8A634C048093E821 /* Inter-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CF4587B8A140480AA3754122 /* Inter-Black.ttf */; };
+		60736EA2A01F407786F3465F /* Geomanist-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BBAAB415B5144EE6AF3AC212 /* Geomanist-ExtraLight.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		8A01CEFF785241F6927E2B5E /* Inter-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 39752631B58649C683B49EAD /* Inter-Light.ttf */; };
+		8BACB89CB749449F83985B6E /* Inter-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EC3A00E2882B4661B87DE899 /* Inter-ExtraBold.ttf */; };
+		90362D3A6DA9495B9A429DCE /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6039091DCE154DE29516A176 /* Inter-Bold.ttf */; };
+		957536B9BFCD4146AB1B638D /* Geomanist-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D5DF1610E8D3442291339468 /* Geomanist-Light.ttf */; };
+		9CFDF2DDA4DA4D778A2F071E /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AD8B92F8F0CC471EB88DB12B /* Inter-SemiBold.ttf */; };
+		A8A86B85E710413CA52EA5B9 /* Geomanist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8EE895663F2D4061B646886E /* Geomanist-Regular.ttf */; };
+		B08FCD874C734FC7A30BD393 /* Inter-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BE47D9C110E24F8EA44D97A8 /* Inter-ExtraLight.ttf */; };
+		C4E30E7286774B74B9302359 /* Geomanist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0C4252F6C2C1430A89248F9A /* Geomanist-Medium.ttf */; };
+		FAE9EA10CADB40759AA384AF /* Geomanist-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E34919129233471593601C16 /* Geomanist-Black.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C4252F6C2C1430A89248F9A /* Geomanist-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Medium.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Medium.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SureRide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SureRide.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SureRide/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SureRide/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SureRide/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		15233C4DE1864891A36F09CD /* Geomanist-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Thin.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Thin.ttf"; sourceTree = "<group>"; };
+		39752631B58649C683B49EAD /* Inter-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Light.ttf"; path = "../src/assets/fonts/Inter/Inter-Light.ttf"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-SureRide.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SureRide.debug.xcconfig"; path = "Target Support Files/Pods-SureRide/Pods-SureRide.debug.xcconfig"; sourceTree = "<group>"; };
+		53C7A3E7D6EE464CAA51B59F /* Inter-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Thin.ttf"; path = "../src/assets/fonts/Inter/Inter-Thin.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-SureRide.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SureRide.release.xcconfig"; path = "Target Support Files/Pods-SureRide/Pods-SureRide.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-SureRide.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SureRide.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6039091DCE154DE29516A176 /* Inter-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Bold.ttf"; path = "../src/assets/fonts/Inter/Inter-Bold.ttf"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SureRide/AppDelegate.swift; sourceTree = "<group>"; };
+		7FA2A1AD0512406AB930FB7E /* Geomanist-Ultra.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Ultra.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Ultra.ttf"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SureRide/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8EE895663F2D4061B646886E /* Geomanist-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Regular.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Regular.ttf"; sourceTree = "<group>"; };
+		9C6709281CEB4F749284FB33 /* Inter-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Medium.ttf"; path = "../src/assets/fonts/Inter/Inter-Medium.ttf"; sourceTree = "<group>"; };
+		AD8B92F8F0CC471EB88DB12B /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-SemiBold.ttf"; path = "../src/assets/fonts/Inter/Inter-SemiBold.ttf"; sourceTree = "<group>"; };
+		BBAAB415B5144EE6AF3AC212 /* Geomanist-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-ExtraLight.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-ExtraLight.ttf"; sourceTree = "<group>"; };
+		BE47D9C110E24F8EA44D97A8 /* Inter-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-ExtraLight.ttf"; path = "../src/assets/fonts/Inter/Inter-ExtraLight.ttf"; sourceTree = "<group>"; };
+		CF4587B8A140480AA3754122 /* Inter-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Black.ttf"; path = "../src/assets/fonts/Inter/Inter-Black.ttf"; sourceTree = "<group>"; };
+		D5DF1610E8D3442291339468 /* Geomanist-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Light.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Light.ttf"; sourceTree = "<group>"; };
+		E34919129233471593601C16 /* Geomanist-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Black.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Black.ttf"; sourceTree = "<group>"; };
+		E3F9D331D47E41FE98383046 /* Inter-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Regular.ttf"; path = "../src/assets/fonts/Inter/Inter-Regular.ttf"; sourceTree = "<group>"; };
+		EC3A00E2882B4661B87DE899 /* Inter-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-ExtraBold.ttf"; path = "../src/assets/fonts/Inter/Inter-ExtraBold.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		FA1A9BCC63FF4EFEA0AC6BAE /* Geomanist-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geomanist-Bold.ttf"; path = "../src/assets/fonts/Geomanist/Geomanist-Bold.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +85,31 @@
 			name = SureRide;
 			sourceTree = "<group>";
 		};
+		1D286633647645E7A4619991 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9C6709281CEB4F749284FB33 /* Inter-Medium.ttf */,
+				39752631B58649C683B49EAD /* Inter-Light.ttf */,
+				53C7A3E7D6EE464CAA51B59F /* Inter-Thin.ttf */,
+				6039091DCE154DE29516A176 /* Inter-Bold.ttf */,
+				E3F9D331D47E41FE98383046 /* Inter-Regular.ttf */,
+				EC3A00E2882B4661B87DE899 /* Inter-ExtraBold.ttf */,
+				BE47D9C110E24F8EA44D97A8 /* Inter-ExtraLight.ttf */,
+				CF4587B8A140480AA3754122 /* Inter-Black.ttf */,
+				AD8B92F8F0CC471EB88DB12B /* Inter-SemiBold.ttf */,
+				D5DF1610E8D3442291339468 /* Geomanist-Light.ttf */,
+				BBAAB415B5144EE6AF3AC212 /* Geomanist-ExtraLight.ttf */,
+				8EE895663F2D4061B646886E /* Geomanist-Regular.ttf */,
+				7FA2A1AD0512406AB930FB7E /* Geomanist-Ultra.ttf */,
+				0C4252F6C2C1430A89248F9A /* Geomanist-Medium.ttf */,
+				15233C4DE1864891A36F09CD /* Geomanist-Thin.ttf */,
+				FA1A9BCC63FF4EFEA0AC6BAE /* Geomanist-Bold.ttf */,
+				E34919129233471593601C16 /* Geomanist-Black.ttf */,
+			);
+			name = Resources;
+			path = "";
+			sourceTree = "<group>";
+		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -74,6 +134,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				1D286633647645E7A4619991 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -159,6 +220,24 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				4512A7253DA64621A87A4757 /* Inter-Medium.ttf in Resources */,
+				8A01CEFF785241F6927E2B5E /* Inter-Light.ttf in Resources */,
+				0B6A955CA2534328901CE1C6 /* Inter-Thin.ttf in Resources */,
+				90362D3A6DA9495B9A429DCE /* Inter-Bold.ttf in Resources */,
+				1EA2D20F88514EBABB8A7D7F /* Inter-Regular.ttf in Resources */,
+				8BACB89CB749449F83985B6E /* Inter-ExtraBold.ttf in Resources */,
+				B08FCD874C734FC7A30BD393 /* Inter-ExtraLight.ttf in Resources */,
+				5BEEFF6E8A634C048093E821 /* Inter-Black.ttf in Resources */,
+				9CFDF2DDA4DA4D778A2F071E /* Inter-SemiBold.ttf in Resources */,
+				957536B9BFCD4146AB1B638D /* Geomanist-Light.ttf in Resources */,
+				60736EA2A01F407786F3465F /* Geomanist-ExtraLight.ttf in Resources */,
+				A8A86B85E710413CA52EA5B9 /* Geomanist-Regular.ttf in Resources */,
+				50EBBBA896F346E1B1248A41 /* Geomanist-Ultra.ttf in Resources */,
+				C4E30E7286774B74B9302359 /* Geomanist-Medium.ttf in Resources */,
+				44379DB3E81F47799B2ACBD3 /* Geomanist-Thin.ttf in Resources */,
+				304E5CCCCF6C4A1CACABC398 /* Geomanist-Bold.ttf in Resources */,
+				FAE9EA10CADB40759AA384AF /* Geomanist-Black.ttf in Resources */,
+				3619511173E782BE0499F13C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,6 +445,7 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
@@ -374,7 +454,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				USE_HERMES = true;
 			};
 			name = Debug;
 		};
@@ -431,6 +514,7 @@
 					"\"$(inherited)\"",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
@@ -439,7 +523,9 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
+				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
