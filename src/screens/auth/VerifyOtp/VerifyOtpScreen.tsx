@@ -49,7 +49,7 @@ export function VerifyOtpScreen({ route }: Props) {
       setTimeout(() => {
         showSuccess('Phone number verified successfully');
       }, 500);
-      login(res.accessToken);
+      login(res.token, res.user);
     } catch (err: any) {
       showError(err?.response?.data?.message || 'Invalid code');
     } finally {

@@ -1,23 +1,52 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useEffect, useState } from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '@/screens/main/Home/HomeScreen';
-import { CarRentalNavigator } from '@/modules/car-rental/navigation/CarRentalNavigator';
 import { ProfileScreen } from '@/screens/main/Profile/ProfileScreen';
+import { CarRentalTabsNavigator } from '@/modules/car-rental/navigation/CarRentalTabNavigator';
+import { CarRentalFlowNavigator } from '@/modules/car-rental/navigation/CarRentalFlowNavigator';
+import { getItem, StorageKeys } from '@/helpers/storage';
 
-export type MainTabParamList = {
-  Home: undefined;
-  CarRental: undefined;
-  Profile: undefined;
-};
+import type { MainStackParamList } from '@/navigation/types';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<MainStackParamList>();
 
 export function MainNavigator() {
+  const [initialRoute, setInitialRoute] =
+    useState<keyof MainStackParamList>('Home');
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    async function restoreLastModule() {
+      try {
+        const lastModule = await getItem<string>(StorageKeys.LAST_MODULE);
+
+        if (lastModule === 'car_rental') {
+          setInitialRoute('CarRentalTabs');
+        }
+      } catch (error) {
+        console.warn('[MainNavigator] Failed to restore last module', error);
+      } finally {
+        setReady(true);
+      }
+    }
+
+    restoreLastModule();
+  }, []);
+
+  if (!ready) return null; // splash already shown above
+
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="CarRental" component={CarRentalNavigator} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-    </Tab.Navigator>
+    <Stack.Navigator
+      initialRouteName={initialRoute}
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="CarRentalTabs" component={CarRentalTabsNavigator} />
+      <Stack.Screen
+        name="CarRentalFlowNavigator"
+        component={CarRentalFlowNavigator}
+      />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+    </Stack.Navigator>
   );
 }

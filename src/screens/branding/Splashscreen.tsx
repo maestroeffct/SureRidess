@@ -30,13 +30,6 @@ export function SplashScreen() {
             style={[styles.logoText, { tintColor: '#ffffffff' }]}
             resizeMode="contain"
           />
-
-          {/* Tagline */}
-          {/* <Image
-            source={require('@/assets/images/logo-tagline.png')}
-            style={styles.tagline}
-            resizeMode="contain"
-          /> */}
         </View>
       </LinearGradient>
     </>

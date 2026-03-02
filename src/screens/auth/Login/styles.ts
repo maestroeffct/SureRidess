@@ -24,6 +24,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     alignItems: 'center',
   },
+  button: {
+    marginBottom: Spacing.md,
+  },
 });
 
 export default styles;

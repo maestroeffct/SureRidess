@@ -2,7 +2,7 @@ import { ThemeColors } from './types';
 
 export const LightColors: ThemeColors = {
   background: '#FFFFFF',
-  surface: '#F5F7FA',
+  surface: '#ffffffff',
 
   primary: '#02674F', // SURERIDE blue
   accent: '#00D2A8',

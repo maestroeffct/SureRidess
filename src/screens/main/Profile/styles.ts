@@ -17,6 +17,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
   },
+
+  button: {
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+  },
 });
 
 export default styles;

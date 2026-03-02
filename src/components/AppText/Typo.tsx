@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextProps, TextStyle } from 'react-native';
+import { StyleProp, Text, TextProps, TextStyle } from 'react-native';
 import { useTypography } from '@/helpers/useTypography';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -7,7 +7,7 @@ type Variant = 'heading' | 'subheading' | 'body' | 'caption' | 'button';
 
 interface AppTextProps extends TextProps {
   variant?: Variant;
-  style?: TextStyle | TextStyle[];
+  style?: StyleProp<TextStyle>;
   color?: string; // optional override
 }
 

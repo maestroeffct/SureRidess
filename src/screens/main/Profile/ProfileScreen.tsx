@@ -1,44 +1,54 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { useTheme } from '@/theme/ThemeProvider';
-import { Typo } from '@/components/AppText/Typo';
-import styles from './styles';
+import { ScrollView, View } from 'react-native';
 
-export function ProfileScreen() {
-  const { colors } = useTheme();
+import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
+import { AppHeroHeader } from '@/components/AppHeroHeader/AppHeroHeader';
+import { AppContentContainer } from '@/components/AppContentContainer/AppContentContainer';
+import { ProfileInfoRow } from '@/components/ProfileInfoRow/ProfileInfoRow';
+import { AppButton } from '@/components/AppButton/CustomButton';
+
+import { useAuth } from '@/providers/AuthProvider';
+import { logoutUser } from '@/services/auth.service';
+import styles from './styles';
+import { removeItem, StorageKeys } from '@/helpers/storage';
+
+export const ProfileScreen = () => {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await removeItem(StorageKeys.LAST_MODULE);
+      await logoutUser();
+      logout();
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Typo variant="heading">Profile</Typo>
-        <Typo variant="body">Manage your account & preferences</Typo>
-      </View>
+    <ScreenWrapper padded={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* HERO */}
+        <AppHeroHeader titleText="Profile" />
 
-      {/* Menu */}
-      <View style={styles.menu}>
-        <ProfileItem title="Personal Information" />
-        <ProfileItem title="Bookings & Trips" />
-        <ProfileItem title="Payment Methods" />
-        <ProfileItem title="Settings" />
-        <ProfileItem title="Logout" danger />
-      </View>
-    </View>
+        {/* CONTENT */}
+        <AppContentContainer>
+          <ProfileInfoRow label="First Name" value="Jola" />
+          <ProfileInfoRow label="Last Name" value="Akin" />
+          <ProfileInfoRow label="Email" value="jolaakin@gmail.com" verified />
+          <ProfileInfoRow label="Phone Number" value="08128900048" verified />
+          <ProfileInfoRow label="Nationality" value="Nigerian" />
+          <ProfileInfoRow label="Date of Birth" value="06/02/2000" />
+          <ProfileInfoRow label="Password" value="**********" />
+
+          {/* LOGOUT BUTTON */}
+          <View style={styles.button}>
+            <AppButton title="Logout" onPress={handleLogout} />
+          </View>
+        </AppContentContainer>
+      </ScrollView>
+    </ScreenWrapper>
   );
+};
 
-  function ProfileItem({ title, danger }: { title: string; danger?: boolean }) {
-    return (
-      <TouchableOpacity
-        style={[
-          styles.item,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <Typo color={danger ? colors.danger : colors.textPrimary}>{title}</Typo>
-      </TouchableOpacity>
-    );
-  }
-}
+export default ProfileScreen;

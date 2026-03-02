@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, TouchableOpacity, Image } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from 'node_modules/@react-navigation/native
 import { AuthStackParamList } from '@/navigation/Auth/AuthNavigator';
 import { showError, showSuccess } from '@/helpers/toast';
 import { loginUser } from '@/services/auth.service';
+import { DEV_AUTH_ENABLED, DEV_TEST_CREDENTIALS } from '@/config/devAuth';
 
 export function LoginScreen() {
   const navigation =
@@ -30,12 +31,24 @@ export function LoginScreen() {
     try {
       setLoading(true);
 
+      /* ---------------------------------
+       * 🔐 DEV LOGIN (FRONTEND ONLY)
+       * --------------------------------- */
+      if (
+        DEV_AUTH_ENABLED &&
+        email === DEV_TEST_CREDENTIALS.email &&
+        password === DEV_TEST_CREDENTIALS.password
+      ) {
+        login(DEV_TEST_CREDENTIALS.token, DEV_TEST_CREDENTIALS.user);
+
+        showSuccess('Logged in with test account');
+        return;
+      }
+
       const res = await loginUser({ email, password });
 
-      // ✅ normal login
-      login(res.accessToken);
+      login(res.token, res.user);
     } catch (err: any) {
-      // 🔥 THIS IS THE IMPORTANT PART
       if (
         err?.response?.status === 403 &&
         err?.response?.data?.status === 'verification_required'
@@ -56,6 +69,13 @@ export function LoginScreen() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (__DEV__) {
+      setEmail('test@sureride.dev');
+      setPassword('password123');
+    }
+  }, []);
 
   return (
     <ScreenWrapper scrollable>
@@ -91,7 +111,12 @@ export function LoginScreen() {
           }
         />
 
-        <TouchableOpacity style={styles.forgot}>
+        <TouchableOpacity
+          style={styles.forgot}
+          onPress={() => {
+            navigation.navigate('ForgotPassword');
+          }}
+        >
           <Typo variant="button" color={colors.primary}>
             Forgot Password?
           </Typo>
@@ -99,17 +124,26 @@ export function LoginScreen() {
       </View>
 
       {/* Actions */}
-      <AppButton title="Sign In" loading={loading} onPress={handleLogin} />
+      <AppButton
+        title="Sign In"
+        loading={loading}
+        style={styles.button}
+        onPress={handleLogin}
+      />
 
       <AppButton
-        style={{ marginTop: 16 }}
-        onPress={() => {
-          handleLogin();
-        }}
         title="Sign in with Google"
         variant="outline"
+        onPress={() => {
+          showError('Google Sign-In not implemented yet');
+        }}
         leftIcon={
-          <Icon name="logo-google" size={20} color={colors.textPrimary} />
+          <Image
+            source={require('@/assets/images/google-logo.png')}
+            style={{ width: 25, height: 25, marginRight: 0 }}
+          />
+
+          // <Icon name="logo-google" size={20} color={colors.textPrimary} />
         }
       />
 

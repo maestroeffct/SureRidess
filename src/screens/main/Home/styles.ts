@@ -1,24 +1,63 @@
-import { Radius, Spacing } from '@/theme';
 import { StyleSheet } from 'react-native';
+import { Spacing, Radius } from '@/theme';
 
-const styles = StyleSheet.create({
-  container: {
-    padding: Spacing.lg,
+export default StyleSheet.create({
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
   },
-  header: {
-    marginBottom: Spacing.lg,
+
+  logoWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
+
+  logoText: {
+    fontWeight: '600',
+  },
+
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: Spacing.xl,
+  },
+
+  locationText: {
+    opacity: 0.7,
+  },
+
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
+
   card: {
-    width: '48%',
-    padding: Spacing.md,
+    width: '47%',
+    height: 150,
     borderRadius: Radius.md,
-    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+
+  cardText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+  welcomeBox: {
+    marginBottom: Spacing.xl,
+  },
+  welcomeText: {
+    fontWeight: '600',
+  },
+  welcomeSubtext: {
+    marginTop: Spacing.sm,
+    color: '#666',
   },
 });
-
-export default styles;

@@ -3,6 +3,7 @@ import { getItem, setItem, StorageKeys } from '@/helpers/storage';
 export type Country = {
   name: string;
   callingCode: string;
+  code: string; // ISO code e.g. NG, US
 };
 
 export async function fetchCountries(): Promise<Country[]> {
@@ -31,6 +32,7 @@ export async function fetchCountries(): Promise<Country[]> {
       return {
         name: c.name.common,
         callingCode: `${root}${suffix}`,
+        code: c.cca2,
       };
     })
     .filter(Boolean)

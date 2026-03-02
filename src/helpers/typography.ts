@@ -4,14 +4,14 @@ import { ThemeColors } from '@/theme/types';
 
 export const createTypography = (colors: ThemeColors) => ({
   heading: {
-    fontFamily: FontFamily.geomanist.bold,
+    fontFamily: FontFamily.satoshi.bold,
     fontSize: 26,
     color: colors.textPrimary,
   } as TextStyle,
 
   subheading: {
     fontFamily: FontFamily.geomanist.medium,
-    fontSize: 12,
+    fontSize: 18,
     color: colors.textPrimary,
   } as TextStyle,
 

@@ -1,54 +1,101 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getItem, setItem, removeItem, StorageKeys } from '@/helpers/storage';
+import { fetchMe } from '@/services/user.service';
 
-type AuthStatus =
-  | 'initializing'
-  | 'unauthenticated'
-  | 'authenticated'
-  | 'pendingProfile';
+type AuthStatus = 'initializing' | 'unauthenticated' | 'authenticated';
+
+export type User = {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  phoneCountry?: string;
+  phoneNumber?: string;
+  country?: string;
+  nationality?: string;
+  dob?: string;
+  dateOfBirth?: string;
+  kycStatus?: 'NOT_STARTED' | 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+  profileStatus?: string;
+};
 
 type AuthContextType = {
   status: AuthStatus;
-  login: (token: string) => void;
-  logout: () => void;
-  completeProfile: () => void;
+  user: User | null;
+  login: (token: string, user: User) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('initializing');
+  const [user, setUser] = useState<User | null>(null);
 
-  // 🔄 Simulate bootstrapping (replace with AsyncStorage later)
+  /* ---------------- BOOTSTRAP ---------------- */
   useEffect(() => {
     const bootstrap = async () => {
-      // TODO: check stored token
-      setTimeout(() => {
+      try {
+        const token = await getItem<string>(StorageKeys.AUTH_TOKEN);
+
+        if (!token) {
+          setStatus('unauthenticated');
+          return;
+        }
+
+        const me = await fetchMe();
+
+        await setItem(StorageKeys.AUTH_USER, me);
+        setUser(me);
+        setStatus('authenticated');
+      } catch (error) {
+        await removeItem(StorageKeys.AUTH_TOKEN);
+        await removeItem(StorageKeys.AUTH_USER);
+        setUser(null);
         setStatus('unauthenticated');
-      }, 1000);
+
+        console.error('[Auth] Bootstrap failed:', error);
+      }
     };
 
     bootstrap();
   }, []);
 
-  const login = (token: string) => {
-    // TODO: save token securely
-    // decide if profile is complete
-    const isProfileComplete = false;
-
-    setStatus(isProfileComplete ? 'authenticated' : 'pendingProfile');
-  };
-
-  const logout = () => {
-    // TODO: clear token
-    setStatus('unauthenticated');
-  };
-
-  const completeProfile = () => {
+  /* ---------------- LOGIN ---------------- */
+  const login = async (token: string, user: User) => {
+    await setItem(StorageKeys.AUTH_TOKEN, token);
+    try {
+      const me = await fetchMe();
+      await setItem(StorageKeys.AUTH_USER, me);
+      setUser(me);
+    } catch (error) {
+      console.warn('[Auth] Failed to refresh user after login', error);
+      await setItem(StorageKeys.AUTH_USER, user);
+      setUser(user);
+    }
     setStatus('authenticated');
   };
 
+  /* ---------------- LOGOUT ---------------- */
+  const logout = async () => {
+    await removeItem(StorageKeys.AUTH_TOKEN);
+    await removeItem(StorageKeys.AUTH_USER);
+
+    setUser(null);
+    setStatus('unauthenticated');
+  };
+
+  /* ---------------- REFRESH USER ---------------- */
+  const refreshUser = async () => {
+    const me = await fetchMe();
+    await setItem(StorageKeys.AUTH_USER, me);
+    setUser(me);
+  };
+
   return (
-    <AuthContext.Provider value={{ status, login, logout, completeProfile }}>
+    <AuthContext.Provider value={{ status, user, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
