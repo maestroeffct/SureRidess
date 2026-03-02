@@ -7,15 +7,21 @@ import styles from './styles';
 type Props = {
   label: string;
   onPress: () => void;
+  selectedFileName?: string;
 };
 
-export function UploadField({ label, onPress }: Props) {
+export function UploadField({ label, onPress, selectedFileName }: Props) {
   return (
     <View style={styles.container}>
       <Typo style={styles.label}>{label}</Typo>
 
       <TouchableOpacity style={styles.uploadBox} onPress={onPress}>
-        <Typo style={styles.placeholder}>Upload document</Typo>
+        <Typo
+          style={selectedFileName ? styles.selectedText : styles.placeholder}
+          numberOfLines={1}
+        >
+          {selectedFileName || 'Upload document'}
+        </Typo>
 
         <View style={styles.plusButton}>
           <Icon name="add" size={20} color="#fff" />

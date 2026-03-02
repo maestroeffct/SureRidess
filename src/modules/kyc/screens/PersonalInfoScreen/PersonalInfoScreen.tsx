@@ -19,8 +19,10 @@ import { Typo } from '@/components/AppText/Typo';
 import { useAuth, type User } from '@/providers/AuthProvider';
 import { fetchMe } from '@/services/user.service';
 import { fetchCountries, type Country } from '@/services/country.service';
-import { showError } from '@/helpers/toast';
+import { showError, showSuccess } from '@/helpers/toast';
 import { useTheme } from '@/theme/ThemeProvider';
+import { isValidEmail } from '@/helpers/validation';
+import { saveKycPersonalInfo } from '@/services/kyc.service';
 
 function toDate(value?: string) {
   if (!value) return null;
@@ -82,6 +84,7 @@ export default function PersonalInfoScreen() {
   const [nationality, setNationality] = useState('');
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [search, setSearch] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const filteredCountries = useMemo(
     () => countries.filter(c => c.name.toLowerCase().includes(search.toLowerCase())),
@@ -148,6 +151,85 @@ export default function PersonalInfoScreen() {
       setSelectedCountry(match);
     }
   }, [countries, nationality]);
+
+  const handleNext = async () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      showError('First name and last name are required');
+      return;
+    }
+
+    if (!isValidEmail(email.trim())) {
+      showError('Please enter a valid email');
+      return;
+    }
+
+    if (!dob) {
+      showError('Please select date of birth');
+      return;
+    }
+
+    const resolvedNationality = selectedCountry?.name || nationality.trim();
+    if (!resolvedNationality) {
+      showError('Please select nationality');
+      return;
+    }
+
+    if (!phone.trim()) {
+      showError('Please enter phone number');
+      return;
+    }
+
+    let phoneCountry = selectedCountry?.callingCode || user?.phoneCountry || '+234';
+    let phoneValue = phone.replace(/\s+/g, '');
+
+    if (phoneValue.startsWith('+')) {
+      if (phoneValue.startsWith(phoneCountry)) {
+        phoneValue = phoneValue.slice(phoneCountry.length);
+      } else {
+        const matchedCountry = [...countries]
+          .sort((a, b) => b.callingCode.length - a.callingCode.length)
+          .find(c => phoneValue.startsWith(c.callingCode));
+
+        if (matchedCountry) {
+          phoneCountry = matchedCountry.callingCode;
+          phoneValue = phoneValue.slice(matchedCountry.callingCode.length);
+          setSelectedCountry(matchedCountry);
+          setNationality(matchedCountry.name);
+        }
+      }
+    }
+
+    const phoneNumber = phoneValue.replace(/\D/g, '');
+    if (!phoneNumber) {
+      showError('Please enter a valid phone number');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await saveKycPersonalInfo({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
+        dateOfBirth: dob.toISOString().slice(0, 10),
+        nationality: resolvedNationality,
+        phoneCountry,
+        phoneNumber,
+      });
+
+      showSuccess('Personal info saved');
+
+      navigation.navigate('Address', {
+        countryName: selectedCountry?.name || resolvedNationality,
+        countryCode: selectedCountry?.code || null,
+      });
+    } catch (error: any) {
+      showError(error?.response?.data?.message || 'Failed to save personal info');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <ScreenWrapper padded={false}>
@@ -249,12 +331,8 @@ export default function PersonalInfoScreen() {
         <AppButton
           title="Next"
           style={styles.buttonSpacing}
-          onPress={() =>
-            navigation.navigate('Address', {
-              countryName: selectedCountry?.name || nationality || null,
-              countryCode: selectedCountry?.code || null,
-            })
-          }
+          loading={saving}
+          onPress={handleNext}
         />
       </ScrollView>
 
@@ -292,6 +370,11 @@ export default function PersonalInfoScreen() {
             )}
           />
 
+          <AppButton
+            title="Close"
+            variant="outline"
+            onPress={() => setShowCountryModal(false)}
+          />
         </ScreenWrapper>
       </Modal>
     </ScreenWrapper>

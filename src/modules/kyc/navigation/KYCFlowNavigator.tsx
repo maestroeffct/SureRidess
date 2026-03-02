@@ -6,8 +6,20 @@ import DocumentsScreen from '../screens/DocumentsScreen/DocumentsScreen';
 
 export type KYCStackParamList = {
   PersonalInfo: undefined;
-  Address: undefined;
-  Documents: undefined;
+  Address:
+    | {
+        countryName?: string | null;
+        countryCode?: string | null;
+      }
+    | undefined;
+  Documents:
+    | {
+        countryName?: string | null;
+        state?: string | null;
+        region?: string | null;
+        homeAddress?: string | null;
+      }
+    | undefined;
 };
 
 const Stack = createNativeStackNavigator<KYCStackParamList>();

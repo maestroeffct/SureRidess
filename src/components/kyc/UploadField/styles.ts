@@ -27,6 +27,12 @@ export default StyleSheet.create({
     color: '#9AA3AF',
   },
 
+  selectedText: {
+    color: '#111827',
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+
   plusButton: {
     width: 40,
     height: 40,

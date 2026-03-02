@@ -31,6 +31,7 @@ import { fetchMe } from '@/services/user.service';
 import { showError } from '@/helpers/toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { Tag } from '@/components/Rental/Tag/Tag';
+import { DEV_BYPASS_KYC_VERIFICATION } from '@/config/devKyc';
 
 const VehicleDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -175,8 +176,28 @@ const VehicleDetailsScreen = () => {
     return raw ? raw.toString().toUpperCase() : '';
   };
 
+  const proceedToPayment = () => {
+    navigation.navigate('PaymentScreen', {
+      vehicleId: vehicleId || car?.id,
+      car,
+      search,
+      pickupLocationName,
+      dropoffLocationName,
+      insuranceId: insurance === 'none' ? undefined : insurance,
+    });
+  };
+
   const handleProceedToPayment = async () => {
     if (checkingProfile) return;
+
+    if (DEV_BYPASS_KYC_VERIFICATION) {
+      if (__DEV__) {
+        console.log('[KYC][Guard] Bypassed for payment testing');
+      }
+      proceedToPayment();
+      return;
+    }
+
     setCheckingProfile(true);
 
     try {
@@ -206,14 +227,7 @@ const VehicleDetailsScreen = () => {
         return;
       }
 
-      navigation.navigate('PaymentScreen', {
-        vehicleId: vehicleId || car?.id,
-        car,
-        search,
-        pickupLocationName,
-        dropoffLocationName,
-        insuranceId: insurance === 'none' ? undefined : insurance,
-      });
+      proceedToPayment();
     } catch (error) {
       const status = (error as any)?.response?.status;
       console.warn('[VehicleDetails] Failed to check profile', error);
