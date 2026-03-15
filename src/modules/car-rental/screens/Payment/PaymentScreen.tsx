@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Modal,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 
@@ -21,7 +22,13 @@ import { PaymentSummaryRow } from '@/components/Rental/PaymentSummaryRow/Payment
 import { formatDate, formatTime } from '@/helpers/dateTime';
 import type { RentalCar, RentalInsurancePackage } from '@/types/rental';
 import { getCarWithFeatures } from '@/services/rental.service';
+import { createBooking } from '@/services/booking.service';
+import { createPaymentSheetSession, getPaymentConfig } from '@/services/payment.service';
+import { initPaymentSheet, initStripe, presentPaymentSheet } from '@stripe/stripe-react-native';
+import { showError, showSuccess } from '@/helpers/toast';
 import { Tag } from '@/components/Rental/Tag/Tag';
+import { fetchMe } from '@/services/user.service';
+import { DEV_BYPASS_KYC_VERIFICATION } from '@/config/devKyc';
 
 const PaymentScreen = () => {
   const navigation = useNavigation<any>();
@@ -35,6 +42,11 @@ const PaymentScreen = () => {
   const [car, setCar] = useState<RentalCar | undefined>(routeCar);
   const [gateway, setGateway] = useState<'stripe' | 'flutterwave'>('stripe');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState<string | undefined>(
+    route?.params?.bookingId,
+  );
+  const [showKycActionModal, setShowKycActionModal] = useState(false);
 
   const screenWidth = Dimensions.get('window').width;
 
@@ -134,6 +146,223 @@ const PaymentScreen = () => {
       logo: require('@/assets/images/Flutterwave_Logo.png'),
     },
   ];
+
+  const buildBookingPayload = () => {
+    const carId = vehicleId || car?.id;
+    const pickupAtValue = search?.pickupAt;
+    const returnAtValue = search?.returnAt;
+    const pickupLocationIdValue = search?.pickupLocationId || car?.location?.id;
+    const dropoffLocationIdValue =
+      search?.dropoffLocationId || search?.pickupLocationId || car?.location?.id;
+
+    if (
+      !carId ||
+      !pickupAtValue ||
+      !returnAtValue ||
+      !pickupLocationIdValue ||
+      !dropoffLocationIdValue
+    ) {
+      return null;
+    }
+
+    return {
+      carId,
+      pickupAt: pickupAtValue,
+      returnAt: returnAtValue,
+      pickupLocationId: pickupLocationIdValue,
+      dropoffLocationId: dropoffLocationIdValue,
+      insuranceId,
+    };
+  };
+
+
+  const getProfileStatus = (me: any) => {
+    const user = me?.user ?? me?.data?.user ?? me?.data ?? me;
+
+    const raw =
+      user?.profileStatus ||
+      user?.kycStatus ||
+      user?.verificationStatus ||
+      user?.documentsStatus ||
+      user?.kyc?.status ||
+      user?.kyc?.profileStatus ||
+      user?.kyc?.documentsStatus ||
+      '';
+
+    return raw ? raw.toString().toUpperCase() : '';
+  };
+
+  const ensureProfileEligibleForPayment = async () => {
+    if (DEV_BYPASS_KYC_VERIFICATION) {
+      if (__DEV__) {
+        console.log('[KYC][Guard] Bypassed for payment testing');
+      }
+      return true;
+    }
+
+    try {
+      const me = await fetchMe();
+      const status = getProfileStatus(me);
+
+      if (!status) {
+        showError('Profile status unavailable. Please complete KYC.');
+        setShowKycActionModal(true);
+        return false;
+      }
+
+      if (['APPROVED', 'VERIFIED', 'COMPLETED'].includes(status)) {
+        return true;
+      }
+
+      if (['PENDING', 'PENDING_VERIFICATION', 'IN_REVIEW'].includes(status)) {
+        showError('KYC pending verification');
+        return false;
+      }
+
+      if (['REJECTED', 'DECLINED', 'FAILED'].includes(status)) {
+        showError('KYC rejected. Please re-upload documents.');
+        setShowKycActionModal(true);
+        return false;
+      }
+
+      if (['INCOMPLETE', 'NOT_STARTED', 'MISSING'].includes(status)) {
+        showError('Profile not completed. Upload KYC documents.');
+        setShowKycActionModal(true);
+        return false;
+      }
+
+      showError('Profile not completed');
+      setShowKycActionModal(true);
+      return false;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const code = String(error?.response?.data?.code || '').toUpperCase();
+      console.warn('[Payment] Failed to check profile', error);
+
+      if (status === 401) {
+        return false;
+      }
+
+      if (
+        status === 403 &&
+        (code === 'ACCOUNT_SUSPENDED' || code === 'ACCOUNT_UNVERIFIED')
+      ) {
+        return false;
+      }
+
+      showError('Unable to verify profile status');
+      return false;
+    }
+  };
+
+
+  const handleBookVehicle = async () => {
+    if (processingPayment) return;
+
+    if (gateway !== 'stripe') {
+      showError('Flutterwave will be added later. Please use Stripe for now.');
+      return;
+    }
+
+    const canProceed = await ensureProfileEligibleForPayment();
+    if (!canProceed) return;
+
+    const bookingPayload = createdBookingId ? null : buildBookingPayload();
+    if (!createdBookingId && !bookingPayload) {
+      showError('Missing booking details. Please go back and try again.');
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+
+      let bookingId = createdBookingId;
+      if (!bookingId) {
+        const bookingResponse = await createBooking(bookingPayload!);
+        bookingId = bookingResponse?.booking?.id;
+
+        if (!bookingId) {
+          throw new Error('BOOKING_ID_MISSING');
+        }
+
+        setCreatedBookingId(bookingId);
+      }
+
+      const config = await getPaymentConfig();
+      const session = await createPaymentSheetSession({ bookingId });
+
+      const provider = (session.provider || config.provider || '').toUpperCase();
+      if (provider !== 'STRIPE') {
+        showError('Only Stripe payment is currently available.');
+        return;
+      }
+
+      const publishableKey = session.publishableKey || config.publishableKey;
+      if (!publishableKey) {
+        showError('Stripe publishable key is missing.');
+        return;
+      }
+
+      await initStripe({
+        publishableKey,
+        merchantIdentifier: 'merchant.com.sureride',
+        urlScheme: 'sureride',
+      });
+
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: config.merchantDisplayName || 'SureRide',
+        paymentIntentClientSecret: session.paymentIntentClientSecret,
+        allowsDelayedPaymentMethods: true,
+        returnURL: 'sureride://stripe-redirect',
+      });
+
+      if (initError) {
+        showError(initError.message || 'Unable to initialize payment sheet');
+        return;
+      }
+
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        const code = String(presentError.code || '').toLowerCase();
+        if (code.includes('canceled')) {
+          showError('Payment cancelled');
+        } else {
+          showError(presentError.message || 'Payment failed');
+        }
+        return;
+      }
+
+      showSuccess('Payment successful');
+      navigation.navigate('BookingStatus', {
+        status: 'success',
+        bookingId,
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.message;
+
+      if (message === 'Complete your profile before booking') {
+        showError('Complete your profile before booking.');
+        setShowKycActionModal(true);
+      } else if (message === 'BOOKING_NOT_PAYABLE') {
+        showError('This booking is not payable.');
+      } else if (message === 'BOOKING_ALREADY_PAID') {
+        showError('This booking has already been paid.');
+      } else if (message === 'bookingId is required') {
+        showError('Payment setup failed: missing booking ID.');
+      } else if (message) {
+        showError(message);
+      } else {
+        showError('Unable to process payment right now');
+      }
+
+      if (__DEV__) {
+        console.log('[Payment] Checkout failed', error);
+      }
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
 
   return (
     <ScreenWrapper padded={false}>
@@ -332,12 +561,42 @@ const PaymentScreen = () => {
       {/* CTA */}
       <View style={styles.bottomBar}>
         <AppButton
-          title="Book Vehicle"
-          onPress={() =>
-            navigation.navigate('BookingStatus', { status: 'success' })
-          }
+          title={processingPayment ? 'Processing...' : 'Book Vehicle'}
+          loading={processingPayment}
+          onPress={handleBookVehicle}
         />
       </View>
+
+
+      <Modal
+        visible={showKycActionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowKycActionModal(false)}
+      >
+        <View style={styles.kycModalBackdrop}>
+          <View style={styles.kycModalCard}>
+            <Typo variant="subheading">Complete Your KYC</Typo>
+            <Typo variant="caption">
+              You can browse now, but payment requires verified documents.
+            </Typo>
+
+            <AppButton
+              title="Upload Documents"
+              onPress={() => {
+                setShowKycActionModal(false);
+                navigation.navigate('KYCFlow');
+              }}
+            />
+
+            <AppButton
+              title="Skip for now"
+              variant="outline"
+              onPress={() => setShowKycActionModal(false)}
+            />
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 };

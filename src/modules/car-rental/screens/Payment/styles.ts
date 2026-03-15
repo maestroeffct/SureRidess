@@ -102,6 +102,21 @@ const styles = StyleSheet.create({
     height: 28,
     resizeMode: 'contain',
   },
+
+  kycModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+
+  kycModalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+  },
+
 });
 
 export default styles;

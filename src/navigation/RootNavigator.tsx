@@ -47,14 +47,36 @@ export function RootNavigator() {
 
   const needsKycPrompt = useMemo(() => {
     if (status !== 'authenticated') return false;
+
     if (!profileStatus) return true;
-    return !['APPROVED', 'VERIFIED', 'COMPLETED'].includes(profileStatus);
+
+    const isVerified = ['APPROVED', 'VERIFIED', 'COMPLETED'].includes(
+      profileStatus,
+    );
+
+    const isSubmittedForReview = [
+      'PENDING',
+      'PENDING_VERIFICATION',
+      'IN_REVIEW',
+      'SUBMITTED',
+    ].includes(profileStatus);
+
+    if (isVerified || isSubmittedForReview) {
+      return false;
+    }
+
+    return true;
   }, [status, profileStatus]);
 
   useEffect(() => {
-    if (status === 'authenticated' && needsKycPrompt && !kycPromptDismissed) {
+    if (status !== 'authenticated') return;
+
+    if (needsKycPrompt && !kycPromptDismissed) {
       setShowKycPrompt(true);
+      return;
     }
+
+    setShowKycPrompt(false);
   }, [status, needsKycPrompt, kycPromptDismissed]);
 
   if (showSplash || status === 'initializing') {

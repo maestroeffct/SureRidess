@@ -27,16 +27,11 @@ import type {
   RentalInsurancePackage,
 } from '@/types/rental';
 import { getCarWithFeatures } from '@/services/rental.service';
-import { fetchMe } from '@/services/user.service';
-import { showError } from '@/helpers/toast';
-import { useAuth } from '@/providers/AuthProvider';
 import { Tag } from '@/components/Rental/Tag/Tag';
-import { DEV_BYPASS_KYC_VERIFICATION } from '@/config/devKyc';
 
 const VehicleDetailsScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { logout } = useAuth();
   const routeCar: RentalCar | undefined = route?.params?.car;
   const vehicleId: string | undefined = route?.params?.vehicleId;
   const search = route?.params?.search;
@@ -45,7 +40,6 @@ const VehicleDetailsScreen = () => {
   const [insurance, setInsurance] = useState('none');
   const [payment, setPayment] = useState<'collection' | 'online'>('collection');
   const [car, setCar] = useState<RentalCar | undefined>(routeCar);
-  const [checkingProfile, setCheckingProfile] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const screenWidth = Dimensions.get('window').width;
@@ -160,23 +154,7 @@ const VehicleDetailsScreen = () => {
   const totalPrice =
     car?.dailyRate && totalDays ? car.dailyRate * totalDays : undefined;
 
-  const getProfileStatus = (me: any) => {
-    const user = me?.user ?? me?.data?.user ?? me?.data ?? me;
-
-    const raw =
-      user?.profileStatus ||
-      user?.kycStatus ||
-      user?.verificationStatus ||
-      user?.documentsStatus ||
-      user?.kyc?.status ||
-      user?.kyc?.profileStatus ||
-      user?.kyc?.documentsStatus ||
-      '';
-
-    return raw ? raw.toString().toUpperCase() : '';
-  };
-
-  const proceedToPayment = () => {
+  const handleProceedToPayment = () => {
     navigation.navigate('PaymentScreen', {
       vehicleId: vehicleId || car?.id,
       car,
@@ -185,63 +163,6 @@ const VehicleDetailsScreen = () => {
       dropoffLocationName,
       insuranceId: insurance === 'none' ? undefined : insurance,
     });
-  };
-
-  const handleProceedToPayment = async () => {
-    if (checkingProfile) return;
-
-    if (DEV_BYPASS_KYC_VERIFICATION) {
-      if (__DEV__) {
-        console.log('[KYC][Guard] Bypassed for payment testing');
-      }
-      proceedToPayment();
-      return;
-    }
-
-    setCheckingProfile(true);
-
-    try {
-      const me = await fetchMe();
-      const status = getProfileStatus(me);
-
-      if (!status) {
-        showError('Profile status unavailable. Please complete KYC.');
-        return;
-      }
-
-      if (['APPROVED', 'VERIFIED', 'COMPLETED'].includes(status)) {
-        // ok
-      } else if (
-        ['PENDING', 'PENDING_VERIFICATION', 'IN_REVIEW'].includes(status)
-      ) {
-        showError('KYC pending verification');
-        return;
-      } else if (['REJECTED', 'DECLINED', 'FAILED'].includes(status)) {
-        showError('KYC rejected. Please re-upload documents.');
-        return;
-      } else if (['INCOMPLETE', 'NOT_STARTED', 'MISSING'].includes(status)) {
-        showError('Profile not completed. Upload KYC documents.');
-        return;
-      } else {
-        showError('Profile not completed');
-        return;
-      }
-
-      proceedToPayment();
-    } catch (error) {
-      const status = (error as any)?.response?.status;
-      console.warn('[VehicleDetails] Failed to check profile', error);
-
-      if (status === 401) {
-        showError('Session expired. Please log in again.');
-        await logout();
-        return;
-      }
-
-      showError('Unable to verify profile status');
-    } finally {
-      setCheckingProfile(false);
-    }
   };
 
   const insurancePackages: RentalInsurancePackage[] =
@@ -477,11 +398,7 @@ const VehicleDetailsScreen = () => {
             </Typo>
           </View>
 
-          <AppButton
-            title="Book Now"
-            loading={checkingProfile}
-            onPress={handleProceedToPayment}
-          />
+          <AppButton title="Book Now" onPress={handleProceedToPayment} />
         </View>
       </ScrollView>
     </ScreenWrapper>

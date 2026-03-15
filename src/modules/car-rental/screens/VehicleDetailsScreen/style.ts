@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 18,
   },
+
 });
 
 export default styles;

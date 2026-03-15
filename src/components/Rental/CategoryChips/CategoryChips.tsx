@@ -19,6 +19,7 @@ export function CategoryChips({ categories, selected, onSelect }: Props) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={styles.scroll}
       contentContainerStyle={styles.container}
     >
       {categories.map(category => {

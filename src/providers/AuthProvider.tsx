@@ -1,6 +1,14 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { getItem, setItem, removeItem, StorageKeys } from '@/helpers/storage';
 import { fetchMe } from '@/services/user.service';
+import { setAuthErrorHandler, type AuthErrorReason } from '@/services/api';
+import { showError } from '@/helpers/toast';
 
 type AuthStatus = 'initializing' | 'unauthenticated' | 'authenticated';
 
@@ -16,6 +24,8 @@ export type User = {
   nationality?: string;
   dob?: string;
   dateOfBirth?: string;
+  isActive?: boolean;
+  isVerified?: boolean;
   kycStatus?: 'NOT_STARTED' | 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
   profileStatus?: string;
 };
@@ -34,6 +44,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('initializing');
   const [user, setUser] = useState<User | null>(null);
 
+  const clearAuthState = useCallback(async () => {
+    await removeItem(StorageKeys.AUTH_TOKEN);
+    await removeItem(StorageKeys.AUTH_USER);
+    setUser(null);
+    setStatus('unauthenticated');
+  }, []);
+
+  const handleForcedAuthError = useCallback(
+    async (reason: AuthErrorReason) => {
+      await clearAuthState();
+
+      if (reason === 'ACCOUNT_SUSPENDED') {
+        showError('Your account has been suspended.');
+      }
+
+      if (reason === 'ACCOUNT_UNVERIFIED') {
+        showError('Your account is not verified.');
+      }
+    },
+    [clearAuthState],
+  );
+
+  useEffect(() => {
+    setAuthErrorHandler(handleForcedAuthError);
+
+    return () => {
+      setAuthErrorHandler(null);
+    };
+  }, [handleForcedAuthError]);
+
   /* ---------------- BOOTSTRAP ---------------- */
   useEffect(() => {
     const bootstrap = async () => {
@@ -47,49 +87,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const me = await fetchMe();
 
+        if (me?.isActive === false) {
+          await clearAuthState();
+          showError('Your account has been suspended.');
+          return;
+        }
+
         await setItem(StorageKeys.AUTH_USER, me);
         setUser(me);
         setStatus('authenticated');
       } catch (error) {
-        await removeItem(StorageKeys.AUTH_TOKEN);
-        await removeItem(StorageKeys.AUTH_USER);
-        setUser(null);
-        setStatus('unauthenticated');
-
+        await clearAuthState();
         console.error('[Auth] Bootstrap failed:', error);
       }
     };
 
     bootstrap();
-  }, []);
+  }, [clearAuthState]);
 
   /* ---------------- LOGIN ---------------- */
   const login = async (token: string, user: User) => {
     await setItem(StorageKeys.AUTH_TOKEN, token);
     try {
       const me = await fetchMe();
+
+      if (me?.isActive === false) {
+        await clearAuthState();
+        showError('Your account has been suspended.');
+        return;
+      }
+
       await setItem(StorageKeys.AUTH_USER, me);
       setUser(me);
+      setStatus('authenticated');
     } catch (error) {
+      const statusCode = (error as any)?.response?.status;
+      if (statusCode === 401 || statusCode === 403) {
+        await clearAuthState();
+        return;
+      }
+
       console.warn('[Auth] Failed to refresh user after login', error);
       await setItem(StorageKeys.AUTH_USER, user);
       setUser(user);
+      setStatus('authenticated');
     }
-    setStatus('authenticated');
   };
 
   /* ---------------- LOGOUT ---------------- */
   const logout = async () => {
-    await removeItem(StorageKeys.AUTH_TOKEN);
-    await removeItem(StorageKeys.AUTH_USER);
-
-    setUser(null);
-    setStatus('unauthenticated');
+    await clearAuthState();
   };
 
   /* ---------------- REFRESH USER ---------------- */
   const refreshUser = async () => {
     const me = await fetchMe();
+
+    if (me?.isActive === false) {
+      await clearAuthState();
+      showError('Your account has been suspended.');
+      return;
+    }
+
     await setItem(StorageKeys.AUTH_USER, me);
     setUser(me);
   };

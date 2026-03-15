@@ -23,7 +23,7 @@ export function CarRentalTabsNavigator() {
         component={CarRentalHomeScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="car-outline" color={color} size={size} />
+            <Icon name="car" color={color} size={size} />
           ),
         }}
       />
@@ -33,7 +33,7 @@ export function CarRentalTabsNavigator() {
         component={BookingsScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="calendar-outline" color={color} size={size} />
+            <Icon name="calendar" color={color} size={size} />
           ),
         }}
       />
@@ -43,7 +43,7 @@ export function CarRentalTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="person-outline" color={color} size={size} />
+            <Icon name="person" color={color} size={size} />
           ),
         }}
       />

@@ -2,6 +2,10 @@ import { StyleSheet } from 'react-native';
 import { Radius, Spacing } from '@/theme';
 
 export default StyleSheet.create({
+  scroll: {
+    flexGrow: 0,
+  },
+
   container: {
     paddingHorizontal: Spacing.md,
     gap: Spacing.sm,

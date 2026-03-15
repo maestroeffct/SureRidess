@@ -2,6 +2,20 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { getItem, StorageKeys } from '@/helpers/storage';
 
+export type AuthErrorReason =
+  | 'UNAUTHORIZED'
+  | 'ACCOUNT_SUSPENDED'
+  | 'ACCOUNT_UNVERIFIED';
+
+let authErrorHandler: ((reason: AuthErrorReason) => void | Promise<void>) | null =
+  null;
+
+export function setAuthErrorHandler(
+  handler: ((reason: AuthErrorReason) => void | Promise<void>) | null,
+) {
+  authErrorHandler = handler;
+}
+
 const BASE_URL =
   Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
 
@@ -51,10 +65,24 @@ api.interceptors.response.use(
       });
     }
 
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
+    const status = error?.response?.status;
+    const code = String(error?.response?.data?.code || '').toUpperCase();
+
+    if (status === 401) {
       console.log('Unauthorized access - redirecting to login');
+      authErrorHandler?.('UNAUTHORIZED');
     }
+
+    if (status === 403 && code === 'ACCOUNT_SUSPENDED') {
+      console.log('Account suspended - forcing logout');
+      authErrorHandler?.('ACCOUNT_SUSPENDED');
+    }
+
+    if (status === 403 && code === 'ACCOUNT_UNVERIFIED') {
+      console.log('Account unverified - forcing logout');
+      authErrorHandler?.('ACCOUNT_UNVERIFIED');
+    }
+
     return Promise.reject(error);
   },
 );
