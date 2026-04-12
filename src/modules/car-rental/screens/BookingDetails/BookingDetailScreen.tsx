@@ -27,6 +27,7 @@ import {
   type BookingDetails,
 } from '@/services/booking.service';
 import { showError, showSuccess } from '@/helpers/toast';
+import { useTheme } from '@/theme/ThemeProvider';
 
 type RouteParams = {
   bookingId: string;
@@ -36,6 +37,7 @@ type RouteParams = {
 const BookingDetailsScreen = () => {
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const navigation = useNavigation<any>();
+  const { colors } = useTheme();
 
   const { bookingId, status = 'in_progress' } = route.params || {};
   const isCompleted = status === 'completed';
@@ -99,9 +101,9 @@ const BookingDetailsScreen = () => {
   if (loading) {
     return (
       <ScreenWrapper padded={false}>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} />
+            <Icon name="chevron-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Typo variant="subheading">Booking Details</Typo>
           <View style={{ width: 24 }} />
@@ -155,15 +157,15 @@ const BookingDetailsScreen = () => {
     <ScreenWrapper padded={false}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* HEADER */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} />
+            <Icon name="chevron-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
 
           <Typo variant="subheading">Booking Details</Typo>
 
           <TouchableOpacity>
-            <Icon name="ellipsis-horizontal" size={20} />
+            <Icon name="ellipsis-horizontal" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -175,13 +177,13 @@ const BookingDetailsScreen = () => {
             resizeMode="cover"
           />
 
-          <View style={styles.imageCounter}>
+          <View style={[styles.imageCounter, { backgroundColor: colors.background }]}>
             <Typo variant="caption">1/{car?.images?.length ?? 1}</Typo>
           </View>
         </View>
 
         {/* VEHICLE INFO */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo style={styles.vehicleName}>{carName}</Typo>
 
           <View style={styles.locationRow}>
@@ -210,7 +212,7 @@ const BookingDetailsScreen = () => {
         />
 
         {/* BOOKING ID */}
-        <View style={styles.infoRow}>
+        <View style={[styles.infoRow, { borderBottomWidth: 1, borderColor: colors.border }]}>
           <Typo variant="caption">Booking</Typo>
           <Typo>{bookingId?.slice(0, 8).toUpperCase()}</Typo>
         </View>
@@ -224,7 +226,7 @@ const BookingDetailsScreen = () => {
         )}
 
         {/* RENTAL PERIOD */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">Rental Period</Typo>
 
           <RentalPoint
@@ -265,7 +267,7 @@ const BookingDetailsScreen = () => {
         )}
 
         {/* PAYMENT SUMMARY */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">Payment Summary</Typo>
 
           <PaymentSummaryRow
@@ -293,7 +295,7 @@ const BookingDetailsScreen = () => {
 
         {/* PAYMENT METHOD */}
         {isCollection ? (
-          <View style={styles.section}>
+          <View style={[styles.section, { borderColor: colors.border }]}>
             <CardPaymentRow
               brand="Collection"
               last4=""
@@ -320,7 +322,7 @@ const BookingDetailsScreen = () => {
 
         {/* DOWNLOAD RECEIPT */}
         {isCompleted && (
-          <View style={styles.section}>
+          <View style={[styles.section, { borderColor: colors.border }]}>
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.receiptBtn}
@@ -335,7 +337,7 @@ const BookingDetailsScreen = () => {
         )}
 
         {/* POLICIES */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">Rental Policies</Typo>
 
           <PolicyItem
@@ -348,7 +350,7 @@ const BookingDetailsScreen = () => {
 
         {/* CANCEL BOOKING */}
         {!isCompleted && booking?.status !== 'CANCELLED' && (
-          <View style={styles.section}>
+          <View style={[styles.section, { borderColor: colors.border }]}>
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.cancelBtn}
@@ -365,7 +367,7 @@ const BookingDetailsScreen = () => {
 
         {/* HELP */}
         {!isCompleted && (
-          <View style={styles.section}>
+          <View style={[styles.section, { borderColor: colors.border }]}>
             <Typo variant="subheading">Need Help?</Typo>
 
             {provider?.phone && (

@@ -10,10 +10,12 @@ import styles from './styles';
 import { fetchBookingDetails } from '@/services/booking.service';
 import type { BookingDetails } from '@/services/booking.service';
 import dayjs from 'dayjs';
+import { useTheme } from '@/theme/ThemeProvider';
 
 const BookingStatusScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { colors } = useTheme();
   const bookingId: string | undefined = route?.params?.bookingId;
   const paymentMethod: string = route?.params?.paymentMethod ?? 'ONLINE';
 
@@ -64,11 +66,11 @@ const BookingStatusScreen = () => {
   return (
     <ScreenWrapper padded={false}>
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <View />
         <Typo variant="subheading">Booking Status</Typo>
         <TouchableOpacity>
-          <Icon name="ellipsis-horizontal" size={22} />
+          <Icon name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -146,7 +148,7 @@ const BookingStatusScreen = () => {
       </ScrollView>
 
       {/* CTA */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <AppButton
           title="View My Bookings"
           onPress={() =>

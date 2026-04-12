@@ -27,10 +27,12 @@ import type {
 } from '@/types/rental';
 import { getCarWithFeatures } from '@/services/rental.service';
 import { Tag } from '@/components/Rental/Tag/Tag';
+import { useTheme } from '@/theme/ThemeProvider';
 
 const VehicleDetailsScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { colors } = useTheme();
   const routeCar: RentalCar | undefined = route?.params?.car;
   const vehicleId: string | undefined = route?.params?.vehicleId;
   const search = route?.params?.search;
@@ -198,15 +200,15 @@ const VehicleDetailsScreen = () => {
   return (
     <ScreenWrapper padded={false}>
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} />
+          <Icon name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Typo variant="subheading">Vehicle Details</Typo>
 
         <TouchableOpacity>
-          <Icon name="ellipsis-horizontal" size={22} />
+          <Icon name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -266,7 +268,7 @@ const VehicleDetailsScreen = () => {
         </View>
 
         {/* PROVIDER */}
-        <View style={styles.provider}>
+        <View style={[styles.provider, { borderColor: colors.border }]}>
           <View style={styles.providerLeft}>
             <View style={styles.providerLogo}>
               <Typo style={styles.providerText}>
@@ -410,7 +412,7 @@ const VehicleDetailsScreen = () => {
       </ScrollView>
 
       {/* FIXED BOTTOM BAR */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <View style={styles.priceInfo}>
           <Typo variant="caption" style={styles.priceLabel}>
             Total Price
@@ -453,9 +455,10 @@ function PaymentOption({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
-      style={[styles.paymentCard, selected && styles.paymentCardSelected]}
+      style={[styles.paymentCard, { backgroundColor: colors.surface, borderColor: colors.border }, selected && styles.paymentCardSelected]}
       onPress={onPress}
       activeOpacity={0.8}
     >

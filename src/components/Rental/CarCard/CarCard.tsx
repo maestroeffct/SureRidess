@@ -7,6 +7,7 @@ import type {
   RentalCarFeature,
   RentalCarFeatureLink,
 } from '@/types/rental';
+import { useTheme } from '@/theme/ThemeProvider';
 import styles from './styles';
 
 export function CarCard({
@@ -18,6 +19,7 @@ export function CarCard({
   car?: RentalCar;
   style?: ViewStyle;
 }) {
+  const { colors } = useTheme();
   const title =
     car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Toyota RAV4';
   const location = car?.location?.name ?? 'Ogun State';
@@ -118,7 +120,11 @@ export function CarCard({
       : ['Instant confirmation', 'Free cancelation'];
 
   return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, style]}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
       {/* IMAGE */}
       <View style={styles.imageWrapper}>
         <Image
@@ -153,7 +159,7 @@ export function CarCard({
         {/* SPECS */}
         <View style={styles.specRow}>
           {specs.map(spec => (
-            <Spec key={`${spec.icon}-${spec.label}`} {...spec} />
+            <Spec key={`${spec.icon}-${spec.label}`} {...spec} borderColor={colors.border} />
           ))}
         </View>
 
@@ -180,12 +186,14 @@ export function CarCard({
 function Spec({
   icon,
   label,
+  borderColor,
 }: {
   icon: ComponentProps<typeof Ionicons>['name'];
   label: string;
+  borderColor?: string;
 }) {
   return (
-    <View style={styles.specChip}>
+    <View style={[styles.specChip, borderColor ? { borderColor } : undefined]}>
       <Ionicons name={icon} size={14} />
       <Typo variant="caption">{label}</Typo>
     </View>

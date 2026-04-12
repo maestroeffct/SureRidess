@@ -29,10 +29,12 @@ import { showError, showSuccess } from '@/helpers/toast';
 import { Tag } from '@/components/Rental/Tag/Tag';
 import { fetchMe } from '@/services/user.service';
 import { DEV_BYPASS_KYC_VERIFICATION } from '@/config/devKyc';
+import { useTheme } from '@/theme/ThemeProvider';
 
 const PaymentScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { colors } = useTheme();
   const routeCar: RentalCar | undefined = route?.params?.car;
   const vehicleId: string | undefined = route?.params?.vehicleId;
   const search = route?.params?.search;
@@ -452,15 +454,15 @@ const PaymentScreen = () => {
   return (
     <ScreenWrapper padded={false}>
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} />
+          <Icon name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Typo variant="subheading">Payment</Typo>
 
         <TouchableOpacity>
-          <Icon name="ellipsis-horizontal" size={22} />
+          <Icon name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -499,7 +501,7 @@ const PaymentScreen = () => {
         </View>
 
         {/* BASIC INFO */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">{title}</Typo>
 
           <View style={styles.locationRow}>
@@ -533,7 +535,7 @@ const PaymentScreen = () => {
         />
 
         {/* IMPORTANT NOTES */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">Important Notes</Typo>
 
           <View style={styles.bullet}>
@@ -553,7 +555,7 @@ const PaymentScreen = () => {
         <InfoText label="Useful information for your booking" />
 
         {/* RENTAL PERIOD */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">Rental Period</Typo>
 
           <TimelineLocation
@@ -592,7 +594,7 @@ const PaymentScreen = () => {
         />
 
         {/* PAYMENT SUMMARY */}
-        <View style={styles.section}>
+        <View style={[styles.section, { borderColor: colors.border }]}>
           <Typo variant="subheading">Payment Summary</Typo>
 
           <PaymentSummaryRow
@@ -606,7 +608,7 @@ const PaymentScreen = () => {
             amount={formatMoney(insuranceFee)}
           />
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <PaymentSummaryRow
             label="Total"
@@ -617,7 +619,7 @@ const PaymentScreen = () => {
 
         {/* PAYMENT METHOD */}
         {paymentMethod === 'COLLECTION' ? (
-          <View style={styles.section}>
+          <View style={[styles.section, { borderColor: colors.border }]}>
             <Typo variant="subheading">Payment Method</Typo>
             <View style={collectionInfoStyle}>
               <Icon name="wallet-outline" size={22} color="#0B6E4F" />
@@ -631,7 +633,7 @@ const PaymentScreen = () => {
             </View>
           </View>
         ) : (
-          <View style={styles.section}>
+          <View style={[styles.section, { borderColor: colors.border }]}>
             <Typo variant="subheading">Payment Gateway</Typo>
 
             {paymentGateways.map(gw => (
@@ -639,6 +641,7 @@ const PaymentScreen = () => {
                 key={gw.id}
                 style={[
                   styles.gatewayRow,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
                   gateway === gw.id && styles.gatewayRowActive,
                 ]}
                 onPress={() => setGateway(gw.id)}
@@ -660,7 +663,7 @@ const PaymentScreen = () => {
       </ScrollView>
 
       {/* CTA */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <AppButton
           title={
             processingPayment
@@ -682,7 +685,7 @@ const PaymentScreen = () => {
         onRequestClose={() => setShowKycActionModal(false)}
       >
         <View style={styles.kycModalBackdrop}>
-          <View style={styles.kycModalCard}>
+          <View style={[styles.kycModalCard, { backgroundColor: colors.background }]}>
             <Typo variant="subheading">Complete Your KYC</Typo>
             <Typo variant="caption">
               You can browse now, but payment requires verified documents.

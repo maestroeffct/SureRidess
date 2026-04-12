@@ -14,6 +14,7 @@ import { BookingCard } from '@/components/Rental/BookingCard/BookingCard';
 import { useNavigation } from '@react-navigation/native';
 import { fetchUserBookings } from '@/services/booking.service';
 import { Typo } from '@/components/AppText/Typo';
+import { useTheme } from '@/theme/ThemeProvider';
 
 type RawBooking = {
   id: string;
@@ -38,6 +39,7 @@ const TABS = [
 ];
 
 const BookingsScreen = () => {
+  const { colors } = useTheme();
   const [tab, setTab] = useState<'in_progress' | 'completed'>('in_progress');
   const [bookings, setBookings] = useState<RawBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,23 +100,23 @@ const BookingsScreen = () => {
   return (
     <ScreenWrapper padded={false}>
       {/* ── HEADER ── */}
-      <View style={s.header}>
-        <Typo style={s.headerTitle}>My Bookings</Typo>
-        <Typo variant="caption" style={s.headerSub}>
+      <View style={[s.header, { backgroundColor: colors.background }]}>
+        <Typo style={[s.headerTitle, { color: colors.textPrimary }]}>My Bookings</Typo>
+        <Typo variant="caption" style={[s.headerSub, { color: colors.textSecondary }]}>
           {bookings.length} total reservation{bookings.length !== 1 ? 's' : ''}
         </Typo>
       </View>
 
       {/* ── SEARCH ── */}
       <View style={s.searchWrap}>
-        <View style={s.searchBox}>
-          <Icon name="search-outline" size={18} color="#9CA3AF" />
+        <View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Icon name="search-outline" size={18} color={colors.textSecondary} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search by car, booking ID…"
-            placeholderTextColor="#9CA3AF"
-            style={s.searchInput}
+            placeholderTextColor={colors.textSecondary}
+            style={[s.searchInput, { color: colors.textPrimary }]}
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
@@ -122,11 +124,11 @@ const BookingsScreen = () => {
       </View>
 
       {/* ── TABS ── */}
-      <View style={s.tabRow}>
+      <View style={[s.tabRow, { borderBottomColor: colors.border }]}>
         {TABS.map(t => (
           <View key={t.key} style={s.tabItem}>
             <Typo
-              style={[s.tabLabel, tab === t.key && s.tabLabelActive]}
+              style={[s.tabLabel, { color: colors.textSecondary }, tab === t.key && s.tabLabelActive, tab === t.key && { color: colors.textPrimary }]}
               onPress={() => setTab(t.key)}
             >
               {t.label}
@@ -158,10 +160,10 @@ const BookingsScreen = () => {
         ) : filtered.length === 0 ? (
           <View style={s.emptyWrap}>
             <Icon name="calendar-outline" size={48} color="#D1D5DB" />
-            <Typo style={s.emptyTitle}>
+            <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>
               {query ? 'No results' : tab === 'in_progress' ? 'No active bookings' : 'No past bookings'}
             </Typo>
-            <Typo variant="caption" style={s.emptySub}>
+            <Typo variant="caption" style={[s.emptySub, { color: colors.textSecondary }]}>
               {query
                 ? 'Try a different search term'
                 : tab === 'in_progress'

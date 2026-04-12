@@ -52,14 +52,15 @@ function InfoRow({
   value?: string | null;
   verified?: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <View style={s.infoRow}>
       <View style={s.infoIconWrap}>
         <Icon name={icon as any} size={17} color="#0A6A4B" />
       </View>
       <View style={s.infoContent}>
-        <Typo style={s.infoLabel}>{label}</Typo>
-        <Typo style={s.infoValue}>{value || '—'}</Typo>
+        <Typo style={[s.infoLabel, { color: colors.textSecondary }]}>{label}</Typo>
+        <Typo style={[s.infoValue, { color: colors.textPrimary }]}>{value || '—'}</Typo>
       </View>
       {verified && (
         <Icon name="checkmark-circle" size={18} color="#22C55E" />
@@ -83,14 +84,15 @@ function ActionRow({
   onPress: () => void;
   danger?: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity style={s.actionRow} onPress={onPress} activeOpacity={0.7}>
       <View style={[s.actionIconWrap, danger && s.actionIconDanger]}>
-        <Icon name={icon as any} size={17} color={danger ? '#EF4444' : '#374151'} />
+        <Icon name={icon as any} size={17} color={danger ? '#EF4444' : colors.textPrimary} />
       </View>
-      <Typo style={[s.actionLabel, danger && { color: '#EF4444' }]}>{label}</Typo>
+      <Typo style={[s.actionLabel, { color: colors.textPrimary }, danger && { color: '#EF4444' }]}>{label}</Typo>
       {!danger && (
-        <Icon name="chevron-forward" size={16} color="#9CA3AF" style={{ marginLeft: 'auto' }} />
+        <Icon name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
       )}
     </TouchableOpacity>
   );
@@ -102,7 +104,7 @@ function ActionRow({
 
 export const ProfileScreen = () => {
   const { user, logout, refreshUser } = useAuth();
-  const { preference, setPreference } = useTheme();
+  const { preference, setPreference, colors } = useTheme();
 
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
@@ -225,14 +227,14 @@ export const ProfileScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* ── AVATAR HEADER ── */}
-        <View style={s.avatarSection}>
+        <View style={[s.avatarSection, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
           <View style={s.avatarCircle}>
             <Typo style={s.avatarText}>
               {initials(user?.firstName, user?.lastName)}
             </Typo>
           </View>
-          <Typo style={s.fullName}>{fullName}</Typo>
-          <Typo variant="caption" style={s.emailSub}>{user?.email}</Typo>
+          <Typo style={[s.fullName, { color: colors.textPrimary }]}>{fullName}</Typo>
+          <Typo variant="caption" style={[s.emailSub, { color: colors.textSecondary }]}>{user?.email}</Typo>
 
           {kycStatus && (
             <View style={[s.kycBadge, { borderColor: kycColor[kycStatus] ?? '#9CA3AF' }]}>
@@ -245,7 +247,7 @@ export const ProfileScreen = () => {
         </View>
 
         {/* ── PERSONAL INFO ── */}
-        <View style={s.card}>
+        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SectionHeader title="Personal Info" />
           <InfoRow icon="person-outline" label="Full Name" value={fullName} />
           <InfoRow icon="mail-outline" label="Email" value={user?.email} verified={user?.isVerified} />
@@ -259,7 +261,7 @@ export const ProfileScreen = () => {
         </View>
 
         {/* ── ACCOUNT ACTIONS ── */}
-        <View style={s.card}>
+        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SectionHeader title="Account" />
           <ActionRow
             icon="create-outline"
@@ -274,7 +276,7 @@ export const ProfileScreen = () => {
         </View>
 
         {/* ── APPEARANCE ── */}
-        <View style={s.card}>
+        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SectionHeader title="Appearance" />
           <View style={s.themeRow}>
             {(
@@ -288,16 +290,20 @@ export const ProfileScreen = () => {
               return (
                 <TouchableOpacity
                   key={opt.value}
-                  style={[s.themeOption, active && s.themeOptionActive]}
+                  style={[
+                    s.themeOption,
+                    { backgroundColor: colors.background, borderColor: colors.border },
+                    active && s.themeOptionActive,
+                  ]}
                   onPress={() => setPreference(opt.value)}
                   activeOpacity={0.75}
                 >
                   <Icon
                     name={opt.icon as any}
                     size={18}
-                    color={active ? '#fff' : '#6B7280'}
+                    color={active ? '#fff' : colors.textSecondary}
                   />
-                  <Typo style={[s.themeLabel, active && s.themeLabelActive]}>
+                  <Typo style={[s.themeLabel, { color: colors.textSecondary }, active && s.themeLabelActive]}>
                     {opt.label}
                   </Typo>
                 </TouchableOpacity>
@@ -307,7 +313,7 @@ export const ProfileScreen = () => {
         </View>
 
         {/* ── DANGER ZONE ── */}
-        <View style={s.card}>
+        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ActionRow
             icon="log-out-outline"
             label="Log out"
@@ -325,31 +331,31 @@ export const ProfileScreen = () => {
         onClose={() => setEditNameOpen(false)}
         heightFactor={0.48}
       >
-        <View style={s.sheetInner}>
+        <View style={[s.sheetInner, { backgroundColor: colors.surface }]}>
           <View style={s.sheetTitleRow}>
-            <Typo style={s.sheetTitle}>Edit Name</Typo>
+            <Typo style={[s.sheetTitle, { color: colors.textPrimary }]}>Edit Name</Typo>
             <TouchableOpacity onPress={() => setEditNameOpen(false)}>
-              <Icon name="close" size={22} color="#374151" />
+              <Icon name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <Typo style={s.fieldLabel}>First Name</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>First Name</Typo>
           <TextInput
             value={firstName}
             onChangeText={setFirstName}
-            style={s.input}
+            style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="Enter first name"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textSecondary}
             autoCapitalize="words"
           />
 
-          <Typo style={s.fieldLabel}>Last Name</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>Last Name</Typo>
           <TextInput
             value={lastName}
             onChangeText={setLastName}
-            style={s.input}
+            style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="Enter last name"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textSecondary}
             autoCapitalize="words"
           />
 
@@ -367,56 +373,56 @@ export const ProfileScreen = () => {
         onClose={() => setChangePassOpen(false)}
         heightFactor={0.68}
       >
-        <View style={s.sheetInner}>
+        <View style={[s.sheetInner, { backgroundColor: colors.surface }]}>
           <View style={s.sheetTitleRow}>
-            <Typo style={s.sheetTitle}>Change Password</Typo>
+            <Typo style={[s.sheetTitle, { color: colors.textPrimary }]}>Change Password</Typo>
             <TouchableOpacity onPress={() => setChangePassOpen(false)}>
-              <Icon name="close" size={22} color="#374151" />
+              <Icon name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <Typo style={s.fieldLabel}>Current Password</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>Current Password</Typo>
           <View style={s.passwordRow}>
             <TextInput
               value={oldPassword}
               onChangeText={setOldPassword}
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
+              style={[s.input, { flex: 1, marginBottom: 0, backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="Enter current password"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showOld}
             />
             <TouchableOpacity onPress={() => setShowOld(v => !v)} style={s.eyeBtn}>
-              <Icon name={showOld ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+              <Icon name={showOld ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <Typo style={s.fieldLabel}>New Password</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>New Password</Typo>
           <View style={s.passwordRow}>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
+              style={[s.input, { flex: 1, marginBottom: 0, backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="Min 6 characters"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showNew}
             />
             <TouchableOpacity onPress={() => setShowNew(v => !v)} style={s.eyeBtn}>
-              <Icon name={showNew ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+              <Icon name={showNew ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <Typo style={s.fieldLabel}>Confirm New Password</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>Confirm New Password</Typo>
           <View style={s.passwordRow}>
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
+              style={[s.input, { flex: 1, marginBottom: 0, backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="Repeat new password"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showConfirm}
             />
             <TouchableOpacity onPress={() => setShowConfirm(v => !v)} style={s.eyeBtn}>
-              <Icon name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+              <Icon name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 

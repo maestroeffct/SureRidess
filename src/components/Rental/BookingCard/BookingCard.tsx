@@ -3,6 +3,7 @@ import { View, Image, TouchableOpacity } from 'react-native';
 import { Typo } from '@/components/AppText/Typo';
 import styles from './styles';
 import { BookingLocationRow } from '../BookingLocationRow/BookingLocationRow';
+import { useTheme } from '@/theme/ThemeProvider';
 import dayjs from 'dayjs';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -51,6 +52,7 @@ export const BookingCard = ({
   totalPrice,
   currency = 'NGN',
 }: Props) => {
+  const { colors } = useTheme();
   const pickup = pickupAt ? dayjs(pickupAt) : null;
   const ret = returnAt ? dayjs(returnAt) : null;
   const days =
@@ -69,10 +71,10 @@ export const BookingCard = ({
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.surface }]}
     >
       {/* HEADER */}
-      <View style={styles.codeRow}>
+      <View style={[styles.codeRow, { backgroundColor: colors.background }]}>
         {collectionCode ? (
           <>
             <Typo variant="caption">Pickup code:</Typo>
