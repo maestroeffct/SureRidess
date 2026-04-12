@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, TouchableOpacity, Modal, FlatList, Text } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -10,27 +10,28 @@ import { AppButton } from '@/components/AppButton/CustomButton';
 import { AppInput } from '@/components/AppInput/Input';
 import styles from './styles';
 
-import { fetchCountries } from '@/services/country.service';
+import { fetchCountries, type Country } from '@/services/country.service';
 import { showError, showSuccess } from '@/helpers/toast';
 import {
   getPasswordStrength,
   getStrengthColor,
   isValidEmail,
 } from '@/helpers/validation';
+import { getFlagEmoji } from '@/helpers/countryFlag';
 import { registerUser } from '@/services/auth.service';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/navigation/Auth/AuthNavigator';
-
-/* ---------------- TYPES ---------------- */
-export type Country = {
-  name: string;
-  callingCode: string;
-};
+import { useAuth } from '@/providers/AuthProvider';
+import {
+  getGoogleAuthErrorMessage,
+  signInOrSignUpWithGoogle,
+} from '@/services/socialAuth.service';
 
 /* ---------------- SCREEN ---------------- */
 export function RegisterScreen() {
   const { colors } = useTheme();
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -60,6 +61,7 @@ export function RegisterScreen() {
   );
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const navigation =
     useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
@@ -117,6 +119,25 @@ export function RegisterScreen() {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    try {
+      setGoogleLoading(true);
+      const res = await signInOrSignUpWithGoogle();
+      await login(res.token, res.user);
+
+      if (res.isNewUser || res.needsProfileCompletion) {
+        showSuccess('Account created with Google. Complete your profile to continue.');
+        return;
+      }
+
+      showSuccess('Signed in with Google');
+    } catch (error) {
+      showError(getGoogleAuthErrorMessage(error));
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <ScreenWrapper scrollable showBack>
       {/* Header */}
@@ -154,21 +175,23 @@ export function RegisterScreen() {
         />
 
         {/* DOB */}
-        <AppInput
-          label="Date of Birth"
-          placeholder="Select date"
-          value={dob ? dob.toDateString() : ''}
-          editable={false}
-          rightIcon={
-            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-              <Icon
-                name="calendar-outline"
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          }
-        />
+        <TouchableOpacity activeOpacity={0.8} onPress={() => setShowDatePicker(true)}>
+          <View pointerEvents="none">
+            <AppInput
+              label="Date of Birth"
+              placeholder="Select date"
+              value={dob ? dob.toDateString() : ''}
+              editable={false}
+              rightIcon={
+                <Icon
+                  name="calendar-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              }
+            />
+          </View>
+        </TouchableOpacity>
 
         {showDatePicker && (
           <DateTimePicker
@@ -183,20 +206,30 @@ export function RegisterScreen() {
         )}
 
         {/* Nationality */}
-        <AppInput
-          label="Nationality"
-          placeholder={selectedCountry?.name ?? 'Select country'}
-          editable={false}
-          leftIcon={
-            <TouchableOpacity onPress={() => setShowCountryModal(true)}>
-              <Icon
-                name="chevron-down"
-                size={18}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          }
-        />
+        <TouchableOpacity activeOpacity={0.8} onPress={() => setShowCountryModal(true)}>
+          <View pointerEvents="none">
+            <AppInput
+              label="Nationality"
+              placeholder="Select country"
+              value={selectedCountry ? selectedCountry.name : ''}
+              editable={false}
+              leftIcon={
+                selectedCountry ? (
+                  <Text style={{ fontSize: 18 }}>
+                    {getFlagEmoji(selectedCountry.code)}
+                  </Text>
+                ) : undefined
+              }
+              rightIcon={
+                <Icon
+                  name="chevron-down"
+                  size={18}
+                  color={colors.textSecondary}
+                />
+              }
+            />
+          </View>
+        </TouchableOpacity>
 
         {/* Phone */}
         <View>
@@ -215,7 +248,14 @@ export function RegisterScreen() {
               ]}
               onPress={() => setShowCountryModal(true)}
             >
-              <Typo>{phoneCode}</Typo>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {selectedCountry ? (
+                  <Text style={{ fontSize: 16, marginRight: 6 }}>
+                    {getFlagEmoji(selectedCountry.code)}
+                  </Text>
+                ) : null}
+                <Typo>{phoneCode}</Typo>
+              </View>
               <Icon
                 name="chevron-down"
                 size={16}
@@ -283,6 +323,14 @@ export function RegisterScreen() {
         onPress={handleRegister}
       />
 
+      <AppButton
+        title="Continue with Google"
+        variant="outline"
+        loading={googleLoading}
+        onPress={handleGoogleAuth}
+        style={styles.googleBtn}
+      />
+
       {/* Footer */}
       <View style={styles.footer}>
         <Typo variant="caption">Have an account?</Typo>
@@ -326,8 +374,15 @@ export function RegisterScreen() {
                   setSearch('');
                 }}
               >
-                <Typo>{item.name}</Typo>
-                <Typo variant="caption">{item.callingCode}</Typo>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 18, marginRight: 10 }}>
+                    {getFlagEmoji(item.code)}
+                  </Text>
+                  <View>
+                    <Typo>{item.name}</Typo>
+                    <Typo variant="caption">{item.callingCode}</Typo>
+                  </View>
+                </View>
               </TouchableOpacity>
             )}
           />

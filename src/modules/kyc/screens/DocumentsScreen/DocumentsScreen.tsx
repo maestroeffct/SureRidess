@@ -1,7 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  FlatList,
-  Modal,
   ScrollView,
   TouchableOpacity,
   View,
@@ -14,11 +12,12 @@ import { KYCStepHeader } from '@/components/kyc/KYCStepHeader/KYCStepHeader';
 import { KYCInfoAlert } from '@/components/kyc/KYCInfoAlert/KYCInfoAlert';
 import { AppInput } from '@/components/AppInput/Input';
 import { AppButton } from '@/components/AppButton/CustomButton';
-import { Typo } from '@/components/AppText/Typo';
+
 import styles from './styles';
 import { useNavigation } from '@react-navigation/native';
 import { UploadField } from '@/components/kyc/UploadField/UploadField';
 import { useTheme } from '@/theme/ThemeProvider';
+import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { showError, showSuccess } from '@/helpers/toast';
 import { uploadKycDocuments } from '@/services/kyc.service';
 import { useAuth } from '@/providers/AuthProvider';
@@ -45,7 +44,6 @@ export default function DocumentsScreen() {
     useState<GovernmentIdType | null>(null);
   const [showGovernmentIdTypeModal, setShowGovernmentIdTypeModal] =
     useState(false);
-  const [idTypeSearch, setIdTypeSearch] = useState('');
 
   const [governmentIdNumber, setGovernmentIdNumber] = useState('');
   const [driverLicenseNumber, setDriverLicenseNumber] = useState('');
@@ -62,14 +60,6 @@ export default function DocumentsScreen() {
     useState<Asset | null>(null);
   const [driverLicenseBackAsset, setDriverLicenseBackAsset] =
     useState<Asset | null>(null);
-
-  const filteredGovernmentIdTypes = useMemo(
-    () =>
-      GOVERNMENT_ID_TYPES.filter(item =>
-        item.toLowerCase().includes(idTypeSearch.trim().toLowerCase()),
-      ),
-    [idTypeSearch],
-  );
 
   const governmentIdNumberLabel =
     governmentIdType === 'International Passport'
@@ -306,49 +296,21 @@ export default function DocumentsScreen() {
         />
       </ScrollView>
 
-      <Modal visible={showGovernmentIdTypeModal} animationType="slide">
-        <ScreenWrapper>
-          <AppInput
-            placeholder="Search ID type"
-            value={idTypeSearch}
-            onChangeText={setIdTypeSearch}
-            leftIcon={
-              <Icon
-                name="search-outline"
-                size={18}
-                color={colors.textSecondary}
-              />
-            }
-          />
-
-          <FlatList
-            data={filteredGovernmentIdTypes}
-            keyExtractor={item => item}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={{ paddingVertical: 14 }}
-                onPress={() => {
-                  setGovernmentIdType(item);
-                  setGovernmentIdNumber('');
-                  setGovernmentIdFrontAsset(null);
-                  setGovernmentIdBackAsset(null);
-                  setShowGovernmentIdTypeModal(false);
-                  setIdTypeSearch('');
-                }}
-              >
-                <Typo>{item}</Typo>
-              </TouchableOpacity>
-            )}
-          />
-
-          <AppButton
-            title="Close"
-            variant="outline"
-            onPress={() => setShowGovernmentIdTypeModal(false)}
-          />
-        </ScreenWrapper>
-      </Modal>
+      <AppSelectSheet
+        visible={showGovernmentIdTypeModal}
+        title="Select ID Type"
+        searchable={false}
+        options={GOVERNMENT_ID_TYPES.map(t => ({ label: t, value: t }))}
+        selected={governmentIdType ?? undefined}
+        onClose={() => setShowGovernmentIdTypeModal(false)}
+        onSelect={opt => {
+          setGovernmentIdType(opt.value as GovernmentIdType);
+          setGovernmentIdNumber('');
+          setGovernmentIdFrontAsset(null);
+          setGovernmentIdBackAsset(null);
+          setShowGovernmentIdTypeModal(false);
+        }}
+      />
     </ScreenWrapper>
   );
 }

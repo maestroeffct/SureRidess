@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
+// import { Platform } from 'react-native';
 import { getItem, StorageKeys } from '@/helpers/storage';
 
 export type AuthErrorReason =
@@ -7,8 +7,9 @@ export type AuthErrorReason =
   | 'ACCOUNT_SUSPENDED'
   | 'ACCOUNT_UNVERIFIED';
 
-let authErrorHandler: ((reason: AuthErrorReason) => void | Promise<void>) | null =
-  null;
+let authErrorHandler:
+  | ((reason: AuthErrorReason) => void | Promise<void>)
+  | null = null;
 
 export function setAuthErrorHandler(
   handler: ((reason: AuthErrorReason) => void | Promise<void>) | null,
@@ -16,8 +17,10 @@ export function setAuthErrorHandler(
   authErrorHandler = handler;
 }
 
-const BASE_URL =
-  Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+// const BASE_URL =
+//   Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+
+const BASE_URL = 'https://sureride-backend-production.up.railway.app';
 
 export const api = axios.create({
   baseURL: BASE_URL,

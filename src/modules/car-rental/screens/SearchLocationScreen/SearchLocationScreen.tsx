@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 
@@ -22,21 +22,48 @@ import {
 } from '@/services/location.service';
 import type { RentalLocation } from '@/types/rental';
 
+type SearchField = 'pickup' | 'dropoff';
+type SearchResultsByField = Record<SearchField, RentalLocation[]>;
+type SearchFlagByField = Record<SearchField, boolean>;
+
 const SearchLocationScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { colors } = useTheme();
-  // const [useCurrent, setUseCurrent] = useState(true);
+
   const [sameDropOff, setSameDropOff] = useState(true);
   const [pickupLocationId, setPickupLocationId] = useState('');
   const [dropoffLocationId, setDropoffLocationId] = useState('');
   const [pickupQuery, setPickupQuery] = useState('');
   const [dropoffQuery, setDropoffQuery] = useState('');
-  const [activeField, setActiveField] =
-    useState<'pickup' | 'dropoff'>('pickup');
-  const [locationResults, setLocationResults] = useState<RentalLocation[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [pickupSelectedLocation, setPickupSelectedLocation] =
+    useState<RentalLocation | null>(null);
+  const [dropoffSelectedLocation, setDropoffSelectedLocation] =
+    useState<RentalLocation | null>(null);
+  const [activeField, setActiveField] = useState<SearchField>('pickup');
+  const [fallbackLocations, setFallbackLocations] = useState<RentalLocation[]>(
+    [],
+  );
+  const [searchResultsByField, setSearchResultsByField] =
+    useState<SearchResultsByField>({
+      pickup: [],
+      dropoff: [],
+    });
+  const [searchLoadingByField, setSearchLoadingByField] =
+    useState<SearchFlagByField>({
+      pickup: false,
+      dropoff: false,
+    });
+  const [searchAttemptedByField, setSearchAttemptedByField] =
+    useState<SearchFlagByField>({
+      pickup: false,
+      dropoff: false,
+    });
+  const [showResults, setShowResults] = useState(true);
+  const latestSearchIdRef = useRef<Record<SearchField, number>>({
+    pickup: 0,
+    dropoff: 0,
+  });
   const [countryIdByCode, setCountryIdByCode] = useState<
     Record<string, string>
   >({});
@@ -63,9 +90,16 @@ const SearchLocationScreen = () => {
     if (sameDropOff) {
       setDropoffLocationId(pickupLocationId);
       setDropoffQuery(pickupQuery);
+      setDropoffSelectedLocation(pickupSelectedLocation);
       setActiveField('pickup');
     }
-  }, [sameDropOff, pickupLocationId, pickupQuery]);
+  }, [sameDropOff, pickupLocationId, pickupQuery, pickupSelectedLocation]);
+
+  // Car locked from HomeScreen → VehicleDetails flow
+  const lockedCarId: string | undefined = route?.params?.lockedCarId;
+  const lockedCar = route?.params?.lockedCar;
+  const lockedInsuranceId: string | undefined = route?.params?.insuranceId;
+  const lockedPaymentMethod: string | undefined = route?.params?.paymentMethod;
 
   useEffect(() => {
     const params = route?.params;
@@ -104,7 +138,7 @@ const SearchLocationScreen = () => {
   }, []);
 
   useEffect(() => {
-    const loadCountryIds = async () => {
+    const loadLocationContext = async () => {
       try {
         const locations = await listRentalLocations();
         const map: Record<string, string> = {};
@@ -118,46 +152,130 @@ const SearchLocationScreen = () => {
         });
 
         setCountryIdByCode(map);
+        setFallbackLocations(locations);
       } catch (error) {
         console.warn('Failed to load location country IDs', error);
       }
     };
 
-    loadCountryIds();
+    loadLocationContext();
   }, []);
 
   useEffect(() => {
-    const query = activeField === 'pickup' ? pickupQuery : dropoffQuery;
-    const trimmed = query.trim();
+    const field = activeField;
+    const activeQuery = field === 'pickup' ? pickupQuery : dropoffQuery;
+    const activeSelectedLocation =
+      field === 'pickup' ? pickupSelectedLocation : dropoffSelectedLocation;
+    const trimmed = activeQuery.trim();
+
+    if (!showResults) {
+      return;
+    }
+
+    if (
+      activeSelectedLocation &&
+      trimmed.length > 0 &&
+      trimmed === activeSelectedLocation.name
+    ) {
+      setSearchLoadingByField(current => ({
+        ...current,
+        [field]: false,
+      }));
+      setSearchAttemptedByField(current => ({
+        ...current,
+        [field]: false,
+      }));
+      setSearchResultsByField(current => ({
+        ...current,
+        [field]: [],
+      }));
+      return;
+    }
 
     if (!trimmed || trimmed.length < 3) {
-      setLocationResults([]);
-      setLoadingLocations(false);
-      setShowResults(false);
+      setSearchLoadingByField(current => ({
+        ...current,
+        [field]: false,
+      }));
+      setSearchAttemptedByField(current => ({
+        ...current,
+        [field]: false,
+      }));
+      setSearchResultsByField(current => ({
+        ...current,
+        [field]: [],
+      }));
       return;
     }
 
     const countryId = selectedCountry?.code
       ? countryIdByCode[selectedCountry.code]
       : undefined;
+
     if (!countryId) {
-      setLocationResults([]);
+      setSearchResultsByField(current => ({
+        ...current,
+        [field]: [],
+      }));
+      setSearchLoadingByField(current => ({
+        ...current,
+        [field]: false,
+      }));
+      setSearchAttemptedByField(current => ({
+        ...current,
+        [field]: false,
+      }));
       return;
     }
 
+    const requestId = latestSearchIdRef.current[field] + 1;
+    latestSearchIdRef.current[field] = requestId;
+
     const timer = setTimeout(async () => {
       try {
-        setLoadingLocations(true);
+        setSearchLoadingByField(current => ({
+          ...current,
+          [field]: true,
+        }));
+
         const results = await searchRentalLocations({
           q: trimmed,
           countryId,
         });
-        setLocationResults(results);
+
+        if (latestSearchIdRef.current[field] !== requestId) {
+          return;
+        }
+
+        setSearchResultsByField(current => ({
+          ...current,
+          [field]: results,
+        }));
+        setSearchAttemptedByField(current => ({
+          ...current,
+          [field]: true,
+        }));
       } catch (error) {
+        if (latestSearchIdRef.current[field] !== requestId) {
+          return;
+        }
+
         console.warn('Failed to search locations', error);
-        setLocationResults([]);
+        setSearchResultsByField(current => ({
+          ...current,
+          [field]: [],
+        }));
+        setSearchAttemptedByField(current => ({
+          ...current,
+          [field]: true,
+        }));
       } finally {
-        setLoadingLocations(false);
+        if (latestSearchIdRef.current[field] === requestId) {
+          setSearchLoadingByField(current => ({
+            ...current,
+            [field]: false,
+          }));
+        }
       }
     }, 400);
 
@@ -166,8 +284,11 @@ const SearchLocationScreen = () => {
     activeField,
     pickupQuery,
     dropoffQuery,
+    pickupSelectedLocation,
+    dropoffSelectedLocation,
     selectedCountry?.code,
     countryIdByCode,
+    showResults,
   ]);
 
   const buildIsoDateTime = (date: Date, time: Date) => {
@@ -176,21 +297,67 @@ const SearchLocationScreen = () => {
     return combined.toISOString();
   };
 
+  const clearFieldSearchState = (field: SearchField) => {
+    setSearchResultsByField(current => ({
+      ...current,
+      [field]: [],
+    }));
+    setSearchLoadingByField(current => ({
+      ...current,
+      [field]: false,
+    }));
+    setSearchAttemptedByField(current => ({
+      ...current,
+      [field]: false,
+    }));
+  };
+
   const handleSelectLocation = (location: RentalLocation) => {
     if (activeField === 'pickup') {
       setPickupLocationId(location.id);
       setPickupQuery(location.name);
+      setPickupSelectedLocation(location);
+      clearFieldSearchState('pickup');
+
       if (sameDropOff) {
         setDropoffLocationId(location.id);
         setDropoffQuery(location.name);
+        setDropoffSelectedLocation(location);
+        clearFieldSearchState('dropoff');
       }
     } else {
       setDropoffLocationId(location.id);
       setDropoffQuery(location.name);
+      setDropoffSelectedLocation(location);
+      clearFieldSearchState('dropoff');
     }
 
-    setLocationResults([]);
     setShowResults(false);
+  };
+
+  const handlePickupChange = (text: string) => {
+    setPickupQuery(text);
+    setPickupLocationId('');
+    setPickupSelectedLocation(null);
+    setActiveField('pickup');
+    setShowResults(true);
+    clearFieldSearchState('pickup');
+
+    if (sameDropOff) {
+      setDropoffQuery(text);
+      setDropoffLocationId('');
+      setDropoffSelectedLocation(null);
+      clearFieldSearchState('dropoff');
+    }
+  };
+
+  const handleDropoffChange = (text: string) => {
+    setDropoffQuery(text);
+    setDropoffLocationId('');
+    setDropoffSelectedLocation(null);
+    setActiveField('dropoff');
+    setShowResults(true);
+    clearFieldSearchState('dropoff');
   };
 
   const handleSearch = async () => {
@@ -232,16 +399,38 @@ const SearchLocationScreen = () => {
         countryCode: selectedCountry.code,
       });
 
-      navigation.navigate('ChooseVehicle', {
-        search: result.search,
-        cars: result.cars,
-        pickupLocationId: pickupId,
-        dropoffLocationId: dropoffId,
-        pickupLocationName: pickupQuery.trim(),
-        dropoffLocationName: sameDropOff
-          ? pickupQuery.trim()
-          : dropoffQuery.trim(),
-      });
+      const pickupName = pickupSelectedLocation?.name || pickupQuery.trim();
+      const dropoffName = sameDropOff
+        ? pickupName
+        : dropoffSelectedLocation?.name || dropoffQuery.trim();
+
+      if (lockedCarId && lockedCar) {
+        // Came from VehicleDetails without dates — jump straight back with data
+        navigation.navigate('VehicleDetails', {
+          vehicleId: lockedCarId,
+          car: lockedCar,
+          search: result.search,
+          pickupLocationId: pickupId,
+          dropoffLocationId: dropoffId,
+          pickupLocationName: pickupName,
+          dropoffLocationName: dropoffName,
+          insuranceId: lockedInsuranceId,
+          paymentMethod: lockedPaymentMethod,
+        });
+      } else {
+        navigation.navigate('ChooseVehicle', {
+          search: result.search,
+          cars: result.cars,
+          pickupLocationId: pickupId,
+          dropoffLocationId: dropoffId,
+          pickupLocationName: pickupName,
+          dropoffLocationName: dropoffName,
+          pickupLocation: pickupSelectedLocation,
+          dropoffLocation: sameDropOff
+            ? pickupSelectedLocation
+            : dropoffSelectedLocation,
+        });
+      }
     } catch (error: any) {
       showError(
         error?.response?.data?.message ||
@@ -252,30 +441,48 @@ const SearchLocationScreen = () => {
     }
   };
 
+  const activeQuery = activeField === 'pickup' ? pickupQuery.trim() : dropoffQuery.trim();
+  const activeSelectedLocation =
+    activeField === 'pickup' ? pickupSelectedLocation : dropoffSelectedLocation;
+  const activeResults = searchResultsByField[activeField];
+  const isLoadingResults = searchLoadingByField[activeField];
+  const hasAttemptedSearch = searchAttemptedByField[activeField];
+  const visibleFallbackLocations = fallbackLocations.filter(location => {
+    if (!selectedCountry?.code) {
+      return true;
+    }
+
+    return location.country?.code === selectedCountry.code;
+  });
+  const visibleLocations =
+    activeQuery.length >= 3 ? activeResults : visibleFallbackLocations;
+  const showEmptyState =
+    activeQuery.length >= 3 &&
+    hasAttemptedSearch &&
+    !isLoadingResults &&
+    activeResults.length === 0 &&
+    !activeSelectedLocation;
+
   return (
     <ScreenWrapper>
-      {/* HEADER */}
       <View style={styles.header}>
         <Typo variant="heading">Search Location</Typo>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="close" size={26} />
         </TouchableOpacity>
       </View>
-      {/* PICKUP */}
+
       <Typo style={styles.sectionTitle}>Pick-up Location</Typo>
 
       <View style={styles.input}>
         <AppInput
           placeholder="Search for destinations"
           value={pickupQuery}
-          onChangeText={text => {
-            setPickupQuery(text);
-            setPickupLocationId('');
+          onChangeText={handlePickupChange}
+          onFocus={() => {
             setActiveField('pickup');
-            setShowResults(text.trim().length >= 3);
+            setShowResults(!pickupSelectedLocation);
           }}
-          onFocus={() => setActiveField('pickup')}
-          onBlur={() => setShowResults(false)}
           leftIcon={
             <Icon
               name="location-outline"
@@ -288,6 +495,7 @@ const SearchLocationScreen = () => {
           Enter the first 3 letters and wait for results.
         </Typo>
       </View>
+
       <TouchableOpacity
         style={styles.checkboxRow}
         onPress={() => setSameDropOff(!sameDropOff)}
@@ -297,7 +505,7 @@ const SearchLocationScreen = () => {
         </View>
         <Typo>Same location for drop off</Typo>
       </TouchableOpacity>
-      {/* DROP OFF */}
+
       {!sameDropOff && (
         <>
           <Typo style={styles.sectionTitle}>Drop-off Location</Typo>
@@ -305,14 +513,11 @@ const SearchLocationScreen = () => {
             <AppInput
               placeholder="Search for destinations"
               value={dropoffQuery}
-              onChangeText={text => {
-                setDropoffQuery(text);
-                setDropoffLocationId('');
+              onChangeText={handleDropoffChange}
+              onFocus={() => {
                 setActiveField('dropoff');
-                setShowResults(text.trim().length >= 3);
+                setShowResults(!dropoffSelectedLocation);
               }}
-              onFocus={() => setActiveField('dropoff')}
-              onBlur={() => setShowResults(false)}
               leftIcon={
                 <Icon
                   name="location-outline"
@@ -325,18 +530,18 @@ const SearchLocationScreen = () => {
         </>
       )}
 
-      {showResults && (
+      {showResults && (isLoadingResults || visibleLocations.length > 0 || showEmptyState) && (
         <View style={styles.resultsWrapper}>
-          {loadingLocations ? (
+          {isLoadingResults ? (
             <Typo variant="caption" style={styles.helperText}>
               Searching...
             </Typo>
-          ) : locationResults.length === 0 ? (
+          ) : showEmptyState ? (
             <Typo variant="caption" style={styles.helperText}>
               No locations found.
             </Typo>
           ) : (
-            locationResults.map(location => (
+            visibleLocations.map(location => (
               <TouchableOpacity
                 key={location.id}
                 style={styles.locationItem}
@@ -360,7 +565,7 @@ const SearchLocationScreen = () => {
           )}
         </View>
       )}
-      {/* PICKUP / RETURN LABELS */}
+
       <View style={styles.dateHeaderRow}>
         <Typo variant="subheading" style={styles.dateHeader}>
           Pickup
@@ -369,9 +574,8 @@ const SearchLocationScreen = () => {
           Return
         </Typo>
       </View>
-      {/* DATE + TIME CARDS */}
+
       <View style={styles.dateWrapper}>
-        {/* PICKUP CARD */}
         <View style={styles.dateCard}>
           <TouchableOpacity
             style={styles.dateRow}
@@ -406,7 +610,6 @@ const SearchLocationScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* RETURN CARD */}
         <View style={styles.dateCard}>
           <TouchableOpacity
             style={styles.dateRow}
@@ -441,9 +644,9 @@ const SearchLocationScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-      {/* SECTION DIVIDER */}
+
       <View style={styles.sectionDivider} />
-      {/* COUNTRY OF RESIDENCE */}
+
       <Typo style={styles.sectionTitle}>Country of residence</Typo>
       <TouchableOpacity
         style={styles.countrySelect}
@@ -459,8 +662,9 @@ const SearchLocationScreen = () => {
 
         <Icon name="chevron-down" size={20} />
       </TouchableOpacity>
+
       <View style={styles.sectionDivider} />
-      {/* ACTION */}
+
       <AppButton
         title="Search"
         onPress={handleSearch}
@@ -468,6 +672,7 @@ const SearchLocationScreen = () => {
         loading={searching}
         disabled={loadingCountries}
       />
+
       <CountryPickerModal
         visible={countryModalVisible}
         countries={countries}
@@ -476,6 +681,16 @@ const SearchLocationScreen = () => {
         onSelect={country => {
           setSelectedCountry(country);
           setCountryModalVisible(false);
+          setPickupLocationId('');
+          setDropoffLocationId('');
+          setPickupQuery('');
+          setDropoffQuery('');
+          setPickupSelectedLocation(null);
+          setDropoffSelectedLocation(null);
+          clearFieldSearchState('pickup');
+          clearFieldSearchState('dropoff');
+          setActiveField('pickup');
+          setShowResults(true);
         }}
       />
     </ScreenWrapper>

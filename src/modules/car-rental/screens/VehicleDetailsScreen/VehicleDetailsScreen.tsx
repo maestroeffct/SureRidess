@@ -17,7 +17,6 @@ import { Section } from '@/components/SectionHeader/SectionHeader';
 import { CheckItem } from '@/components/CheckItem/CheckItem';
 import { InfoText } from '@/components/InfoText/InfoText';
 import { InsuranceCard } from '@/components/Rental/InsuranceCard/InsuranceCard';
-import { RadioRow } from '@/components/RadioRow/RadioRow';
 import { TimelineLocation } from '@/components/Timeline/TimelineLocation';
 import { formatDate, formatTime } from '@/helpers/dateTime';
 import type {
@@ -35,6 +34,8 @@ const VehicleDetailsScreen = () => {
   const routeCar: RentalCar | undefined = route?.params?.car;
   const vehicleId: string | undefined = route?.params?.vehicleId;
   const search = route?.params?.search;
+  const pickupLocationId = route?.params?.pickupLocationId;
+  const dropoffLocationId = route?.params?.dropoffLocationId;
   const pickupLocationName = route?.params?.pickupLocationName;
   const dropoffLocationName = route?.params?.dropoffLocationName;
   const [insurance, setInsurance] = useState('none');
@@ -47,11 +48,6 @@ const VehicleDetailsScreen = () => {
   useEffect(() => {
     if (routeCar) {
       setCar(routeCar);
-      console.log(
-        '[VehicleDetails][RouteCar Images]',
-        routeCar.id,
-        routeCar.images,
-      );
     }
   }, [routeCar]);
 
@@ -64,11 +60,6 @@ const VehicleDetailsScreen = () => {
 
       try {
         const detail = await getCarWithFeatures(vehicleId);
-        console.log(
-          '[VehicleDetails][Fetched Images]',
-          detail.id,
-          detail.images,
-        );
         setCar(prev => ({
           ...(prev ?? detail),
           ...detail,
@@ -154,14 +145,36 @@ const VehicleDetailsScreen = () => {
   const totalPrice =
     car?.dailyRate && totalDays ? car.dailyRate * totalDays : undefined;
 
+  const hasBookingData =
+    !!search?.pickupAt &&
+    !!search?.returnAt &&
+    !!(pickupLocationId || car?.location?.id);
+
   const handleProceedToPayment = () => {
+    if (!hasBookingData) {
+      // No dates/location selected — send them to SearchLocation with this car locked
+      navigation.navigate('CarRentalFlowNavigator', {
+        screen: 'SearchLocation',
+        params: {
+          lockedCarId: vehicleId || car?.id,
+          lockedCar: car,
+          insuranceId: insurance === 'none' ? undefined : insurance,
+          paymentMethod: payment === 'collection' ? 'COLLECTION' : 'ONLINE',
+        },
+      });
+      return;
+    }
+
     navigation.navigate('PaymentScreen', {
       vehicleId: vehicleId || car?.id,
       car,
       search,
+      pickupLocationId: pickupLocationId || car?.location?.id,
+      dropoffLocationId: dropoffLocationId || pickupLocationId || car?.location?.id,
       pickupLocationName,
       dropoffLocationName,
       insuranceId: insurance === 'none' ? undefined : insurance,
+      paymentMethod: payment === 'collection' ? 'COLLECTION' : 'ONLINE',
     });
   };
 
@@ -197,8 +210,11 @@ const VehicleDetailsScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* IMAGE */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 16 }}
+      >
+        {/* IMAGE CAROUSEL */}
         <View>
           <ScrollView
             horizontal
@@ -347,7 +363,7 @@ const VehicleDetailsScreen = () => {
           )}
         </Section>
 
-        {/* PICKUP / DROP */}
+        {/* PICKUP / DROP-OFF */}
         <Section title="Pick-up and Drop-off">
           <TimelineLocation
             icon="location"
@@ -374,35 +390,99 @@ const VehicleDetailsScreen = () => {
           />
         </Section>
 
-        {/* PAYMENT */}
+        {/* PAYMENT METHOD */}
         <Section title="Payment Method">
-          <RadioRow
+          <PaymentOption
+            icon="wallet-outline"
             label="Pay on Collection"
+            subtitle="Pay in cash when you pick up the car"
             selected={payment === 'collection'}
             onPress={() => setPayment('collection')}
           />
-          <RadioRow
+          <PaymentOption
+            icon="card-outline"
             label="Pay Online"
+            subtitle="Secure payment via card or bank transfer"
             selected={payment === 'online'}
             onPress={() => setPayment('online')}
           />
         </Section>
-
-        <View style={{ height: 20 }} />
-        {/* BOTTOM BAR */}
-        <View style={styles.bottomBar}>
-          <View>
-            <Typo variant="caption">Total Price</Typo>
-            <Typo style={styles.total}>
-              {totalPrice ? `₦${totalPrice}` : '—'}
-            </Typo>
-          </View>
-
-          <AppButton title="Book Now" onPress={handleProceedToPayment} />
-        </View>
       </ScrollView>
+
+      {/* FIXED BOTTOM BAR */}
+      <View style={styles.bottomBar}>
+        <View style={styles.priceInfo}>
+          <Typo variant="caption" style={styles.priceLabel}>
+            Total Price
+          </Typo>
+          <Typo style={styles.priceAmount}>
+            {totalPrice ? `₦${totalPrice.toLocaleString()}` : '—'}
+          </Typo>
+          {totalDays > 0 && car?.dailyRate && (
+            <Typo variant="caption" style={styles.priceSub}>
+              {totalDays} day{totalDays !== 1 ? 's' : ''} ·{' '}
+              ₦{car.dailyRate.toLocaleString()}/day
+            </Typo>
+          )}
+        </View>
+
+        <AppButton
+          title="Book Now"
+          onPress={handleProceedToPayment}
+          style={styles.bookBtn}
+        />
+      </View>
     </ScreenWrapper>
   );
 };
 
 export default VehicleDetailsScreen;
+
+/* ---------------- LOCAL COMPONENT ---------------- */
+
+function PaymentOption({
+  icon,
+  label,
+  subtitle,
+  selected,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Icon>['name'];
+  label: string;
+  subtitle: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.paymentCard, selected && styles.paymentCardSelected]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View
+        style={[styles.paymentIcon, selected && styles.paymentIconSelected]}
+      >
+        <Icon
+          name={icon}
+          size={20}
+          color={selected ? '#0B6E4F' : '#6B7280'}
+        />
+      </View>
+
+      <View style={styles.paymentInfo}>
+        <Typo style={selected ? styles.paymentLabelSelected : undefined}>
+          {label}
+        </Typo>
+        <Typo variant="caption" style={styles.paymentSubtitle}>
+          {subtitle}
+        </Typo>
+      </View>
+
+      <View
+        style={[styles.paymentCheck, selected && styles.paymentCheckSelected]}
+      >
+        {selected && <Icon name="checkmark" size={13} color="#fff" />}
+      </View>
+    </TouchableOpacity>
+  );
+}

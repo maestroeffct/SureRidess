@@ -19,6 +19,11 @@ export default StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    gap: 2,
+  },
+
+  tabLabel: {
+    opacity: 0.6,
   },
 
   activeTab: {

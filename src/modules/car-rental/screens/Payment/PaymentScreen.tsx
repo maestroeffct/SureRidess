@@ -22,7 +22,7 @@ import { PaymentSummaryRow } from '@/components/Rental/PaymentSummaryRow/Payment
 import { formatDate, formatTime } from '@/helpers/dateTime';
 import type { RentalCar, RentalInsurancePackage } from '@/types/rental';
 import { getCarWithFeatures } from '@/services/rental.service';
-import { createBooking } from '@/services/booking.service';
+import { createBooking, confirmCollectionBooking } from '@/services/booking.service';
 import { createPaymentSheetSession, getPaymentConfig } from '@/services/payment.service';
 import { initPaymentSheet, initStripe, presentPaymentSheet } from '@stripe/stripe-react-native';
 import { showError, showSuccess } from '@/helpers/toast';
@@ -39,6 +39,9 @@ const PaymentScreen = () => {
   const pickupLocationName = route?.params?.pickupLocationName;
   const dropoffLocationName = route?.params?.dropoffLocationName;
   const insuranceId: string | undefined = route?.params?.insuranceId;
+  const routePickupLocationId: string | undefined = route?.params?.pickupLocationId;
+  const routeDropoffLocationId: string | undefined = route?.params?.dropoffLocationId;
+  const paymentMethod: 'ONLINE' | 'COLLECTION' = route?.params?.paymentMethod ?? 'ONLINE';
   const [car, setCar] = useState<RentalCar | undefined>(routeCar);
   const [gateway, setGateway] = useState<'stripe' | 'flutterwave'>('stripe');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -151,9 +154,14 @@ const PaymentScreen = () => {
     const carId = vehicleId || car?.id;
     const pickupAtValue = search?.pickupAt;
     const returnAtValue = search?.returnAt;
-    const pickupLocationIdValue = search?.pickupLocationId || car?.location?.id;
+    const pickupLocationIdValue =
+      routePickupLocationId || search?.pickupLocationId || car?.location?.id;
     const dropoffLocationIdValue =
-      search?.dropoffLocationId || search?.pickupLocationId || car?.location?.id;
+      routeDropoffLocationId ||
+      routePickupLocationId ||
+      search?.dropoffLocationId ||
+      search?.pickupLocationId ||
+      car?.location?.id;
 
     if (
       !carId ||
@@ -172,7 +180,72 @@ const PaymentScreen = () => {
       pickupLocationId: pickupLocationIdValue,
       dropoffLocationId: dropoffLocationIdValue,
       insuranceId,
+      paymentMethod,
     };
+  };
+
+  const handlePayOnCollection = async () => {
+    if (processingPayment) return;
+
+    const canProceed = await ensureProfileEligibleForPayment();
+    if (!canProceed) return;
+
+    const bookingPayload = createdBookingId ? null : buildBookingPayload();
+    if (!createdBookingId && !bookingPayload) {
+      showError('Missing booking details. Please go back and try again.');
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+
+      let bookingId = createdBookingId;
+      if (!bookingId) {
+        const bookingResponse = await createBooking(bookingPayload!);
+        bookingId = bookingResponse?.booking?.id;
+
+        if (!bookingId) {
+          throw new Error('BOOKING_ID_MISSING');
+        }
+
+        setCreatedBookingId(bookingId);
+      }
+
+      await confirmCollectionBooking(bookingId);
+
+      showSuccess('Booking confirmed! Pay on collection.');
+      navigation.navigate('BookingStatus', {
+        status: 'success',
+        bookingId,
+        paymentMethod: 'COLLECTION',
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.message;
+      if (message === 'Complete your profile before booking') {
+        showError('Complete your profile before booking.');
+        setShowKycActionModal(true);
+      } else if (message === 'Booking already processed') {
+        // Booking was already confirmed — navigate to success
+        showSuccess('Booking already confirmed!');
+        navigation.navigate('BookingStatus', {
+          status: 'success',
+          bookingId: createdBookingId,
+          paymentMethod: 'COLLECTION',
+        });
+      } else if (message === 'CAR_ALREADY_BOOKED') {
+        showError('This car is already booked for the selected dates. Please choose different dates or another vehicle.');
+      } else if (message) {
+        showError(message);
+      } else {
+        showError('Unable to confirm booking. Please try again.');
+      }
+
+      if (__DEV__) {
+        console.log('[Payment] Collection booking failed', error);
+      }
+    } finally {
+      setProcessingPayment(false);
+    }
   };
 
 
@@ -364,6 +437,18 @@ const PaymentScreen = () => {
     }
   };
 
+  const collectionInfoStyle = {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: 12,
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  };
+
   return (
     <ScreenWrapper padded={false}>
       {/* HEADER */}
@@ -531,29 +616,45 @@ const PaymentScreen = () => {
         </View>
 
         {/* PAYMENT METHOD */}
-        <View style={styles.section}>
-          <Typo variant="subheading">Payment Gateway</Typo>
-
-          {paymentGateways.map(gw => (
-            <TouchableOpacity
-              key={gw.id}
-              style={[
-                styles.gatewayRow,
-                gateway === gw.id && styles.gatewayRowActive,
-              ]}
-              onPress={() => setGateway(gw.id)}
-            >
-              <View style={styles.gatewayLeft}>
-                <Image source={gw.logo} style={styles.gatewayLogo} />
-                <Typo>{gw.name}</Typo>
+        {paymentMethod === 'COLLECTION' ? (
+          <View style={styles.section}>
+            <Typo variant="subheading">Payment Method</Typo>
+            <View style={collectionInfoStyle}>
+              <Icon name="wallet-outline" size={22} color="#0B6E4F" />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Typo style={{ fontWeight: '600' }}>Pay on Collection</Typo>
+                <Typo variant="caption" style={{ color: '#6B7280' }}>
+                  Pay in cash when you arrive to pick up the car. A collection
+                  code will be sent to you upon confirmation.
+                </Typo>
               </View>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <Typo variant="subheading">Payment Gateway</Typo>
 
-              {gateway === gw.id && (
-                <Icon name="checkmark-circle" size={20} color="#0B6E4F" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+            {paymentGateways.map(gw => (
+              <TouchableOpacity
+                key={gw.id}
+                style={[
+                  styles.gatewayRow,
+                  gateway === gw.id && styles.gatewayRowActive,
+                ]}
+                onPress={() => setGateway(gw.id)}
+              >
+                <View style={styles.gatewayLeft}>
+                  <Image source={gw.logo} style={styles.gatewayLogo} />
+                  <Typo>{gw.name}</Typo>
+                </View>
+
+                {gateway === gw.id && (
+                  <Icon name="checkmark-circle" size={20} color="#0B6E4F" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={{ height: 120 }} />
       </ScrollView>
@@ -561,9 +662,15 @@ const PaymentScreen = () => {
       {/* CTA */}
       <View style={styles.bottomBar}>
         <AppButton
-          title={processingPayment ? 'Processing...' : 'Book Vehicle'}
+          title={
+            processingPayment
+              ? 'Processing...'
+              : paymentMethod === 'COLLECTION'
+              ? 'Confirm — Pay on Collection'
+              : 'Book Vehicle'
+          }
           loading={processingPayment}
-          onPress={handleBookVehicle}
+          onPress={paymentMethod === 'COLLECTION' ? handlePayOnCollection : handleBookVehicle}
         />
       </View>
 

@@ -192,11 +192,12 @@ const ChooseVehicleScreen = () => {
               key={car.id}
               car={car}
               onPress={() => (
-                console.log('[CarClick][Images]', car.id, car.images),
                 navigation.navigate('VehicleDetails', {
                   vehicleId: car.id,
                   car,
                   search,
+                  pickupLocationId,
+                  dropoffLocationId,
                   pickupLocationName,
                   dropoffLocationName,
                 })

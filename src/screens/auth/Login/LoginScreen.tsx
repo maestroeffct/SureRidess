@@ -15,6 +15,10 @@ import { AuthStackParamList } from '@/navigation/Auth/AuthNavigator';
 import { showError, showSuccess } from '@/helpers/toast';
 import { loginUser } from '@/services/auth.service';
 import { DEV_AUTH_ENABLED, DEV_TEST_CREDENTIALS } from '@/config/devAuth';
+import {
+  getGoogleAuthErrorMessage,
+  signInOrSignUpWithGoogle,
+} from '@/services/socialAuth.service';
 
 export function LoginScreen() {
   const navigation =
@@ -26,6 +30,7 @@ export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
@@ -67,6 +72,25 @@ export function LoginScreen() {
       showError(err?.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      setGoogleLoading(true);
+      const res = await signInOrSignUpWithGoogle();
+      await login(res.token, res.user);
+
+      if (res.isNewUser || res.needsProfileCompletion) {
+        showSuccess('Signed in with Google. Complete your profile to continue.');
+        return;
+      }
+
+      showSuccess('Signed in with Google');
+    } catch (error) {
+      showError(getGoogleAuthErrorMessage(error));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -134,9 +158,8 @@ export function LoginScreen() {
       <AppButton
         title="Sign in with Google"
         variant="outline"
-        onPress={() => {
-          showError('Google Sign-In not implemented yet');
-        }}
+        loading={googleLoading}
+        onPress={handleGoogleAuth}
         leftIcon={
           <Image
             source={require('@/assets/images/google-logo.png')}

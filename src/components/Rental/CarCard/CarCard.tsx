@@ -1,4 +1,4 @@
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View, ViewStyle } from 'react-native';
 import type { ComponentProps } from 'react';
 import { Typo } from '../../AppText/Typo';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -12,16 +12,20 @@ import styles from './styles';
 export function CarCard({
   onPress,
   car,
+  style,
 }: {
   onPress: () => void;
   car?: RentalCar;
+  style?: ViewStyle;
 }) {
   const title =
     car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Toyota RAV4';
   const location = car?.location?.name ?? 'Ogun State';
   const dailyRate =
     typeof car?.dailyRate === 'number' ? `₦${car.dailyRate}` : '₦250';
-  const imageUrl = car?.images?.find(img => img.isPrimary)?.url;
+  const imageUrl =
+    car?.images?.find(img => img.isPrimary)?.url ??
+    car?.images?.[0]?.url;
   const imageSource = imageUrl
     ? { uri: imageUrl }
     : require('@/assets/images/car.png');
@@ -114,7 +118,7 @@ export function CarCard({
       : ['Instant confirmation', 'Free cancelation'];
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.9}>
       {/* IMAGE */}
       <View style={styles.imageWrapper}>
         <Image

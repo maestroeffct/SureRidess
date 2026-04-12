@@ -12,6 +12,7 @@ const TIME_GROUPS = [
   { label: 'Early morning', times: generateTimes(0, 5) },
   { label: 'Morning', times: generateTimes(6, 11) },
   { label: 'Afternoon', times: generateTimes(12, 16) },
+  { label: 'Evening', times: generateTimes(17, 23) },
 ];
 
 const SelectTimesScreen = ({ navigation, route }: any) => {
@@ -49,16 +50,17 @@ const SelectTimesScreen = ({ navigation, route }: any) => {
 
       {/* TABS */}
       <View style={styles.tabRow}>
-        {['pickup', 'return'].map(tab => (
+        {(['pickup', 'return'] as const).map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab as any)}
+            onPress={() => setActiveTab(tab)}
           >
+            <Typo variant="caption" style={styles.tabLabel}>
+              {tab === 'pickup' ? 'Pickup' : 'Return'}
+            </Typo>
             <Typo>
-              {tab === 'pickup'
-                ? formatTime(pickupTime)
-                : formatTime(returnTime)}
+              {tab === 'pickup' ? formatTime(pickupTime) : formatTime(returnTime)}
             </Typo>
           </TouchableOpacity>
         ))}

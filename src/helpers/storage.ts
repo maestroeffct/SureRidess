@@ -6,6 +6,7 @@ export const StorageKeys = {
   PROFILE_COMPLETE: 'PROFILE_COMPLETE',
   AUTH_USER: 'AUTH_USER',
   LAST_MODULE: 'LAST_MODULE',
+  THEME_MODE: 'THEME_MODE',
 };
 
 export async function setItem<T>(key: string, value: T): Promise<void> {

@@ -55,11 +55,14 @@ const SelectDatesScreen = ({ navigation, route }: any) => {
             const isReturn =
               returnDate && dayjs(date).isSame(returnDate, 'day');
 
-            const disabled = !!(
-              activeTab === 'return' &&
-              pickupDate &&
-              dayjs(date).isBefore(pickupDate, 'day')
-            );
+            const isPast = dayjs(date).isBefore(dayjs(), 'day');
+            const disabled =
+              isPast ||
+              !!(
+                activeTab === 'return' &&
+                pickupDate &&
+                dayjs(date).isBefore(pickupDate, 'day')
+              );
 
             return (
               <TouchableOpacity
@@ -99,22 +102,29 @@ const SelectDatesScreen = ({ navigation, route }: any) => {
 
       {/* PICKUP / RETURN TABS */}
       <View style={styles.tabRow}>
-        {['pickup', 'return'].map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab as any)}
-          >
-            <Typo variant="subheading">
-              {tab === 'pickup' ? 'Pickup' : 'Return'}
-            </Typo>
-          </TouchableOpacity>
-        ))}
+        {(['pickup', 'return'] as const).map(tab => {
+          const date = tab === 'pickup' ? pickupDate : returnDate;
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, activeTab === tab && styles.activeTab]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Typo variant="caption" style={styles.tabLabel}>
+                {tab === 'pickup' ? 'Pickup' : 'Return'}
+              </Typo>
+              <Typo variant="subheading">
+                {date ? dayjs(date).format('MMM D') : '—'}
+              </Typo>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {renderMonth(0)}
         {renderMonth(1)}
+        {renderMonth(2)}
       </ScrollView>
 
       <AppButton

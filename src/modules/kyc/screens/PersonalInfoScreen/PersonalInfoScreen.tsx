@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
-  Modal,
   ScrollView,
   TouchableOpacity,
   View,
@@ -20,7 +18,9 @@ import { useAuth, type User } from '@/providers/AuthProvider';
 import { fetchMe } from '@/services/user.service';
 import { fetchCountries, type Country } from '@/services/country.service';
 import { showError, showSuccess } from '@/helpers/toast';
+import { getFlagEmoji } from '@/helpers/countryFlag';
 import { useTheme } from '@/theme/ThemeProvider';
+import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { isValidEmail } from '@/helpers/validation';
 import { saveKycPersonalInfo } from '@/services/kyc.service';
 
@@ -304,7 +304,11 @@ export default function PersonalInfoScreen() {
         <View style={styles.inputSpacing}>
           <AppInput
             label="Nationality"
-            placeholder={selectedCountry?.name || nationality || 'Select country'}
+            placeholder={
+              selectedCountry
+                ? getFlagEmoji(selectedCountry.code) + ' ' + selectedCountry.name
+                : nationality || 'Select country'
+            }
             editable={false}
             leftIcon={
               <TouchableOpacity onPress={() => setShowCountryModal(true)}>
@@ -336,47 +340,27 @@ export default function PersonalInfoScreen() {
         />
       </ScrollView>
 
-      <Modal visible={showCountryModal} animationType="slide">
-        <ScreenWrapper>
-          <AppInput
-            placeholder="Search country"
-            value={search}
-            onChangeText={setSearch}
-            leftIcon={
-              <Icon
-                name="search-outline"
-                size={18}
-                color={colors.textSecondary}
-              />
-            }
-          />
-
-          <FlatList
-            data={filteredCountries}
-            keyExtractor={item => item.name}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={{ paddingVertical: 14 }}
-                onPress={() => {
-                  setSelectedCountry(item);
-                  setNationality(item.name);
-                  setShowCountryModal(false);
-                  setSearch('');
-                }}
-              >
-                <Typo>{item.name}</Typo>
-              </TouchableOpacity>
-            )}
-          />
-
-          <AppButton
-            title="Close"
-            variant="outline"
-            onPress={() => setShowCountryModal(false)}
-          />
-        </ScreenWrapper>
-      </Modal>
+      <AppSelectSheet
+        visible={showCountryModal}
+        title="Select Nationality"
+        searchPlaceholder="Search country..."
+        options={filteredCountries.map(c => ({
+          label: c.name,
+          value: c.code,
+          prefix: getFlagEmoji(c.code),
+        }))}
+        selected={selectedCountry?.code}
+        onClose={() => setShowCountryModal(false)}
+        onSelect={opt => {
+          const match = countries.find(c => c.code === opt.value);
+          if (match) {
+            setSelectedCountry(match);
+            setNationality(match.name);
+          }
+          setShowCountryModal(false);
+          setSearch('');
+        }}
+      />
     </ScreenWrapper>
   );
 }

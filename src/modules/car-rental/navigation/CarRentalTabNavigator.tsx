@@ -43,7 +43,12 @@ export function CarRentalTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="person" color={color} size={size} />
+            <Icon
+              name="person
+            "
+              color={color}
+              size={size}
+            />
           ),
         }}
       />

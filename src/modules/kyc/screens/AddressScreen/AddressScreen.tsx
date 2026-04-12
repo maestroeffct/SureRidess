@@ -1,15 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import { AppInput } from '@/components/AppInput/Input';
-import { Typo } from '@/components/AppText/Typo';
+
 import { KYCInfoAlert } from '@/components/kyc/KYCInfoAlert/KYCInfoAlert';
 import { KYCStepHeader } from '@/components/kyc/KYCStepHeader/KYCStepHeader';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { showError, showSuccess } from '@/helpers/toast';
+import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import {
   fetchRegionsByState,
   fetchStatesByCountry,
@@ -259,98 +260,34 @@ export default function AddressScreen() {
         />
       </ScrollView>
 
-      <Modal visible={showStateModal} animationType="slide">
-        <ScreenWrapper>
-          <AppInput
-            placeholder="Search state"
-            value={stateSearch}
-            onChangeText={setStateSearch}
-            leftIcon={
-              <Icon
-                name="search-outline"
-                size={18}
-                color={colors.textSecondary}
-              />
-            }
-          />
+      <AppSelectSheet
+        visible={showStateModal}
+        title="Select State"
+        searchPlaceholder="Search state..."
+        options={filteredStates.map(s => ({ label: s, value: s }))}
+        selected={stateValue}
+        onClose={() => setShowStateModal(false)}
+        onSelect={opt => {
+          setStateValue(opt.value);
+          setRegionValue('');
+          setShowStateModal(false);
+          setStateSearch('');
+        }}
+      />
 
-          <FlatList
-            data={filteredStates}
-            keyExtractor={item => item}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={{ paddingVertical: 14 }}
-                onPress={() => {
-                  setStateValue(item);
-                  setRegionValue('');
-                  setShowStateModal(false);
-                  setStateSearch('');
-                }}
-              >
-                <Typo>{item}</Typo>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <View style={{ paddingVertical: 16 }}>
-                <Typo variant="caption">No states found.</Typo>
-              </View>
-            }
-          />
-
-          <AppButton
-            title="Close"
-            variant="outline"
-            onPress={() => setShowStateModal(false)}
-          />
-        </ScreenWrapper>
-      </Modal>
-
-      <Modal visible={showRegionModal} animationType="slide">
-        <ScreenWrapper>
-          <AppInput
-            placeholder="Search region"
-            value={regionSearch}
-            onChangeText={setRegionSearch}
-            leftIcon={
-              <Icon
-                name="search-outline"
-                size={18}
-                color={colors.textSecondary}
-              />
-            }
-          />
-
-          <FlatList
-            data={filteredRegions}
-            keyExtractor={item => item}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={{ paddingVertical: 14 }}
-                onPress={() => {
-                  setRegionValue(item);
-                  setShowRegionModal(false);
-                  setRegionSearch('');
-                }}
-              >
-                <Typo>{item}</Typo>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <View style={{ paddingVertical: 16 }}>
-                <Typo variant="caption">No regions found.</Typo>
-              </View>
-            }
-          />
-
-          <AppButton
-            title="Close"
-            variant="outline"
-            onPress={() => setShowRegionModal(false)}
-          />
-        </ScreenWrapper>
-      </Modal>
+      <AppSelectSheet
+        visible={showRegionModal}
+        title="Select Region"
+        searchPlaceholder="Search region..."
+        options={filteredRegions.map(r => ({ label: r, value: r }))}
+        selected={regionValue}
+        onClose={() => setShowRegionModal(false)}
+        onSelect={opt => {
+          setRegionValue(opt.value);
+          setShowRegionModal(false);
+          setRegionSearch('');
+        }}
+      />
     </ScreenWrapper>
   );
 }
