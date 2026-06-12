@@ -9,6 +9,11 @@ import { getItem, setItem, removeItem, StorageKeys } from '@/helpers/storage';
 import { fetchMe } from '@/services/user.service';
 import { setAuthErrorHandler, type AuthErrorReason } from '@/services/api';
 import { showError } from '@/helpers/toast';
+import {
+  initNotifications,
+  teardownNotificationHandlers,
+} from '@/services/notification.service';
+import { useCurrency } from '@/providers/CurrencyProvider';
 
 type AuthStatus = 'initializing' | 'unauthenticated' | 'authenticated';
 
@@ -43,10 +48,12 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('initializing');
   const [user, setUser] = useState<User | null>(null);
+  const { setDefaultFromCountry } = useCurrency();
 
   const clearAuthState = useCallback(async () => {
     await removeItem(StorageKeys.AUTH_TOKEN);
     await removeItem(StorageKeys.AUTH_USER);
+    teardownNotificationHandlers();
     setUser(null);
     setStatus('unauthenticated');
   }, []);
@@ -95,7 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         await setItem(StorageKeys.AUTH_USER, me);
         setUser(me);
+        setDefaultFromCountry(me?.country ?? me?.nationality);
         setStatus('authenticated');
+        initNotifications().catch(() => {});
       } catch (error) {
         await clearAuthState();
         console.error('[Auth] Bootstrap failed:', error);
@@ -119,7 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await setItem(StorageKeys.AUTH_USER, me);
       setUser(me);
+      setDefaultFromCountry(me?.country ?? me?.nationality);
       setStatus('authenticated');
+      initNotifications().catch(() => {});
     } catch (error) {
       const statusCode = (error as any)?.response?.status;
       if (statusCode === 401 || statusCode === 403) {
@@ -130,7 +141,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn('[Auth] Failed to refresh user after login', error);
       await setItem(StorageKeys.AUTH_USER, user);
       setUser(user);
+      setDefaultFromCountry(user?.country ?? user?.nationality);
       setStatus('authenticated');
+      initNotifications().catch(() => {});
     }
   };
 
@@ -151,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await setItem(StorageKeys.AUTH_USER, me);
     setUser(me);
+    setDefaultFromCountry(me?.country ?? me?.nationality);
   };
 
   return (

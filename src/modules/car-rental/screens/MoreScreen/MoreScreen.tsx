@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,7 @@ import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
 import { removeItem, StorageKeys } from '@/helpers/storage';
+import { AppAlert } from '@/components/AppAlert/AppAlert';
 
 const APP_VERSION = '1.0.0';
 
@@ -105,30 +105,19 @@ export function MoreScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
 
+  const [switchAlert, setSwitchAlert] = useState(false);
+  const [comingSoonAlert, setComingSoonAlert] = useState(false);
+
   const handleSwitchModule = () => {
-    Alert.alert(
-      'Switch Module',
-      'Go back to the SureRide home screen to choose a different service?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Switch',
-          onPress: async () => {
-            await removeItem(StorageKeys.LAST_MODULE);
-            navigation.navigate('Home');
-          },
-        },
-      ],
-    );
+    console.log('[MoreScreen] Switch Module tapped, opening alert');
+    setSwitchAlert(true);
   };
 
   const handleContact = () => {
     Linking.openURL('mailto:support@sureride.ng').catch(() => {});
   };
 
-  const handleComingSoon = () => {
-    Alert.alert('Coming Soon', 'This feature will be available in a future update.');
-  };
+  const handleComingSoon = () => setComingSoonAlert(true);
 
   return (
     <ScreenWrapper padded={false}>
@@ -163,48 +152,6 @@ export function MoreScreen() {
           </View>
           <Icon name="arrow-forward" size={18} color="#fff" />
         </TouchableOpacity>
-
-        {/* ── SERVICES ── */}
-        <View
-          style={[
-            s.card,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <SectionHeader title="More Services" />
-          <MenuRow
-            icon="bicycle-outline"
-            iconBg="#7C3AED"
-            label="Ride Share"
-            sublabel="Coming soon"
-            onPress={handleComingSoon}
-            badge="Soon"
-          />
-          <MenuRow
-            icon="construct-outline"
-            iconBg="#0369A1"
-            label="Mobile Mechanic"
-            sublabel="Coming soon"
-            onPress={handleComingSoon}
-            badge="Soon"
-          />
-          <MenuRow
-            icon="alert-circle-outline"
-            iconBg="#DC2626"
-            label="Emergency Assistance"
-            sublabel="Coming soon"
-            onPress={handleComingSoon}
-            badge="Soon"
-          />
-          <MenuRow
-            icon="shield-checkmark-outline"
-            iconBg="#2F6F62"
-            label="Insurance"
-            sublabel="Coming soon"
-            onPress={handleComingSoon}
-            badge="Soon"
-          />
-        </View>
 
         {/* ── HELP & SUPPORT ── */}
         <View
@@ -281,6 +228,33 @@ export function MoreScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <AppAlert
+        visible={switchAlert}
+        title="Switch Module"
+        message="Go back to the SureRide home screen to choose a different service?"
+        buttons={[
+          { text: 'Cancel', style: 'cancel', onPress: () => setSwitchAlert(false) },
+          {
+            text: 'Switch',
+            style: 'default',
+            onPress: async () => {
+              setSwitchAlert(false);
+              await removeItem(StorageKeys.LAST_MODULE);
+              navigation.navigate('Home');
+            },
+          },
+        ]}
+        onDismiss={() => setSwitchAlert(false)}
+      />
+
+      <AppAlert
+        visible={comingSoonAlert}
+        title="Coming Soon"
+        message="This feature will be available in a future update."
+        buttons={[{ text: 'OK', style: 'default', onPress: () => setComingSoonAlert(false) }]}
+        onDismiss={() => setComingSoonAlert(false)}
+      />
     </ScreenWrapper>
   );
 }

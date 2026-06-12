@@ -8,6 +8,9 @@ import type {
   RentalCarFeatureLink,
 } from '@/types/rental';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useFormatMoney } from '@/providers/CurrencyProvider';
+import { FavoriteButton } from '@/components/FavoriteButton/FavoriteButton';
+import { StarRating } from '@/components/StarRating/StarRating';
 import styles from './styles';
 
 export function CarCard({
@@ -20,11 +23,17 @@ export function CarCard({
   style?: ViewStyle;
 }) {
   const { colors } = useTheme();
+  const fmtMoney = useFormatMoney();
   const title =
     car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Toyota RAV4';
   const location = car?.location?.name ?? 'Ogun State';
+  // Source currency: what the car is actually priced in (defaults to NGN
+  // when backend doesn't return it yet).
+  const sourceCurrency = car?.currency ?? 'NGN';
   const dailyRate =
-    typeof car?.dailyRate === 'number' ? `₦${car.dailyRate}` : '₦250';
+    typeof car?.dailyRate === 'number'
+      ? fmtMoney(car.dailyRate, sourceCurrency, { round: true })
+      : fmtMoney(250, sourceCurrency, { round: true });
   const imageUrl =
     car?.images?.find(img => img.isPrimary)?.url ??
     car?.images?.[0]?.url;
@@ -147,6 +156,13 @@ export function CarCard({
             </View>
           )}
         </View>
+
+        {/* FAVORITE */}
+        {car?.id ? (
+          <View style={styles.favoriteWrap}>
+            <FavoriteButton carId={car.id} variant="overlay" size={18} />
+          </View>
+        ) : null}
       </View>
 
       {/* INFO */}
@@ -156,10 +172,41 @@ export function CarCard({
           {location}
         </Typo>
 
+        {/* PROVIDER */}
+        {car?.provider?.name ? (
+          <View style={styles.providerRow}>
+            <Ionicons name="business-outline" size={11} color={colors.textSecondary} />
+            <Typo variant="caption" style={[styles.providerName, { color: colors.textSecondary }]} numberOfLines={1}>
+              {car.provider.name}
+            </Typo>
+            {car.provider.isVerified ? (
+              <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* RATING */}
+        {typeof car?.reviewCount === 'number' && car.reviewCount > 0 ? (
+          <View style={styles.ratingRow}>
+            <StarRating value={car.rating ?? 0} size={12} />
+            <Typo variant="caption" style={[styles.ratingValue, { color: colors.textPrimary }]}>
+              {(car.rating ?? 0).toFixed(1)}
+            </Typo>
+            <Typo variant="caption" style={[styles.ratingCount, { color: colors.textSecondary }]}>
+              ({car.reviewCount})
+            </Typo>
+          </View>
+        ) : null}
+
         {/* SPECS */}
         <View style={styles.specRow}>
           {specs.map(spec => (
-            <Spec key={`${spec.icon}-${spec.label}`} {...spec} borderColor={colors.border} />
+            <Spec
+              key={`${spec.icon}-${spec.label}`}
+              {...spec}
+              borderColor={colors.border}
+              iconColor={colors.textSecondary}
+            />
           ))}
         </View>
 
@@ -168,7 +215,11 @@ export function CarCard({
           <View>
             {footerFeatures.map((feature, index) => (
               <View key={`${feature}-${index}`} style={styles.featureRow}>
-                <Ionicons name="checkmark-circle" size={12} color="#0A6A4B" />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={12}
+                  color={colors.primary}
+                />
                 <Typo variant="caption">{feature}</Typo>
               </View>
             ))}
@@ -187,14 +238,16 @@ function Spec({
   icon,
   label,
   borderColor,
+  iconColor,
 }: {
   icon: ComponentProps<typeof Ionicons>['name'];
   label: string;
   borderColor?: string;
+  iconColor?: string;
 }) {
   return (
     <View style={[styles.specChip, borderColor ? { borderColor } : undefined]}>
-      <Ionicons name={icon} size={14} />
+      <Ionicons name={icon} size={14} color={iconColor} />
       <Typo variant="caption">{label}</Typo>
     </View>
   );

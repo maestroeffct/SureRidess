@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
+  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -272,21 +273,26 @@ export default function PersonalInfoScreen() {
         </View>
 
         <View style={styles.inputSpacing}>
-          <AppInput
-            label="Date of Birth"
-            placeholder="Select date"
-            value={dob ? dob.toDateString() : ''}
-            editable={false}
-            rightIcon={
-              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                <Icon
-                  name="calendar-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            }
-          />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <View pointerEvents="none">
+              <AppInput
+                label="Date of Birth"
+                placeholder="Select date"
+                value={dob ? dob.toDateString() : ''}
+                editable={false}
+                rightIcon={
+                  <Icon
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                }
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {showDatePicker && (
@@ -302,24 +308,33 @@ export default function PersonalInfoScreen() {
         )}
 
         <View style={styles.inputSpacing}>
-          <AppInput
-            label="Nationality"
-            placeholder={
-              selectedCountry
-                ? getFlagEmoji(selectedCountry.code) + ' ' + selectedCountry.name
-                : nationality || 'Select country'
-            }
-            editable={false}
-            leftIcon={
-              <TouchableOpacity onPress={() => setShowCountryModal(true)}>
-                <Icon
-                  name="chevron-down"
-                  size={18}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            }
-          />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setShowCountryModal(true)}
+          >
+            <View pointerEvents="none">
+              <AppInput
+                label="Nationality"
+                placeholder="Select country"
+                value={selectedCountry?.name ?? nationality ?? ''}
+                editable={false}
+                leftIcon={
+                  selectedCountry ? (
+                    <Text style={{ fontSize: 18 }}>
+                      {getFlagEmoji(selectedCountry.code)}
+                    </Text>
+                  ) : undefined
+                }
+                rightIcon={
+                  <Icon
+                    name="chevron-down"
+                    size={18}
+                    color={colors.textSecondary}
+                  />
+                }
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.inputSpacing}>

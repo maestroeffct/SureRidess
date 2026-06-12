@@ -4,7 +4,7 @@ export const DarkColors: ThemeColors = {
   background: '#0B1220',
   surface: '#111827',
 
-  primary: '#6FFFE9',
+  primary: '#02806dff',
   accent: '#00D2A8',
 
   textPrimary: '#F9FAFB',

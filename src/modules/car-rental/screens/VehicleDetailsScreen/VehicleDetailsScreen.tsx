@@ -5,15 +5,16 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import styles from './style';
-import { Section } from '@/components/SectionHeader/SectionHeader';
 import { CheckItem } from '@/components/CheckItem/CheckItem';
 import { InfoText } from '@/components/InfoText/InfoText';
 import { InsuranceCard } from '@/components/Rental/InsuranceCard/InsuranceCard';
@@ -26,13 +27,25 @@ import type {
   RentalInsurancePackage,
 } from '@/types/rental';
 import { getCarWithFeatures } from '@/services/rental.service';
-import { Tag } from '@/components/Rental/Tag/Tag';
+import { previewBookingPrice, PricingPreview } from '@/services/pricing.service';
+import { PriceBreakdown } from '@/components/Rental/PriceBreakdown/PriceBreakdown';
+import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
+import { FavoriteButton } from '@/components/FavoriteButton/FavoriteButton';
+import { ReviewsSection } from '@/components/Rental/ReviewsSection/ReviewsSection';
 import { useTheme } from '@/theme/ThemeProvider';
+
+const GREEN = '#0A6A4B';
+const SW = Dimensions.get('window').width;
+const HERO_H = 300;
 
 const VehicleDetailsScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { currency: userCurrency } = useCurrency();
+  const fmtMoney = useFormatMoney();
+  const { mode, colors } = useTheme();
+
   const routeCar: RentalCar | undefined = route?.params?.car;
   const vehicleId: string | undefined = route?.params?.vehicleId;
   const search = route?.params?.search;
@@ -40,17 +53,15 @@ const VehicleDetailsScreen = () => {
   const dropoffLocationId = route?.params?.dropoffLocationId;
   const pickupLocationName = route?.params?.pickupLocationName;
   const dropoffLocationName = route?.params?.dropoffLocationName;
+
   const [insurance, setInsurance] = useState('none');
-  const [payment, setPayment] = useState<'collection' | 'online'>('collection');
   const [car, setCar] = useState<RentalCar | undefined>(routeCar);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-
-  const screenWidth = Dimensions.get('window').width;
+  const [pricing, setPricing] = useState<PricingPreview | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
 
   useEffect(() => {
-    if (routeCar) {
-      setCar(routeCar);
-    }
+    if (routeCar) setCar(routeCar);
   }, [routeCar]);
 
   useEffect(() => {
@@ -59,7 +70,6 @@ const VehicleDetailsScreen = () => {
       const hasFeatures = !!(car?.features || car?.groupedFeatures);
       const hasMultipleImages = (car?.images?.length ?? 0) > 1;
       if (hasFeatures && hasMultipleImages) return;
-
       try {
         const detail = await getCarWithFeatures(vehicleId);
         setCar(prev => ({
@@ -73,52 +83,53 @@ const VehicleDetailsScreen = () => {
         console.warn('[VehicleDetails] Failed to load car details', error);
       }
     };
-
     loadDetails();
   }, [vehicleId, car?.features, car?.groupedFeatures, car?.images?.length]);
 
-  const formatLabel = (value?: string) => {
-    if (!value) return '';
-    return value
-      .replace(/_/g, ' ')
-      .toLowerCase()
-      .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
-  };
+  // Fetch accurate pricing from the backend whenever dates or insurance changes
+  useEffect(() => {
+    if (!search?.pickupAt || !search?.returnAt || !car?.id) return;
+    const fetchPricing = async () => {
+      setPricingLoading(true);
+      try {
+        const result = await previewBookingPrice({
+          carId: car.id,
+          pickupAt: search.pickupAt,
+          returnAt: search.returnAt,
+          insuranceId: insurance === 'none' ? undefined : insurance,
+          displayCurrency: userCurrency,
+        });
+        setPricing(result);
+      } catch {
+        setPricing(null);
+      } finally {
+        setPricingLoading(false);
+      }
+    };
+    fetchPricing();
+  }, [car?.id, search?.pickupAt, search?.returnAt, insurance, userCurrency]);
+
+  const fmt = (value?: string) =>
+    value
+      ? value.replace(/_/g, ' ').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase())
+      : '';
 
   const images = (car?.images ?? []) as Array<
-    | { url?: string; imageUrl?: string; path?: string; isPrimary?: boolean }
-    | string
+    { url?: string; imageUrl?: string; path?: string; isPrimary?: boolean } | string
   >;
   const imageUrls = images
-    .map(img =>
-      typeof img === 'string' ? img : img.url ?? img.imageUrl ?? img.path,
-    )
+    .map(img => (typeof img === 'string' ? img : img.url ?? img.imageUrl ?? img.path))
     .filter((url): url is string => !!url);
-  const fallbackImage =
-    'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
-  const displayImages = imageUrls.length > 0 ? imageUrls : [fallbackImage];
-  const title =
-    car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle Details';
+  const FALLBACK = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
+  const displayImages = imageUrls.length > 0 ? imageUrls : [FALLBACK];
+
+  const title = car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle Details';
   const locationName = car?.location?.name ?? pickupLocationName ?? '';
   const locationAddress = car?.location?.address ?? '';
-  const categoryLabel = car?.category ? formatLabel(car.category) : '';
-  const transmissionLabel = car?.transmission
-    ? formatLabel(car.transmission)
-    : '';
-  const seatsLabel = typeof car?.seats === 'number' ? `${car.seats}` : '';
-  const hasAcLabel =
-    typeof car?.hasAC === 'boolean' ? (car.hasAC ? 'A/C' : 'No A/C') : '';
-  const mileageLabel = car?.mileagePolicy
-    ? `${formatLabel(car.mileagePolicy)} Mileage`
-    : '';
 
-  const normalizeFeatures = (
-    items?: Array<RentalCarFeature | RentalCarFeatureLink>,
-  ): RentalCarFeature[] => {
+  const normalizeFeatures = (items?: Array<RentalCarFeature | RentalCarFeatureLink>): RentalCarFeature[] => {
     if (!items) return [];
-    return items
-      .map(item => ('feature' in item ? item.feature : item))
-      .filter(Boolean) as RentalCarFeature[];
+    return items.map(item => ('feature' in item ? item.feature : item)).filter(Boolean) as RentalCarFeature[];
   };
 
   const allFeatures: RentalCarFeature[] = useMemo(() => {
@@ -127,46 +138,48 @@ const VehicleDetailsScreen = () => {
     return [];
   }, [car?.features, car?.groupedFeatures]);
 
-  const safetyFeatures =
-    car?.groupedFeatures?.SAFETY ??
-    allFeatures.filter(f => f.category === 'SAFETY');
-
-  const includeFeatures =
-    car?.groupedFeatures?.COMFORT ??
-    allFeatures.filter(f => f.category === 'COMFORT');
+  const comfortFeatures = car?.groupedFeatures?.COMFORT ?? allFeatures.filter(f => f.category === 'COMFORT');
+  const safetyFeatures = car?.groupedFeatures?.SAFETY ?? allFeatures.filter(f => f.category === 'SAFETY');
 
   const pickupAt = search?.pickupAt ? new Date(search.pickupAt) : null;
   const returnAt = search?.returnAt ? new Date(search.returnAt) : null;
-  const totalDays =
-    pickupAt && returnAt
-      ? Math.max(
-          1,
-          Math.ceil((returnAt.getTime() - pickupAt.getTime()) / 86400000),
-        )
-      : 1;
-  const totalPrice =
-    car?.dailyRate && totalDays ? car.dailyRate * totalDays : undefined;
+  const totalDays = pricing?.rentalDays ?? (pickupAt && returnAt
+    ? Math.max(1, Math.ceil((returnAt.getTime() - pickupAt.getTime()) / 86400000))
+    : 1);
+  // Use API pricing when available, fall back to local estimate
+  const totalPrice = pricing?.totalPrice ?? (car?.dailyRate && totalDays ? car.dailyRate * totalDays : undefined);
+  const depositAmount = pricing?.depositAmount;
+  const taxAmount = pricing?.taxAmount ?? 0;
 
-  const hasBookingData =
-    !!search?.pickupAt &&
-    !!search?.returnAt &&
-    !!(pickupLocationId || car?.location?.id);
+  const hasBookingData = !!search?.pickupAt && !!search?.returnAt && !!(pickupLocationId || car?.location?.id);
+
+  const insurancePackages: RentalInsurancePackage[] = car?.insurancePackages ?? [];
+  // Source currency: what the backend says these prices are in
+  const sourceCurrency = pricing?.currency ?? car?.currency ?? 'NGN';
+  const fmtPrice = (amount?: number) =>
+    typeof amount !== 'number' ? 'Free' : fmtMoney(amount, sourceCurrency, { round: true });
+  const fmtInsurance = (pkg: RentalInsurancePackage) => {
+    const pkgCurrency = pkg.currency ?? sourceCurrency;
+    if (typeof pkg.dailyPrice === 'number') return `${fmtMoney(pkg.dailyPrice, pkgCurrency, { round: true })} / Day`;
+    if (typeof pkg.dailyRate === 'number') return `${fmtMoney(pkg.dailyRate, pkgCurrency, { round: true })} / Day`;
+    if (typeof pkg.price === 'number') return fmtMoney(pkg.price, pkgCurrency, { round: true });
+    if (typeof pkg.amount === 'number') return fmtMoney(pkg.amount, pkgCurrency, { round: true });
+    return 'Free';
+  };
 
   const handleProceedToPayment = () => {
     if (!hasBookingData) {
-      // No dates/location selected — send them to SearchLocation with this car locked
       navigation.navigate('CarRentalFlowNavigator', {
         screen: 'SearchLocation',
         params: {
           lockedCarId: vehicleId || car?.id,
           lockedCar: car,
           insuranceId: insurance === 'none' ? undefined : insurance,
-          paymentMethod: payment === 'collection' ? 'COLLECTION' : 'ONLINE',
+          paymentMethod: 'ONLINE',
         },
       });
       return;
     }
-
     navigation.navigate('PaymentScreen', {
       vehicleId: vehicleId || car?.id,
       car,
@@ -176,316 +189,561 @@ const VehicleDetailsScreen = () => {
       pickupLocationName,
       dropoffLocationName,
       insuranceId: insurance === 'none' ? undefined : insurance,
-      paymentMethod: payment === 'collection' ? 'COLLECTION' : 'ONLINE',
+      paymentMethod: 'ONLINE',
     });
   };
 
-  const insurancePackages: RentalInsurancePackage[] =
-    car?.insurancePackages ?? [];
-
-  const formatMoney = (amount?: number) => {
-    if (typeof amount !== 'number') return 'Free';
-    return `₦${amount.toLocaleString()}`;
-  };
-
-  const formatInsurancePrice = (pkg: RentalInsurancePackage) => {
-    if (typeof pkg.dailyRate === 'number') {
-      return `${formatMoney(pkg.dailyRate)} / Day`;
-    }
-    if (typeof pkg.price === 'number') return formatMoney(pkg.price);
-    if (typeof pkg.amount === 'number') return formatMoney(pkg.amount);
-    return 'Free';
-  };
+  // Quick-stat chips
+  const stats = [
+    car?.transmission && { icon: 'settings-outline', label: fmt(car.transmission) },
+    typeof car?.seats === 'number' && { icon: 'people-outline', label: `${car.seats} Seats` },
+    typeof car?.hasAC === 'boolean' && { icon: 'snow-outline', label: car.hasAC ? 'A/C' : 'No A/C' },
+    car?.mileagePolicy && { icon: 'speedometer-outline', label: `${fmt(car.mileagePolicy)} Mileage` },
+    car?.category && { icon: 'car-outline', label: fmt(car.category) },
+  ].filter(Boolean) as { icon: string; label: string }[];
 
   return (
-    <ScreenWrapper padded={false}>
-      {/* HEADER */}
-      <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+    <View style={[s.root, { backgroundColor: colors.background }]}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-        <Typo variant="subheading">Vehicle Details</Typo>
-
-        <TouchableOpacity>
-          <Icon name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 16 }}
-      >
-        {/* IMAGE CAROUSEL */}
-        <View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+        {/* ── IMAGE HERO ── */}
+        <View style={s.hero}>
           <ScrollView
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            style={styles.imageCarousel}
-            onMomentumScrollEnd={event => {
-              const index = Math.round(
-                event.nativeEvent.contentOffset.x / screenWidth,
-              );
-              setActiveImageIndex(index);
-            }}
+            style={StyleSheet.absoluteFill}
+            onMomentumScrollEnd={e =>
+              setActiveImageIndex(Math.round(e.nativeEvent.contentOffset.x / SW))
+            }
           >
-            {displayImages.map((uri, index) => (
+            {displayImages.map((uri, idx) => (
               <Image
-                key={`${uri}-${index}`}
+                key={`${uri}-${idx}`}
                 source={{ uri }}
-                style={[styles.heroImage, { width: screenWidth }]}
+                style={{ width: SW, height: HERO_H }}
                 resizeMode="cover"
               />
             ))}
           </ScrollView>
 
-          <View style={styles.imageCount}>
-            <Typo variant="caption">
-              {displayImages.length > 0
-                ? `${activeImageIndex + 1}/${displayImages.length}`
-                : '1/1'}
-            </Typo>
-          </View>
-        </View>
-
-        {/* BASIC INFO */}
-        <View style={styles.section}>
-          <Typo variant="subheading">{title}</Typo>
-
-          <View style={styles.locationRow}>
-            <Icon name="location-outline" size={14} />
-            <Typo variant="caption">{locationName || 'Location'}</Typo>
-          </View>
-
-          <View style={styles.features}>
-            {!!categoryLabel && <Tag label={categoryLabel} />}
-            {!!transmissionLabel && <Tag label={transmissionLabel} />}
-            {!!seatsLabel && <Tag label={seatsLabel} icon="people-outline" />}
-            {!!hasAcLabel && <Tag label={hasAcLabel} />}
-            {!!mileageLabel && <Tag label={mileageLabel} />}
-          </View>
-        </View>
-
-        {/* PROVIDER */}
-        <View style={[styles.provider, { borderColor: colors.border }]}>
-          <View style={styles.providerLeft}>
-            <View style={styles.providerLogo}>
-              <Typo style={styles.providerText}>
-                {car?.provider?.name?.slice(0, 4).toUpperCase() || 'PROV'}
-              </Typo>
-            </View>
-
-            <View>
-              <Typo>{car?.provider?.name || 'Provider'}</Typo>
-              <Typo variant="caption">
-                {car?.provider?.isVerified
-                  ? 'Verified provider'
-                  : 'Rental service'}
-              </Typo>
-            </View>
-          </View>
-
-          {car?.provider?.isVerified && (
-            <Icon name="checkmark-circle" size={22} color="#0B6E4F" />
-          )}
-        </View>
-
-        {/* INCLUDES */}
-        <Section title="This Booking Includes">
-          {includeFeatures?.length
-            ? includeFeatures
-                .slice(0, 3)
-                .map(feature => (
-                  <CheckItem key={feature.id} label={feature.name} />
-                ))
-            : allFeatures
-                .slice(0, 3)
-                .map(feature => (
-                  <CheckItem key={feature.id} label={feature.name} />
-                ))}
-          {allFeatures.length === 0 && (
-            <>
-              <CheckItem label="Vehicle Protection" />
-              <CheckItem label="Theft Protection" />
-              <CheckItem label="Third-Part Protection" />
-            </>
-          )}
-        </Section>
-
-        <InfoText label="Useful information for your booking" />
-
-        {/* SAFETY */}
-        <Section title="Safety and Security">
-          {safetyFeatures?.length
-            ? safetyFeatures
-                .slice(0, 3)
-                .map(feature => (
-                  <CheckItem key={feature.id} label={feature.name} />
-                ))
-            : allFeatures
-                .slice(0, 3)
-                .map(feature => (
-                  <CheckItem key={feature.id} label={feature.name} />
-                ))}
-          {allFeatures.length === 0 && (
-            <>
-              <CheckItem label="ABS Braking System" />
-              <CheckItem label="Airbags (Front & Side)" />
-              <CheckItem label="GPS Tracking" />
-            </>
-          )}
-        </Section>
-
-        {/* INSURANCE */}
-        <Section title="Insurance Packages">
-          <InsuranceCard
-            title="No Insurance"
-            price="Free"
-            selected={insurance === 'none'}
-            onPress={() => setInsurance('none')}
-            description="If you prefer not to include any insurance package for this rental"
+          {/* top gradient — status bar protection */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.55)', 'transparent']}
+            style={[s.gradTop, { height: insets.top + 60 }]}
+          />
+          {/* bottom gradient — title overlay */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.75)']}
+            style={s.gradBottom}
           />
 
-          {insurancePackages.length > 0 ? (
-            insurancePackages.map(pkg => (
-              <InsuranceCard
-                key={pkg.id}
-                title={pkg.name}
-                price={formatInsurancePrice(pkg)}
-                selected={insurance === pkg.id}
-                onPress={() => setInsurance(pkg.id)}
-                description={
-                  pkg.description || 'Insurance package provided by the host'
+          {/* Back button */}
+          <TouchableOpacity
+            style={[s.backBtn, { top: insets.top + 10 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="chevron-back" size={20} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Favorite */}
+          {car?.id ? (
+            <View style={[s.favoriteWrap, { top: insets.top + 10 }]}>
+              <FavoriteButton carId={car.id} variant="inline" size={20} />
+            </View>
+          ) : null}
+
+          {/* Image counter */}
+          {displayImages.length > 1 && (
+            <View style={s.imgCounter}>
+              <Typo style={s.imgCounterText}>
+                {activeImageIndex + 1}/{displayImages.length}
+              </Typo>
+            </View>
+          )}
+
+          {/* Car name + location overlay */}
+          <View style={s.heroInfo}>
+            {car?.category && (
+              <View style={s.categoryBadge}>
+                <Typo style={s.categoryBadgeText}>{fmt(car.category)}</Typo>
+              </View>
+            )}
+            <Typo style={s.heroTitle}>{title}</Typo>
+            {locationName ? (
+              <View style={s.heroLocRow}>
+                <Icon name="location" size={12} color="rgba(255,255,255,0.8)" />
+                <Typo style={s.heroLoc}>{locationName}</Typo>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {/* ── BODY ── */}
+        <View style={[s.body, { backgroundColor: colors.background }]}>
+          {/* Price + stats row */}
+          <View style={s.priceRow}>
+            <View style={s.priceInline}>
+              <Typo style={s.priceAmount}>
+                {car?.dailyRate ? fmtPrice(car.dailyRate) : '—'}
+              </Typo>
+              <Typo style={[s.priceLabel, { color: colors.textSecondary }]}>
+                {' '}/ day
+              </Typo>
+            </View>
+            {totalDays > 1 && totalPrice ? (
+              <View
+                style={[
+                  s.totalBadge,
+                  {
+                    backgroundColor: mode === 'dark' ? '#0F3027' : '#F0FDF4',
+                    borderColor: mode === 'dark' ? '#1F5B49' : '#A7F3D0',
+                  },
+                ]}
+              >
+                <Typo style={[s.totalBadgeLabel, { color: colors.textSecondary }]}>
+                  {totalDays} day{totalDays !== 1 ? 's' : ''} total
+                </Typo>
+                <Typo style={s.totalBadgeAmount}>{fmtPrice(totalPrice)}</Typo>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Quick stats */}
+          {stats.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.statsScroll}>
+              {stats.map(st => (
+                <View
+                  key={st.label}
+                  style={[
+                    s.statChip,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Icon name={st.icon as any} size={14} color={colors.textSecondary} />
+                  <Typo style={[s.statLabel, { color: colors.textPrimary }]}>
+                    {st.label}
+                  </Typo>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Provider */}
+          <View
+            style={[
+              s.providerCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={s.providerAvatarWrap}>
+              <Typo style={s.providerInitials}>
+                {car?.provider?.name?.slice(0, 2).toUpperCase() || 'PR'}
+              </Typo>
+            </View>
+            <View style={s.providerInfo}>
+              <Typo style={[s.providerName, { color: colors.textPrimary }]}>
+                {car?.provider?.name || 'Provider'}
+              </Typo>
+              <Typo style={[s.providerSub, { color: colors.textSecondary }]}>
+                {car?.provider?.isVerified ? 'Verified Provider' : 'Rental Service'}
+              </Typo>
+            </View>
+            {car?.provider?.isVerified && (
+              <View
+                style={[
+                  s.verifiedBadge,
+                  { backgroundColor: mode === 'dark' ? '#0F3027' : '#F0FDF4' },
+                ]}
+              >
+                <Icon name="checkmark-circle" size={18} color={mode === 'dark' ? '#34D399' : GREEN} />
+                <Typo style={[s.verifiedText, { color: mode === 'dark' ? '#34D399' : GREEN }]}>
+                  Verified
+                </Typo>
+              </View>
+            )}
+          </View>
+
+          {/* Includes */}
+          <SectionCard title="This Booking Includes">
+            {(comfortFeatures?.length ? comfortFeatures : allFeatures).slice(0, 4).map(f => (
+              <CheckItem key={f.id} label={f.name} />
+            ))}
+            {allFeatures.length === 0 && (
+              <>
+                <CheckItem label="Vehicle Protection" />
+                <CheckItem label="Theft Protection" />
+                <CheckItem label="Third-Party Protection" />
+              </>
+            )}
+          </SectionCard>
+
+          <InfoText label="Useful information for your booking" />
+
+          {/* Safety */}
+          <SectionCard title="Safety & Security">
+            {(safetyFeatures?.length ? safetyFeatures : allFeatures).slice(0, 4).map(f => (
+              <CheckItem key={f.id} label={f.name} />
+            ))}
+            {allFeatures.length === 0 && (
+              <>
+                <CheckItem label="ABS Braking System" />
+                <CheckItem label="Airbags (Front & Side)" />
+                <CheckItem label="GPS Tracking" />
+              </>
+            )}
+          </SectionCard>
+
+          {/* Reviews */}
+          {car?.id ? (
+            <SectionCard title="Reviews">
+              <ReviewsSection
+                carId={car.id}
+                initialAverage={car.rating}
+                initialCount={car.reviewCount}
+              />
+            </SectionCard>
+          ) : null}
+
+          {/* Insurance */}
+          <SectionCard title="Insurance Packages">
+            <InsuranceCard
+              title="No Insurance"
+              price="Free"
+              selected={insurance === 'none'}
+              onPress={() => setInsurance('none')}
+              description="If you prefer not to include any insurance package for this rental"
+            />
+            {insurancePackages.length > 0
+              ? insurancePackages.map(pkg => (
+                  <InsuranceCard
+                    key={pkg.id}
+                    title={pkg.name}
+                    price={fmtInsurance(pkg)}
+                    selected={insurance === pkg.id}
+                    onPress={() => setInsurance(pkg.id)}
+                    description={pkg.description || 'Insurance package provided by the host'}
+                  />
+                ))
+              : <InfoText label="No insurance packages available for this car." />}
+          </SectionCard>
+
+          {/* Pick-up & Drop-off */}
+          {hasBookingData ? (
+            <SectionCard title="Pick-up & Drop-off">
+              <TimelineLocation
+                icon="location"
+                color={GREEN}
+                date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
+                place={pickupLocationName || locationName}
+                address={locationAddress || 'Pickup location'}
+              />
+              <TimelineLocation
+                icon="location"
+                color="#F59E0B"
+                date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
+                place={dropoffLocationName || locationName}
+                address={locationAddress || 'Drop-off location'}
+              />
+            </SectionCard>
+          ) : (
+            <View
+              style={[
+                s.noDatesCard,
+                {
+                  backgroundColor: mode === 'dark' ? '#2A1F05' : '#FFFBEB',
+                  borderColor: mode === 'dark' ? '#78350F' : '#FCD34D',
+                },
+              ]}
+            >
+              <Icon
+                name="warning-outline"
+                size={24}
+                color={mode === 'dark' ? '#FBBF24' : '#D97706'}
+              />
+              <View style={{ flex: 1 }}>
+                <Typo
+                  style={[
+                    s.noDatesTitle,
+                    { color: mode === 'dark' ? '#FBBF24' : '#D97706' },
+                  ]}
+                >
+                  No dates selected
+                </Typo>
+                <Typo style={[s.noDatesHint, { color: colors.textSecondary }]}>
+                  You'll be asked to choose dates before checkout
+                </Typo>
+              </View>
+            </View>
+          )}
+
+          {/* Price Breakdown */}
+          {hasBookingData && (
+            <SectionCard title="Price Breakdown">
+              <PriceBreakdown
+                pricing={pricing}
+                loading={pricingLoading}
+                fallbackDailyRate={car?.dailyRate}
+                fallbackDays={totalDays}
+                insuranceLabel={
+                  insurance !== 'none'
+                    ? insurancePackages.find(p => p.id === insurance)?.name
+                    : undefined
                 }
               />
-            ))
-          ) : (
-            <InfoText label="No insurance packages available for this car." />
+            </SectionCard>
           )}
-        </Section>
 
-        {/* PICKUP / DROP-OFF */}
-        <Section title="Pick-up and Drop-off">
-          <TimelineLocation
-            icon="location"
-            color="#0B6E4F"
-            date={
-              pickupAt
-                ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}`
-                : ''
-            }
-            place={pickupLocationName || locationName}
-            address={locationAddress || 'Pickup location'}
-          />
-
-          <TimelineLocation
-            icon="location"
-            color="#F59E0B"
-            date={
-              returnAt
-                ? `${formatDate(returnAt)} at ${formatTime(returnAt)}`
-                : ''
-            }
-            place={dropoffLocationName || locationName}
-            address={locationAddress || 'Drop-off location'}
-          />
-        </Section>
-
-        {/* PAYMENT METHOD */}
-        <Section title="Payment Method">
-          <PaymentOption
-            icon="wallet-outline"
-            label="Pay on Collection"
-            subtitle="Pay in cash when you pick up the car"
-            selected={payment === 'collection'}
-            onPress={() => setPayment('collection')}
-          />
-          <PaymentOption
-            icon="card-outline"
-            label="Pay Online"
-            subtitle="Secure payment via card or bank transfer"
-            selected={payment === 'online'}
-            onPress={() => setPayment('online')}
-          />
-        </Section>
+        </View>
       </ScrollView>
 
-      {/* FIXED BOTTOM BAR */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <View style={styles.priceInfo}>
-          <Typo variant="caption" style={styles.priceLabel}>
-            Total Price
-          </Typo>
-          <Typo style={styles.priceAmount}>
-            {totalPrice ? `₦${totalPrice.toLocaleString()}` : '—'}
-          </Typo>
-          {totalDays > 0 && car?.dailyRate && (
-            <Typo variant="caption" style={styles.priceSub}>
-              {totalDays} day{totalDays !== 1 ? 's' : ''} ·{' '}
-              ₦{car.dailyRate.toLocaleString()}/day
-            </Typo>
+      {/* ── BOTTOM BAR ── */}
+      <View
+        style={[
+          s.bottomBar,
+          {
+            paddingBottom: insets.bottom + 12,
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <View style={s.bottomPrice}>
+          {pricingLoading ? (
+            <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>Calculating price…</Typo>
+          ) : (
+            <>
+              <Typo style={s.bottomPriceAmount}>
+                {totalPrice ? fmtPrice(totalPrice) : '—'}
+              </Typo>
+              {hasBookingData && pricing ? (
+                <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>
+                  {totalDays} day{totalDays !== 1 ? 's' : ''}
+                  {taxAmount > 0 ? ` · incl. ${fmtPrice(taxAmount)} tax` : ''}
+                </Typo>
+              ) : hasBookingData && car?.dailyRate ? (
+                <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>
+                  {totalDays} day{totalDays !== 1 ? 's' : ''} · {fmtPrice(car.dailyRate)}/day
+                </Typo>
+              ) : (
+                <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>Select dates to see price</Typo>
+              )}
+              {depositAmount && depositAmount > 0 ? (
+                <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>
+                  + {fmtPrice(depositAmount)} deposit (collected at pickup)
+                </Typo>
+              ) : null}
+            </>
           )}
         </View>
-
         <AppButton
-          title="Book Now"
+          title={hasBookingData ? 'Book Now' : 'Choose Dates'}
           onPress={handleProceedToPayment}
-          style={styles.bookBtn}
+          style={s.bookBtn}
         />
       </View>
-    </ScreenWrapper>
+    </View>
   );
 };
 
 export default VehicleDetailsScreen;
 
-/* ---------------- LOCAL COMPONENT ---------------- */
-
-function PaymentOption({
-  icon,
-  label,
-  subtitle,
-  selected,
-  onPress,
-}: {
-  icon: React.ComponentProps<typeof Icon>['name'];
-  label: string;
-  subtitle: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
+/* ── Section card wrapper ── */
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   const { colors } = useTheme();
   return (
-    <TouchableOpacity
-      style={[styles.paymentCard, { backgroundColor: colors.surface, borderColor: colors.border }, selected && styles.paymentCardSelected]}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View
-        style={[styles.paymentIcon, selected && styles.paymentIconSelected]}
-      >
-        <Icon
-          name={icon}
-          size={20}
-          color={selected ? '#0B6E4F' : '#6B7280'}
-        />
-      </View>
-
-      <View style={styles.paymentInfo}>
-        <Typo style={selected ? styles.paymentLabelSelected : undefined}>
-          {label}
-        </Typo>
-        <Typo variant="caption" style={styles.paymentSubtitle}>
-          {subtitle}
-        </Typo>
-      </View>
-
-      <View
-        style={[styles.paymentCheck, selected && styles.paymentCheckSelected]}
-      >
-        {selected && <Icon name="checkmark" size={13} color="#fff" />}
-      </View>
-    </TouchableOpacity>
+    <View style={[sc.wrap, { borderBottomColor: colors.border }]}>
+      <Typo style={[sc.title, { color: colors.textPrimary }]}>{title}</Typo>
+      {children}
+    </View>
   );
 }
+const sc = StyleSheet.create({
+  wrap: {
+    marginBottom: 8,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    paddingBottom: 16,
+  },
+  title: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+});
+
+const s = StyleSheet.create({
+  root: { flex: 1 },
+
+  /* hero */
+  hero: {
+    height: HERO_H,
+    backgroundColor: '#111',
+    overflow: 'hidden',
+  },
+  gradTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  gradBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    zIndex: 1,
+  },
+  backBtn: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favoriteWrap: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 2,
+  },
+  imgCounter: {
+    position: 'absolute',
+    right: 16,
+    bottom: 14,
+    zIndex: 2,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  imgCounterText: { fontSize: 12, color: '#fff', fontWeight: '600' },
+  heroInfo: {
+    position: 'absolute',
+    bottom: 14,
+    left: 16,
+    right: 60,
+    zIndex: 2,
+    gap: 4,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 4,
+  },
+  categoryBadgeText: { fontSize: 11, color: '#fff', fontWeight: '600', letterSpacing: 0.5 },
+  heroTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  heroLocRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  heroLoc: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
+
+  /* body */
+  body: { paddingTop: 4 },
+
+  /* price row */
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+  },
+  priceInline: { flexDirection: 'row', alignItems: 'baseline' },
+  priceAmount: { fontSize: 28, fontWeight: '800', color: GREEN },
+  priceLabel: { fontSize: 13, fontWeight: '500' },
+  totalBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: 'flex-end',
+    borderWidth: 1,
+  },
+  totalBadgeLabel: { fontSize: 11 },
+  totalBadgeAmount: { fontSize: 15, fontWeight: '700', color: GREEN },
+
+  /* stats scroll */
+  statsScroll: { paddingHorizontal: 16, paddingBottom: 12 },
+
+  /* stat chip */
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginRight: 8,
+    borderWidth: 1,
+  },
+  statLabel: { fontSize: 12, fontWeight: '600' },
+
+  /* provider card */
+  providerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+  },
+  providerAvatarWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#0A6A4B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  providerInitials: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  providerInfo: { flex: 1, gap: 3 },
+  providerName: { fontSize: 14, fontWeight: '700' },
+  providerSub: { fontSize: 12 },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  verifiedText: { fontSize: 11, fontWeight: '700' },
+
+  /* no dates card */
+  noDatesCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginHorizontal: 20,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  noDatesTitle: { fontSize: 14, fontWeight: '700' },
+  noDatesHint: { fontSize: 12, marginTop: 2 },
+
+  /* bottom bar */
+  bottomBar: {
+    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  bottomPrice: { flex: 1 },
+  bottomPriceAmount: { fontSize: 22, fontWeight: '800', color: GREEN },
+  bottomPriceSub: { fontSize: 12, marginTop: 2 },
+  bookBtn: { flex: 1 },
+});

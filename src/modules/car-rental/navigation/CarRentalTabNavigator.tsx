@@ -8,12 +8,16 @@ import { ProfileScreen } from '@/screens/main/Profile/ProfileScreen';
 import CarRentalHomeScreen from '../screens/HomeScreen/CarRentalHomeScreen';
 import BookingsScreen from '../screens/Bookings/BookingsScreen';
 import { MoreScreen } from '../screens/MoreScreen/MoreScreen';
+import { FavoritesScreen } from '../screens/Favorites/FavoritesScreen';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useFavorites } from '@/providers/FavoritesProvider';
 
 const Tab = createBottomTabNavigator();
 
 export function CarRentalTabsNavigator() {
   const { colors } = useTheme();
+  const { favorites } = useFavorites();
+  const favCount = favorites.length;
 
   return (
     <Tab.Navigator
@@ -48,6 +52,22 @@ export function CarRentalTabsNavigator() {
           tabBarIcon: ({ color, size }) => (
             <Icon name="calendar" color={color} size={size} />
           ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Saved"
+        component={FavoritesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="heart" color={color} size={size} />
+          ),
+          tabBarBadge: favCount > 0 ? favCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: '#EF4444',
+            color: '#fff',
+            fontSize: 10,
+          },
         }}
       />
 

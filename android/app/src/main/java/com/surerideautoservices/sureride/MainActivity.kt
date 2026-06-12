@@ -1,4 +1,4 @@
-package com.sureride
+package com.surerideautoservices.sureride
 
 
 import com.facebook.react.ReactActivity

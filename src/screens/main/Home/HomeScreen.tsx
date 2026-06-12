@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TouchableOpacity,
   Image,
   ScrollView,
   StyleSheet,
+  Modal,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import {
@@ -12,15 +13,18 @@ import {
   useNavigation,
 } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import type { MainStackParamList, MainDrawerParamList } from '@/navigation/types';
-import { setItem, StorageKeys } from '@/helpers/storage';
+import { removeItem, setItem, StorageKeys } from '@/helpers/storage';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { logoutUser } from '@/services/auth.service';
+import { AppAlert } from '@/components/AppAlert/AppAlert';
 
 type NavProp = CompositeNavigationProp<
   DrawerNavigationProp<MainDrawerParamList>,
@@ -43,10 +47,26 @@ function initials(first?: string | null, last?: string | null) {
 
 export function HomeScreen() {
   const { colors, mode } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigation = useNavigation<NavProp>();
+  const { count: unreadCount } = useUnreadNotifications();
+
+  const insets = useSafeAreaInsets();
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [logoutAlertOpen, setLogoutAlertOpen] = useState(false);
 
   const firstName = user?.firstName?.trim() || 'there';
+
+  const handleLogout = async () => {
+    setLogoutAlertOpen(false);
+    try {
+      await removeItem(StorageKeys.LAST_MODULE);
+      await logoutUser();
+      logout();
+    } catch {
+      logout();
+    }
+  };
 
   const modules: Module[] = [
     {
@@ -96,21 +116,17 @@ export function HomeScreen() {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A6A4B' }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A6A4B" />
+    <View style={{ flex: 1, backgroundColor: '#0A6A4B' }}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
 
       {/* ── GREEN HERO HEADER ── */}
-      <View style={s.hero}>
+      <View style={[s.hero, { paddingTop: insets.top + 8 }]}>
         {/* Top bar */}
         <View style={s.topBar}>
-          <TouchableOpacity
-            style={s.topBarBtn}
-            onPress={() => navigation.openDrawer()}
-            activeOpacity={0.7}
-          >
-            <Icon name="menu-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-
           <View style={s.logoRow}>
             <Image
               source={require('@/assets/images/logo.png')}
@@ -120,16 +136,34 @@ export function HomeScreen() {
             <Typo style={s.logoText}>SURERIDE</Typo>
           </View>
 
-          {/* Avatar */}
-          <TouchableOpacity
-            style={s.avatarBtn}
-            activeOpacity={0.8}
-            onPress={() => {}}
-          >
-            <Typo style={s.avatarText}>
-              {initials(user?.firstName, user?.lastName)}
-            </Typo>
-          </TouchableOpacity>
+          <View style={s.topRight}>
+            {/* Bell */}
+            <TouchableOpacity
+              style={s.topBarBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('NotificationInbox')}
+            >
+              <Icon name="notifications-outline" size={22} color="#fff" />
+              {unreadCount > 0 ? (
+                <View style={s.badge}>
+                  <Typo style={s.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Typo>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+
+            {/* Avatar — opens account menu */}
+            <TouchableOpacity
+              style={s.avatarBtn}
+              activeOpacity={0.8}
+              onPress={() => setAvatarMenuOpen(true)}
+            >
+              <Typo style={s.avatarText}>
+                {initials(user?.firstName, user?.lastName)}
+              </Typo>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Greeting */}
@@ -165,7 +199,75 @@ export function HomeScreen() {
           More services launching soon
         </Typo>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── ACCOUNT MENU POPUP ── */}
+      <Modal
+        visible={avatarMenuOpen}
+        transparent
+        animationType="fade"
+        hardwareAccelerated
+        presentationStyle="overFullScreen"
+        onRequestClose={() => setAvatarMenuOpen(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={s.menuBackdrop}
+          onPress={() => setAvatarMenuOpen(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[s.menuCard, { backgroundColor: colors.surface }]}
+            onPress={e => e.stopPropagation()}
+          >
+            {/* User info header */}
+            <View style={[s.menuHeader, { borderBottomColor: colors.border }]}>
+              <View style={s.menuAvatar}>
+                <Typo style={s.menuAvatarText}>
+                  {initials(user?.firstName, user?.lastName)}
+                </Typo>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Typo style={[s.menuName, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {user?.firstName} {user?.lastName}
+                </Typo>
+                {user?.email ? (
+                  <Typo style={[s.menuEmail, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {user.email}
+                  </Typo>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Log out action */}
+            <TouchableOpacity
+              style={s.menuItem}
+              onPress={() => {
+                setAvatarMenuOpen(false);
+                setLogoutAlertOpen(true);
+              }}
+              activeOpacity={0.6}
+            >
+              <View style={[s.menuItemIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Icon name="log-out-outline" size={18} color="#EF4444" />
+              </View>
+              <Typo style={[s.menuItemLabel, { color: '#EF4444' }]}>Log out</Typo>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── LOGOUT CONFIRMATION ── */}
+      <AppAlert
+        visible={logoutAlertOpen}
+        title="Log out"
+        message="Are you sure you want to log out?"
+        buttons={[
+          { text: 'Cancel', style: 'cancel', onPress: () => setLogoutAlertOpen(false) },
+          { text: 'Log out', style: 'destructive', onPress: handleLogout },
+        ]}
+        onDismiss={() => setLogoutAlertOpen(false)}
+      />
+    </View>
   );
 }
 
@@ -211,8 +313,8 @@ function ModuleRow({
           <Icon name="arrow-forward" size={16} color="#fff" />
         </View>
       ) : (
-        <View style={s.soonPill}>
-          <Typo style={s.soonText}>Soon</Typo>
+        <View style={[s.soonPill, { backgroundColor: colors.background }]}>
+          <Typo style={[s.soonText, { color: colors.textSecondary }]}>Soon</Typo>
         </View>
       )}
     </TouchableOpacity>
@@ -268,6 +370,31 @@ const s = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '700',
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#0A6A4B',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
   },
 
   greeting: {
@@ -347,14 +474,12 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   soonPill: {
-    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   soonText: {
     fontSize: 11,
-    color: '#9CA3AF',
     fontWeight: '600',
   },
 
@@ -362,5 +487,71 @@ const s = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     marginTop: 12,
+  },
+
+  /* ── account menu ── */
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingTop: 70,
+    paddingHorizontal: 16,
+    alignItems: 'flex-end',
+  },
+  menuCard: {
+    width: 260,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+  },
+  menuAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0A6A4B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuAvatarText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  menuName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  menuEmail: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    gap: 12,
+  },
+  menuItemIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuItemLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
   },
 });

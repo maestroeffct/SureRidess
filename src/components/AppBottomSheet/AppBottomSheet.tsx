@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { useTheme } from '@/theme/ThemeProvider';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -27,6 +28,7 @@ export function AppBottomSheet({
   children,
   heightFactor = 0.62,
 }: Props) {
+  const { mode, colors } = useTheme();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
@@ -68,7 +70,8 @@ export function AppBottomSheet({
       visible={visible}
       transparent
       animationType="none"
-      statusBarTranslucent
+      hardwareAccelerated
+      presentationStyle="overFullScreen"
       onRequestClose={onClose}
     >
       {/* BACKDROP */}
@@ -85,11 +88,20 @@ export function AppBottomSheet({
         <Animated.View
           style={[
             styles.sheet,
-            { height: sheetHeight, transform: [{ translateY }] },
+            {
+              height: sheetHeight,
+              backgroundColor: colors.surface,
+              transform: [{ translateY }],
+            },
           ]}
         >
           {/* DRAG HANDLE */}
-          <View style={styles.handle} />
+          <View
+            style={[
+              styles.handle,
+              { backgroundColor: mode === 'dark' ? colors.border : '#D1D5DB' },
+            ]}
+          />
 
           {children}
         </Animated.View>
@@ -109,7 +121,6 @@ const styles = StyleSheet.create({
     pointerEvents: 'box-none',
   },
   sheet: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -123,7 +134,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#D1D5DB',
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 4,

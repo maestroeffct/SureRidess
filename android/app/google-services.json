@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "542436190217",
+    "project_id": "sureride003",
+    "storage_bucket": "sureride003.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:542436190217:android:87f0cfdaad196d8d9530d8",
+        "android_client_info": {
+          "package_name": "com.surerideautoservices.sureride"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "542436190217-segmvusa67tnk9ev006u1he6sksn75ni.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQlVet6HQWqqJ0_k4fSvE9mYnrMKRKcJo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "542436190217-segmvusa67tnk9ev006u1he6sksn75ni.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

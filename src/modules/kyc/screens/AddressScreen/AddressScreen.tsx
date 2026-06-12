@@ -3,6 +3,7 @@ import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import { AppInput } from '@/components/AppInput/Input';
+import { Typo } from '@/components/AppText/Typo';
 
 import { KYCInfoAlert } from '@/components/kyc/KYCInfoAlert/KYCInfoAlert';
 import { KYCStepHeader } from '@/components/kyc/KYCStepHeader/KYCStepHeader';
@@ -39,6 +40,11 @@ export default function AddressScreen() {
   const [loadingRegions, setLoadingRegions] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Track failure separately so we can offer a fallback (manual entry +
+  // retry) instead of leaving the user stuck on a dead dropdown.
+  const [statesFailed, setStatesFailed] = useState(false);
+  const [regionsFailed, setRegionsFailed] = useState(false);
+
   const [showStateModal, setShowStateModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
 
@@ -61,81 +67,82 @@ export default function AddressScreen() {
     [regionSearch, regions],
   );
 
-  useEffect(() => {
+  const loadStates = async () => {
     if (!countryName) {
       setStates([]);
       return;
     }
-
-    let mounted = true;
-
-    const loadStates = async () => {
-      try {
-        setLoadingStates(true);
-        const results = await fetchStatesByCountry(countryName);
-        if (!mounted) return;
-        setStates(results);
-      } catch (error) {
-        if (mounted) {
-          setStates([]);
-          showError('Unable to load states for selected country.');
-        }
-        if (__DEV__) {
-          console.log('[KYC][Address] Failed to load states', { countryName, error });
-        }
-      } finally {
-        if (mounted) {
-          setLoadingStates(false);
-        }
+    try {
+      setLoadingStates(true);
+      setStatesFailed(false);
+      const results = await fetchStatesByCountry(countryName);
+      setStates(results);
+      if (results.length === 0) {
+        // API returned no states for this country — treat as a soft failure
+        // so the user can type their state manually.
+        setStatesFailed(true);
       }
-    };
+    } catch (error) {
+      setStates([]);
+      setStatesFailed(true);
+      if (__DEV__) {
+        console.log('[KYC][Address] Failed to load states', { countryName, error });
+      }
+    } finally {
+      setLoadingStates(false);
+    }
+  };
 
-    loadStates();
-
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!mounted) return;
+      await loadStates();
+    })();
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryName]);
 
-  useEffect(() => {
+  const loadRegions = async () => {
     if (!countryName || !stateValue) {
       setRegions([]);
       return;
     }
-
-    let mounted = true;
-
-    const loadRegions = async () => {
-      try {
-        setLoadingRegions(true);
-        const results = await fetchRegionsByState(countryName, stateValue);
-        if (!mounted) return;
-        setRegions(results);
-      } catch (error) {
-        if (mounted) {
-          setRegions([]);
-          showError('Unable to load regions for selected state.');
-        }
-
-        if (__DEV__) {
-          console.log('[KYC][Address] Failed to load regions', {
-            countryName,
-            stateValue,
-            error,
-          });
-        }
-      } finally {
-        if (mounted) {
-          setLoadingRegions(false);
-        }
+    try {
+      setLoadingRegions(true);
+      setRegionsFailed(false);
+      const results = await fetchRegionsByState(countryName, stateValue);
+      setRegions(results);
+      if (results.length === 0) {
+        setRegionsFailed(true);
       }
-    };
+    } catch (error) {
+      setRegions([]);
+      setRegionsFailed(true);
+      if (__DEV__) {
+        console.log('[KYC][Address] Failed to load regions', {
+          countryName,
+          stateValue,
+          error,
+        });
+      }
+    } finally {
+      setLoadingRegions(false);
+    }
+  };
 
-    loadRegions();
-
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!mounted) return;
+      await loadRegions();
+    })();
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryName, stateValue]);
 
   const handleNext = async () => {
@@ -194,53 +201,111 @@ export default function AddressScreen() {
         </View>
 
         <View style={styles.inputSpacing}>
-          <AppInput
-            label="State"
-            placeholder={loadingStates ? 'Loading states...' : 'Select state'}
-            value={stateValue}
-            editable={false}
-            leftIcon={
+          {statesFailed && !loadingStates ? (
+            <>
+              <AppInput
+                label="State"
+                placeholder="Type your state"
+                value={stateValue}
+                onChangeText={setStateValue}
+              />
               <TouchableOpacity
-                onPress={() => {
-                  if (!loadingStates && states.length) {
-                    setShowStateModal(true);
-                  }
-                }}
+                onPress={loadStates}
+                activeOpacity={0.7}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}
               >
-                <Icon
-                  name="chevron-down"
-                  size={18}
-                  color={colors.textSecondary}
-                />
+                <Icon name="refresh-outline" size={13} color={colors.primary} />
+                <Typo
+                  variant="caption"
+                  style={{ color: colors.primary, fontWeight: '600' }}
+                >
+                  We couldn’t load states. Tap to retry or type yours above.
+                </Typo>
               </TouchableOpacity>
-            }
-          />
+            </>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                if (!loadingStates && states.length) {
+                  setShowStateModal(true);
+                }
+              }}
+              disabled={loadingStates || states.length === 0}
+            >
+              <View pointerEvents="none">
+                <AppInput
+                  label="State"
+                  placeholder={loadingStates ? 'Loading states...' : 'Select state'}
+                  value={stateValue}
+                  editable={false}
+                  rightIcon={
+                    <Icon
+                      name="chevron-down"
+                      size={18}
+                      color={colors.textSecondary}
+                    />
+                  }
+                />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.inputSpacing}>
-          <AppInput
-            label="Region (optional)"
-            placeholder={
-              loadingRegions ? 'Loading regions...' : 'Select region (optional)'
-            }
-            value={regionValue}
-            editable={false}
-            leftIcon={
+          {regionsFailed && !loadingRegions ? (
+            <>
+              <AppInput
+                label="Region (optional)"
+                placeholder="Type your region (optional)"
+                value={regionValue}
+                onChangeText={setRegionValue}
+              />
               <TouchableOpacity
-                onPress={() => {
-                  if (!loadingRegions && regions.length) {
-                    setShowRegionModal(true);
-                  }
-                }}
+                onPress={loadRegions}
+                activeOpacity={0.7}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}
               >
-                <Icon
-                  name="chevron-down"
-                  size={18}
-                  color={colors.textSecondary}
-                />
+                <Icon name="refresh-outline" size={13} color={colors.primary} />
+                <Typo
+                  variant="caption"
+                  style={{ color: colors.primary, fontWeight: '600' }}
+                >
+                  We couldn’t load regions. Tap to retry or skip.
+                </Typo>
               </TouchableOpacity>
-            }
-          />
+            </>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                if (!loadingRegions && regions.length) {
+                  setShowRegionModal(true);
+                }
+              }}
+              disabled={loadingRegions || regions.length === 0}
+            >
+              <View pointerEvents="none">
+                <AppInput
+                  label="Region (optional)"
+                  placeholder={
+                    loadingRegions
+                      ? 'Loading regions...'
+                      : 'Select region (optional)'
+                  }
+                  value={regionValue}
+                  editable={false}
+                  rightIcon={
+                    <Icon
+                      name="chevron-down"
+                      size={18}
+                      color={colors.textSecondary}
+                    />
+                  }
+                />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.inputSpacing}>

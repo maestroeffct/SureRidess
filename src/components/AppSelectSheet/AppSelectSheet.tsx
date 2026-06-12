@@ -9,6 +9,7 @@ import {
 import Icon from '@react-native-vector-icons/ionicons';
 import { AppBottomSheet } from '@/components/AppBottomSheet/AppBottomSheet';
 import { Typo } from '@/components/AppText/Typo';
+import { useTheme } from '@/theme/ThemeProvider';
 
 export type SelectOption = {
   label: string;
@@ -40,6 +41,7 @@ export function AppSelectSheet({
   searchPlaceholder = 'Search...',
   heightFactor,
 }: Props) {
+  const { mode, colors } = useTheme();
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -66,28 +68,36 @@ export function AppSelectSheet({
       heightFactor={heightFactor ?? (searchable ? 0.72 : 0.55)}
     >
       {/* HEADER */}
-      <View style={styles.header}>
-        <Typo style={styles.title}>{title}</Typo>
+      <View style={[styles.header, { borderColor: colors.border }]}>
+        <Typo style={[styles.title, { color: colors.textPrimary }]}>{title}</Typo>
         <TouchableOpacity onPress={handleClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Icon name="close" size={22} color="#374151" />
+          <Icon name="close" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* SEARCH */}
       {searchable && (
-        <View style={styles.searchRow}>
-          <Icon name="search-outline" size={16} color="#9CA3AF" style={styles.searchIcon} />
+        <View
+          style={[
+            styles.searchRow,
+            {
+              backgroundColor: mode === 'dark' ? colors.background : '#F9FAFB',
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Icon name="search-outline" size={16} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder={searchPlaceholder}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textSecondary}
             value={query}
             onChangeText={setQuery}
             autoCorrect={false}
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')}>
-              <Icon name="close-circle" size={16} color="#9CA3AF" />
+              <Icon name="close-circle" size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -101,7 +111,7 @@ export function AppSelectSheet({
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Typo variant="caption" style={{ color: '#9CA3AF' }}>
+            <Typo variant="caption" style={{ color: colors.textSecondary }}>
               No results found
             </Typo>
           </View>
@@ -112,7 +122,10 @@ export function AppSelectSheet({
 
           return (
             <TouchableOpacity
-              style={[styles.item, !isLast && styles.itemBorder]}
+              style={[
+                styles.item,
+                !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+              ]}
               onPress={() => handleSelect(item)}
               activeOpacity={0.7}
             >
@@ -121,7 +134,11 @@ export function AppSelectSheet({
                   <Typo style={styles.prefix}>{item.prefix}</Typo>
                 ) : null}
                 <Typo
-                  style={[styles.itemLabel, isActive && styles.itemLabelActive]}
+                  style={[
+                    styles.itemLabel,
+                    { color: colors.textPrimary },
+                    isActive && styles.itemLabelActive,
+                  ]}
                 >
                   {item.label}
                 </Typo>
@@ -146,12 +163,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderColor: '#F3F4F6',
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
   },
   searchRow: {
     flexDirection: 'row',
@@ -161,10 +176,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   searchIcon: {
     marginRight: 8,
@@ -172,7 +185,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
     padding: 0,
   },
   list: {
@@ -186,10 +198,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
   },
-  itemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
   itemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,7 +209,6 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     fontSize: 15,
-    color: '#374151',
   },
   itemLabelActive: {
     color: '#0A6A4B',

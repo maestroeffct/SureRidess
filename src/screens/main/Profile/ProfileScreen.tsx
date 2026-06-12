@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppAlert } from '@/components/AppAlert/AppAlert';
 import Icon from '@react-native-vector-icons/ionicons';
 
+import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -19,6 +20,9 @@ import { updateProfile, updatePassword } from '@/services/user.service';
 import { removeItem, StorageKeys } from '@/helpers/storage';
 import { showError, showSuccess } from '@/helpers/toast';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useCurrency } from '@/providers/CurrencyProvider';
+import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
+import { SUPPORTED_CURRENCIES } from '@/helpers/currency';
 import dayjs from 'dayjs';
 
 /* ──────────────────────────────────────────────── */
@@ -86,8 +90,18 @@ function ActionRow({
 }) {
   const { colors } = useTheme();
   return (
-    <TouchableOpacity style={s.actionRow} onPress={onPress} activeOpacity={0.7}>
-      <View style={[s.actionIconWrap, danger && s.actionIconDanger]}>
+    <TouchableOpacity
+      style={[s.actionRow, { borderTopColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[
+          s.actionIconWrap,
+          { backgroundColor: colors.background },
+          danger && s.actionIconDanger,
+        ]}
+      >
         <Icon name={icon as any} size={17} color={danger ? '#EF4444' : colors.textPrimary} />
       </View>
       <Typo style={[s.actionLabel, { color: colors.textPrimary }, danger && { color: '#EF4444' }]}>{label}</Typo>
@@ -104,10 +118,14 @@ function ActionRow({
 
 export const ProfileScreen = () => {
   const { user, logout, refreshUser } = useAuth();
+  const navigation = useNavigation<any>();
   const { preference, setPreference, colors } = useTheme();
 
+  const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
+  const [logoutAlert, setLogoutAlert] = useState(false);
+  const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
 
   /* edit name state */
   const [firstName, setFirstName] = useState('');
@@ -123,23 +141,17 @@ export const ProfileScreen = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await removeItem(StorageKeys.LAST_MODULE);
-            await logoutUser();
-            logout();
-          } catch {
-            logout();
-          }
-        },
-      },
-    ]);
+  const handleLogout = () => setLogoutAlert(true);
+
+  const confirmLogout = async () => {
+    setLogoutAlert(false);
+    try {
+      await removeItem(StorageKeys.LAST_MODULE);
+      await logoutUser();
+      logout();
+    } catch {
+      logout();
+    }
   };
 
   const openEditName = () => {
@@ -236,14 +248,31 @@ export const ProfileScreen = () => {
           <Typo style={[s.fullName, { color: colors.textPrimary }]}>{fullName}</Typo>
           <Typo variant="caption" style={[s.emailSub, { color: colors.textSecondary }]}>{user?.email}</Typo>
 
-          {kycStatus && (
-            <View style={[s.kycBadge, { borderColor: kycColor[kycStatus] ?? '#9CA3AF' }]}>
-              <View style={[s.kycDot, { backgroundColor: kycColor[kycStatus] ?? '#9CA3AF' }]} />
-              <Typo style={[s.kycText, { color: kycColor[kycStatus] ?? '#9CA3AF' }]}>
-                KYC {kycLabel[kycStatus] ?? kycStatus}
-              </Typo>
-            </View>
-          )}
+          {kycStatus && (() => {
+            const isVerified =
+              kycStatus === 'VERIFIED' || kycStatus === 'APPROVED';
+            const isPending =
+              kycStatus === 'PENDING' || kycStatus === 'PENDING_VERIFICATION';
+            const canOpen = !isVerified && !isPending;
+            const badge = (
+              <View style={[s.kycBadge, { borderColor: kycColor[kycStatus] ?? '#9CA3AF' }]}>
+                <View style={[s.kycDot, { backgroundColor: kycColor[kycStatus] ?? '#9CA3AF' }]} />
+                <Typo style={[s.kycText, { color: kycColor[kycStatus] ?? '#9CA3AF' }]}>
+                  KYC {kycLabel[kycStatus] ?? kycStatus}
+                </Typo>
+              </View>
+            );
+            return canOpen ? (
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={() => navigation.navigate('KYCFlow')}
+              >
+                {badge}
+              </TouchableOpacity>
+            ) : (
+              badge
+            );
+          })()}
         </View>
 
         {/* ── PERSONAL INFO ── */}
@@ -263,6 +292,90 @@ export const ProfileScreen = () => {
         {/* ── ACCOUNT ACTIONS ── */}
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SectionHeader title="Account" />
+          {(() => {
+            const verified = kycStatus === 'VERIFIED' || kycStatus === 'APPROVED';
+            const pending =
+              kycStatus === 'PENDING' || kycStatus === 'PENDING_VERIFICATION';
+            const rejected = kycStatus === 'REJECTED';
+            const label = verified
+              ? 'Identity Verified'
+              : pending
+              ? 'Identity Verification — Pending Review'
+              : rejected
+              ? 'Identity Verification — Resubmit'
+              : 'Verify Your Identity';
+            const sub = verified
+              ? 'Your documents are approved.'
+              : pending
+              ? 'We’re reviewing your documents.'
+              : rejected
+              ? 'Tap to upload again.'
+              : 'Required to book a vehicle.';
+
+            // Only let the user open KYCFlow when there's actually something
+            // for them to do there:
+            //   - Not started / Incomplete → start the flow
+            //   - Rejected → resubmit
+            // For Verified and Pending Review, the row is informational only.
+            const navigable = !verified && !pending;
+
+            return (
+              <TouchableOpacity
+                style={[s.actionRow, { borderTopColor: colors.border }]}
+                onPress={() =>
+                  navigable ? navigation.navigate('KYCFlow') : undefined
+                }
+                disabled={!navigable}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    s.actionIconWrap,
+                    { backgroundColor: colors.background },
+                  ]}
+                >
+                  <Icon
+                    name={
+                      verified
+                        ? 'shield-checkmark-outline'
+                        : pending
+                        ? 'time-outline'
+                        : rejected
+                        ? 'warning-outline'
+                        : 'shield-outline'
+                    }
+                    size={18}
+                    color={
+                      verified
+                        ? '#22C55E'
+                        : pending
+                        ? '#F59E0B'
+                        : rejected
+                        ? '#EF4444'
+                        : colors.textPrimary
+                    }
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Typo style={[s.actionLabel, { color: colors.textPrimary }]}>
+                    {label}
+                  </Typo>
+                  <Typo
+                    style={[s.infoLabel, { color: colors.textSecondary }]}
+                  >
+                    {sub}
+                  </Typo>
+                </View>
+                {navigable ? (
+                  <Icon
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                ) : null}
+              </TouchableOpacity>
+            );
+          })()}
           <ActionRow
             icon="create-outline"
             label="Edit Name"
@@ -273,6 +386,28 @@ export const ProfileScreen = () => {
             label="Change Password"
             onPress={openChangePass}
           />
+        </View>
+
+        {/* ── CURRENCY ── */}
+        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <SectionHeader title="Currency" />
+          <TouchableOpacity
+            style={[s.actionRow, { borderTopColor: colors.border }]}
+            onPress={() => setCurrencyPickerOpen(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[s.actionIconWrap, { backgroundColor: colors.background }]}>
+              <Icon name="cash-outline" size={18} color={colors.textPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Typo style={[s.actionLabel, { color: colors.textPrimary }]}>Display Currency</Typo>
+              <Typo style={[s.infoLabel, { color: colors.textSecondary }]}>
+                Prices show in {displayCurrency}
+              </Typo>
+            </View>
+            <Typo style={[s.infoValue, { color: colors.textSecondary, fontSize: 13 }]}>{displayCurrency}</Typo>
+            <Icon name="chevron-forward" size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* ── APPEARANCE ── */}
@@ -435,6 +570,33 @@ export const ProfileScreen = () => {
           </View>
         </View>
       </AppBottomSheet>
+
+      <AppSelectSheet
+        visible={currencyPickerOpen}
+        title="Display Currency"
+        searchPlaceholder="Search currency"
+        options={SUPPORTED_CURRENCIES.map(c => ({
+          label: `${c.code} — ${c.name}`,
+          value: c.code,
+        }))}
+        selected={displayCurrency}
+        onClose={() => setCurrencyPickerOpen(false)}
+        onSelect={opt => {
+          setDisplayCurrency(String(opt.value));
+          setCurrencyPickerOpen(false);
+        }}
+      />
+
+      <AppAlert
+        visible={logoutAlert}
+        title="Log out"
+        message="Are you sure you want to log out?"
+        buttons={[
+          { text: 'Cancel', style: 'cancel', onPress: () => setLogoutAlert(false) },
+          { text: 'Log out', style: 'destructive', onPress: confirmLogout },
+        ]}
+        onDismiss={() => setLogoutAlert(false)}
+      />
     </ScreenWrapper>
   );
 };

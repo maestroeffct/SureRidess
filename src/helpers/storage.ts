@@ -7,6 +7,9 @@ export const StorageKeys = {
   AUTH_USER: 'AUTH_USER',
   LAST_MODULE: 'LAST_MODULE',
   THEME_MODE: 'THEME_MODE',
+  HAS_SEEN_ONBOARDING: 'HAS_SEEN_ONBOARDING',
+  DISPLAY_CURRENCY: 'DISPLAY_CURRENCY',
+  FAVORITE_CARS: 'FAVORITE_CARS',
 };
 
 export async function setItem<T>(key: string, value: T): Promise<void> {

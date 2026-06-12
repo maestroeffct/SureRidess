@@ -7,8 +7,6 @@ export default StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     borderWidth: 1,
-    borderColor: '#B23AF1',
-    backgroundColor: '#F6EDFF',
     padding: Spacing.md,
     borderRadius: Radius.md,
     marginVertical: Spacing.md,
@@ -16,6 +14,5 @@ export default StyleSheet.create({
 
   text: {
     flex: 1,
-    color: '#333',
   },
 });

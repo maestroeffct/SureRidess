@@ -24,8 +24,11 @@ export type BookingDetails = {
   collectionCode?: string;
   status: string;
   paymentMethod: string;
+  /** True when the user has already submitted a review for this booking. */
+  hasReview?: boolean;
 
   car: {
+    id?: string;
     brand: string;
     model: string;
     category?: string;

@@ -4,20 +4,8 @@ import { Typo } from '@/components/AppText/Typo';
 import styles from './styles';
 import { BookingLocationRow } from '../BookingLocationRow/BookingLocationRow';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useFormatMoney } from '@/providers/CurrencyProvider';
 import dayjs from 'dayjs';
-
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  ngn: '₦', NGN: '₦',
-  usd: '$',  USD: '$',
-  gbp: '£',  GBP: '£',
-  eur: '€',  EUR: '€',
-  ghs: '₵',  GHS: '₵',
-};
-
-function formatMoney(amount: number, currency = 'NGN') {
-  const symbol = CURRENCY_SYMBOLS[currency] ?? currency.toUpperCase() + ' ';
-  return `${symbol}${amount.toLocaleString()}`;
-}
 
 const FALLBACK_IMAGE =
   'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
@@ -53,6 +41,7 @@ export const BookingCard = ({
   currency = 'NGN',
 }: Props) => {
   const { colors } = useTheme();
+  const fmtMoney = useFormatMoney();
   const pickup = pickupAt ? dayjs(pickupAt) : null;
   const ret = returnAt ? dayjs(returnAt) : null;
   const days =
@@ -137,7 +126,7 @@ export const BookingCard = ({
           )}
           {typeof totalPrice === 'number' && (
             <Typo style={styles.bookingId}>
-              {formatMoney(totalPrice, currency)}
+              {fmtMoney(totalPrice, currency, { round: true })}
             </Typo>
           )}
           <Typo style={[styles.bookingId, { fontSize: 11, color: '#9CA3AF' }]}>

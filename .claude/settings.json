@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"POST /rental/pricing-preview → HTTP %{http_code}\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{}' http://localhost:4000/rental/pricing-preview)",
+      "Bash(grep -n \"const { user, logout, refreshUser }\" /Users/maestroeffect/Desktop/SureRide/src/screens/main/Profile/ProfileScreen.tsx)",
+      "Bash(export CLAUDE_CODE_TMPDIR=/tmp)",
+      "Bash(grep -i \"notifee\" /Users/maestroeffect/Desktop/SureRide/package.json)"
+    ]
+  }
+}

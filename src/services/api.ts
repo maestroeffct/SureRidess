@@ -1,5 +1,6 @@
 import axios from 'axios';
-// import { Platform } from 'react-native';
+import { Platform } from 'react-native';
+import { API_URL } from '@env';
 import { getItem, StorageKeys } from '@/helpers/storage';
 
 export type AuthErrorReason =
@@ -17,20 +18,33 @@ export function setAuthErrorHandler(
   authErrorHandler = handler;
 }
 
-// const BASE_URL =
-//   Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+// Resolve emulator-only hosts to the right value for the current platform.
+// 10.0.2.2 → Android emulator's loopback to host. iOS sim must use localhost.
+function resolveBaseUrl(url: string) {
+  if (Platform.OS === 'ios' && url.includes('10.0.2.2')) {
+    return url.replace('10.0.2.2', 'localhost');
+  }
+  if (Platform.OS === 'android' && url.includes('localhost')) {
+    return url.replace('localhost', '10.0.2.2');
+  }
+  return url;
+}
 
-const BASE_URL = 'https://sureride-backend-production.up.railway.app';
+const RESOLVED_BASE_URL = resolveBaseUrl(API_URL);
+
+if (__DEV__) {
+  console.log('[API] baseURL =', RESOLVED_BASE_URL);
+}
 
 export const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: RESOLVED_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-const LOG_API = true;
+const LOG_API = __DEV__;
 
 // 🔐 Attach token automatically
 api.interceptors.request.use(async config => {
@@ -64,6 +78,8 @@ api.interceptors.response.use(
   async error => {
     if (LOG_API) {
       console.log('[API][Error]', error?.response?.status, error?.config?.url, {
+        message: error?.message,
+        code: error?.code,
         data: error?.response?.data,
       });
     }

@@ -5,8 +5,8 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
+import { AppAlert } from '@/components/AppAlert/AppAlert';
 import Icon from '@react-native-vector-icons/ionicons';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
@@ -27,7 +27,9 @@ import {
   type BookingDetails,
 } from '@/services/booking.service';
 import { showError, showSuccess } from '@/helpers/toast';
+import { useFormatMoney } from '@/providers/CurrencyProvider';
 import { useTheme } from '@/theme/ThemeProvider';
+import { WriteReviewModal } from '@/components/Rental/WriteReviewModal/WriteReviewModal';
 
 type RouteParams = {
   bookingId: string;
@@ -38,6 +40,7 @@ const BookingDetailsScreen = () => {
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
+  const fmtMoney = useFormatMoney();
 
   const { bookingId, status = 'in_progress' } = route.params || {};
   const isCompleted = status === 'completed';
@@ -45,6 +48,8 @@ const BookingDetailsScreen = () => {
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelAlert, setCancelAlert] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   useEffect(() => {
     if (!bookingId) return;
@@ -70,32 +75,20 @@ const BookingDetailsScreen = () => {
       .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
 
-  const handleCancel = () => {
-    Alert.alert(
-      'Cancel Booking',
-      'Are you sure you want to cancel this booking?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setCancelling(true);
-              await cancelBooking(bookingId);
-              showSuccess('Booking cancelled successfully');
-              navigation.goBack();
-            } catch (error: any) {
-              showError(
-                error?.response?.data?.message || 'Failed to cancel booking',
-              );
-            } finally {
-              setCancelling(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleCancel = () => setCancelAlert(true);
+
+  const confirmCancel = async () => {
+    setCancelAlert(false);
+    try {
+      setCancelling(true);
+      await cancelBooking(bookingId);
+      showSuccess('Booking cancelled successfully');
+      navigation.goBack();
+    } catch (error: any) {
+      showError(error?.response?.data?.message || 'Failed to cancel booking');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   if (loading) {
@@ -146,12 +139,9 @@ const BookingDetailsScreen = () => {
       ? Math.max(1, Math.ceil((returnAt.getTime() - pickupAt.getTime()) / 86400000))
       : 1;
 
-  const CURRENCY_SYMBOLS: Record<string, string> = { ngn: '₦', NGN: '₦', usd: '$', USD: '$', gbp: '£', GBP: '£', eur: '€', EUR: '€' };
   const rawCurrency = payment?.currency ?? 'NGN';
-  const currency = CURRENCY_SYMBOLS[rawCurrency] ?? rawCurrency.toUpperCase();
 
-  const formatMoney = (amount?: number) =>
-    typeof amount === 'number' ? `${currency}${amount.toLocaleString()}` : '—';
+  const formatMoney = (amount?: number) => fmtMoney(amount, rawCurrency, { round: true });
 
   return (
     <ScreenWrapper padded={false}>
@@ -348,8 +338,50 @@ const BookingDetailsScreen = () => {
           <PolicyItem title="Mileage" value="Unlimited mileage included" />
         </View>
 
+        {/* LEAVE A REVIEW */}
+        {booking?.status === 'COMPLETED' && booking?.car?.id ? (
+          booking.hasReview ? (
+            <View style={[styles.section, { borderColor: colors.border }]}>
+              <View style={leaveReviewStyles.row}>
+                <View style={[leaveReviewStyles.iconWrap, { backgroundColor: '#F0FDF4' }]}>
+                  <Icon name="checkmark-circle" size={20} color="#16A34A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Typo style={[leaveReviewStyles.title, { color: colors.textPrimary }]}>
+                    Review submitted
+                  </Typo>
+                  <Typo style={[leaveReviewStyles.hint, { color: colors.textSecondary }]}>
+                    Thanks for sharing your experience.
+                  </Typo>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.section, { borderColor: colors.border }]}
+              onPress={() => setReviewOpen(true)}
+            >
+              <View style={leaveReviewStyles.row}>
+                <View style={[leaveReviewStyles.iconWrap, { backgroundColor: '#FFFBEB' }]}>
+                  <Icon name="star" size={20} color="#D97706" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Typo style={[leaveReviewStyles.title, { color: colors.textPrimary }]}>
+                    Rate your trip
+                  </Typo>
+                  <Typo style={[leaveReviewStyles.hint, { color: colors.textSecondary }]}>
+                    Share how this car and provider went for you.
+                  </Typo>
+                </View>
+                <Icon name="chevron-forward" size={18} color={colors.textSecondary} />
+              </View>
+            </TouchableOpacity>
+          )
+        ) : null}
+
         {/* CANCEL BOOKING */}
-        {!isCompleted && booking?.status !== 'CANCELLED' && (
+        {!isCompleted && booking?.status !== 'CANCELLED' && booking?.status !== 'COMPLETED' && (
           <View style={[styles.section, { borderColor: colors.border }]}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -380,8 +412,61 @@ const BookingDetailsScreen = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <AppAlert
+        visible={cancelAlert}
+        title="Cancel Booking"
+        message="Are you sure you want to cancel this booking?"
+        buttons={[
+          { text: 'No', style: 'cancel', onPress: () => setCancelAlert(false) },
+          { text: 'Yes, Cancel', style: 'destructive', onPress: confirmCancel },
+        ]}
+        onDismiss={() => setCancelAlert(false)}
+      />
+
+      {booking?.car?.id ? (
+        <WriteReviewModal
+          visible={reviewOpen}
+          carId={booking.car.id}
+          bookingId={booking.id}
+          carTitle={
+            booking.car.brand && booking.car.model
+              ? `${booking.car.brand} ${booking.car.model}`
+              : undefined
+          }
+          onClose={() => setReviewOpen(false)}
+          onSubmitted={async () => {
+            // Refetch booking so hasReview flips to true and the prompt
+            // collapses into the "Review submitted" confirmation row.
+            try {
+              const fresh = await fetchBookingDetails(bookingId);
+              setBooking(fresh);
+            } catch {
+              // non-fatal
+            }
+          }}
+        />
+      ) : null}
     </ScreenWrapper>
   );
+};
+
+const leaveReviewStyles = {
+  row: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 12,
+    paddingVertical: 4,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  title: { fontSize: 14, fontWeight: '700' as const },
+  hint: { fontSize: 12, marginTop: 2, lineHeight: 16 },
 };
 
 export default BookingDetailsScreen;

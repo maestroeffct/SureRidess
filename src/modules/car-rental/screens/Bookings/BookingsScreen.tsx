@@ -209,11 +209,9 @@ const s = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
   },
   headerSub: {
     marginTop: 2,
-    color: '#6B7280',
   },
 
   searchWrap: {
@@ -223,10 +221,8 @@ const s = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     paddingHorizontal: 14,
     height: 48,
     gap: 10,
@@ -234,7 +230,6 @@ const s = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
     paddingVertical: 0,
   },
 
@@ -242,7 +237,6 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
     marginBottom: 8,
   },
   tabItem: {
@@ -252,17 +246,14 @@ const s = StyleSheet.create({
   tabLabel: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#9CA3AF',
     paddingBottom: 10,
   },
   tabLabelActive: {
-    color: '#111827',
     fontWeight: '600',
   },
   tabCount: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#9CA3AF',
   },
   tabCountActive: {
     color: '#0A6A4B',
@@ -293,11 +284,9 @@ const s = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
     marginTop: 12,
   },
   emptySub: {
-    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 20,
   },

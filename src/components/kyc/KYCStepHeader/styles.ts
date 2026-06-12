@@ -11,12 +11,10 @@ export default StyleSheet.create({
   },
 
   stepContainer: {
-    backgroundColor: '#EAF2EF',
     padding: Spacing.lg,
   },
 
   progressText: {
-    color: '#1B7C63',
     marginBottom: Spacing.sm,
   },
 

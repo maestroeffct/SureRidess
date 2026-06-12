@@ -1,4 +1,4 @@
-export const DEV_AUTH_ENABLED = true; // auto false in production
+export const DEV_AUTH_ENABLED = __DEV__;
 
 export const DEV_TEST_CREDENTIALS = {
   email: 'test@sureride.dev',

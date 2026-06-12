@@ -189,21 +189,26 @@ export default function DocumentsScreen() {
         <KYCInfoAlert message="Upload clear photos of your documents. All information will be encrypted and secure." />
 
         <View style={styles.inputSpacing}>
-          <AppInput
-            label="Government ID Type"
-            placeholder="Select ID type"
-            value={governmentIdType ?? ''}
-            editable={false}
-            leftIcon={
-              <TouchableOpacity onPress={() => setShowGovernmentIdTypeModal(true)}>
-                <Icon
-                  name="chevron-down"
-                  size={18}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            }
-          />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setShowGovernmentIdTypeModal(true)}
+          >
+            <View pointerEvents="none">
+              <AppInput
+                label="Government ID Type"
+                placeholder="Select ID type"
+                value={governmentIdType ?? ''}
+                editable={false}
+                rightIcon={
+                  <Icon
+                    name="chevron-down"
+                    size={18}
+                    color={colors.textSecondary}
+                  />
+                }
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {governmentIdType && (
@@ -241,21 +246,26 @@ export default function DocumentsScreen() {
         </View>
 
         <View style={styles.inputSpacing}>
-          <AppInput
-            label="Driver License Expiry Date"
-            placeholder="Select date"
-            value={driverLicenseExpiryDate ? driverLicenseExpiryDate.toDateString() : ''}
-            editable={false}
-            rightIcon={
-              <TouchableOpacity onPress={() => setShowLicenseExpiryPicker(true)}>
-                <Icon
-                  name="calendar-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            }
-          />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setShowLicenseExpiryPicker(true)}
+          >
+            <View pointerEvents="none">
+              <AppInput
+                label="Driver License Expiry Date"
+                placeholder="Select date"
+                value={driverLicenseExpiryDate ? driverLicenseExpiryDate.toDateString() : ''}
+                editable={false}
+                rightIcon={
+                  <Icon
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                }
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {showLicenseExpiryPicker && (

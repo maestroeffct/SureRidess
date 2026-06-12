@@ -27,9 +27,15 @@ const styles = StyleSheet.create({
   tagRow: {
     position: 'absolute',
     top: 12,
-    right: 12,
+    left: 12,
     flexDirection: 'row',
     gap: 8,
+  },
+
+  favoriteWrap: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
 
   tag: {
@@ -51,6 +57,31 @@ const styles = StyleSheet.create({
   location: {
     marginTop: 2,
     opacity: 0.6,
+  },
+
+  providerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  providerName: {
+    fontSize: 11,
+    maxWidth: 160,
+  },
+
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  ratingValue: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  ratingCount: {
+    fontSize: 11,
   },
 
   specRow: {

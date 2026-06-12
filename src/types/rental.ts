@@ -28,6 +28,9 @@ export type RentalInsurancePackage = {
   id: string;
   name: string;
   description?: string;
+  // Backend canonical field (Prisma schema). All other names below are
+  // legacy aliases kept for compatibility — prefer dailyPrice going forward.
+  dailyPrice?: number;
   dailyRate?: number;
   price?: number;
   amount?: number;
@@ -48,6 +51,7 @@ export type RentalCar = {
   year?: number;
   bags?: number | string;
   dailyRate: number;
+  currency?: string;
   hourlyRate?: number;
   hasAC?: boolean;
   isActive?: boolean;
@@ -62,6 +66,29 @@ export type RentalCar = {
   features?: Array<RentalCarFeature | RentalCarFeatureLink>;
   groupedFeatures?: Record<string, RentalCarFeature[]>;
   insurancePackages?: RentalInsurancePackage[];
+  /** Average rating (0–5). 0 when no reviews. */
+  rating?: number;
+  /** Total non-hidden review count. */
+  reviewCount?: number;
+  /** ISO date string from the backend — used to sort the "Newest arrivals" rail. */
+  createdAt?: string;
+};
+
+export type RentalCarReview = {
+  id: string;
+  carId: string;
+  userId: string;
+  bookingId: string;
+  rating: number; // 1–5
+  comment: string | null;
+  userDisplayName: string | null;
+  createdAt: string;
+};
+
+export type RentalCarReviewStats = {
+  averageRating: number;
+  reviewCount: number;
+  breakdown: Record<'1' | '2' | '3' | '4' | '5', number>;
 };
 
 export type RentalSearchParams = {

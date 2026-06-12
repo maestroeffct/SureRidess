@@ -7,4 +7,5 @@ export type MainStackParamList = {
   CarRentalTabs: undefined;
   Profile: undefined;
   CarRentalFlowNavigator: undefined;
+  NotificationInbox: undefined;
 };
