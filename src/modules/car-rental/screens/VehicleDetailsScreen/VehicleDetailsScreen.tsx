@@ -228,13 +228,14 @@ const VehicleDetailsScreen = () => {
             ))}
           </ScrollView>
 
-          {/* top gradient — status bar protection */}
+          {/* Gradients are decoration only — let swipe gestures pass through */}
           <LinearGradient
+            pointerEvents="none"
             colors={['rgba(0,0,0,0.55)', 'transparent']}
             style={[s.gradTop, { height: insets.top + 60 }]}
           />
-          {/* bottom gradient — title overlay */}
           <LinearGradient
+            pointerEvents="none"
             colors={['transparent', 'rgba(0,0,0,0.75)']}
             style={s.gradBottom}
           />
@@ -263,8 +264,9 @@ const VehicleDetailsScreen = () => {
             </View>
           )}
 
-          {/* Car name + location overlay */}
-          <View style={s.heroInfo}>
+          {/* Car name + location overlay — non-interactive so the underlying
+              carousel still receives swipe gestures across the bottom of the hero */}
+          <View pointerEvents="none" style={s.heroInfo}>
             {car?.category && (
               <View style={s.categoryBadge}>
                 <Typo style={s.categoryBadgeText}>{fmt(car.category)}</Typo>
@@ -436,6 +438,7 @@ const VehicleDetailsScreen = () => {
           {hasBookingData ? (
             <SectionCard title="Pick-up & Drop-off">
               <TimelineLocation
+                label="Pick-up"
                 icon="location"
                 color={GREEN}
                 date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
@@ -443,11 +446,13 @@ const VehicleDetailsScreen = () => {
                 address={locationAddress || 'Pickup location'}
               />
               <TimelineLocation
+                label="Drop-off"
                 icon="location"
                 color="#F59E0B"
                 date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
                 place={dropoffLocationName || locationName}
                 address={locationAddress || 'Drop-off location'}
+                isLast
               />
             </SectionCard>
           ) : (
@@ -489,6 +494,7 @@ const VehicleDetailsScreen = () => {
                 loading={pricingLoading}
                 fallbackDailyRate={car?.dailyRate}
                 fallbackDays={totalDays}
+                fallbackCurrency={car?.currency ?? 'NGN'}
                 insuranceLabel={
                   insurance !== 'none'
                     ? insurancePackages.find(p => p.id === insurance)?.name

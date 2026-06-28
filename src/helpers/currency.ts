@@ -79,6 +79,42 @@ export const SUPPORTED_CURRENCIES = [
   { code: 'ZAR', name: 'South African Rand' },
 ];
 
+// Primary ISO-3166 alpha-2 country for each currency. Used to derive flag
+// emojis for currency UIs (the picker, the home-screen switcher chip, etc).
+const CURRENCY_TO_COUNTRY: Record<string, string> = {
+  NGN: 'NG',
+  USD: 'US',
+  GBP: 'GB',
+  EUR: 'EU', // Council of Europe emoji
+  CAD: 'CA',
+  AUD: 'AU',
+  GHS: 'GH',
+  KES: 'KE',
+  ZAR: 'ZA',
+  JPY: 'JP',
+  CNY: 'CN',
+  INR: 'IN',
+  AED: 'AE',
+  SAR: 'SA',
+};
+
+// Convert a 2-letter country code to its flag emoji by mapping each letter to
+// the matching Regional Indicator Symbol code point.
+function countryCodeToFlag(code: string): string {
+  if (code.length !== 2) return '';
+  const offset = 0x1f1e6 - 'A'.charCodeAt(0);
+  return [...code.toUpperCase()]
+    .map(c => String.fromCodePoint(c.charCodeAt(0) + offset))
+    .join('');
+}
+
+/** Returns the flag emoji for a currency, or empty string if unknown. */
+export function flagForCurrency(currency?: string | null): string {
+  if (!currency) return '';
+  const country = CURRENCY_TO_COUNTRY[currency.toUpperCase()];
+  return country ? countryCodeToFlag(country) : '';
+}
+
 // ── FX rates ────────────────────────────────────────────────────────────────
 // All rates expressed as "1 USD = X target". So 1 USD = 1500 NGN.
 // IMPORTANT: these are static placeholder rates for display purposes ONLY.

@@ -18,12 +18,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
+import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { useAuth } from '@/providers/AuthProvider';
+import { useBrowseCountry } from '@/providers/CountryProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { listRentalCars } from '@/services/rental.service';
-import { useFormatMoney } from '@/providers/CurrencyProvider';
+import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { SUPPORTED_CURRENCIES, symbolFor } from '@/helpers/currency';
+import {
+  findCountry,
+  flagForCountry,
+  SUPPORTED_COUNTRIES,
+} from '@/helpers/region';
 import type { RentalCar } from '@/types/rental';
+import { PromoBannerCarousel } from '@/components/PromoBannerCarousel/PromoBannerCarousel';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_BG = require('@/assets/images/car_back.png');
@@ -46,10 +55,17 @@ const CarRentalHomeScreen = () => {
   const { user } = useAuth();
   const { colors, mode } = useTheme();
   const { count: unreadCount } = useUnreadNotifications();
+  const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
+  const { country: browseCountry, setCountry: setBrowseCountry } = useBrowseCountry();
 
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+
+  const currencySymbol = symbolFor(displayCurrency);
+  const browseCountryFlag = flagForCountry(browseCountry);
 
   const firstName = user?.firstName?.trim() || 'there';
   const avatarText =
@@ -140,15 +156,41 @@ const CarRentalHomeScreen = () => {
                 ) : null}
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={s.avatar}
-                onPress={() =>
-                  navigation.navigate('CarRentalTabs', { screen: 'Profile' })
-                }
-                activeOpacity={0.8}
-              >
-                <Typo style={s.avatarText}>{avatarText}</Typo>
-              </TouchableOpacity>
+              <View style={s.topRightGroup}>
+                <TouchableOpacity
+                  style={s.topChip}
+                  onPress={() => setCountryPickerOpen(true)}
+                  activeOpacity={0.8}
+                  accessibilityLabel={`Browse region, currently ${browseCountry}`}
+                >
+                  {browseCountryFlag ? (
+                    <Typo style={s.countryFlag}>{browseCountryFlag}</Typo>
+                  ) : (
+                    <Typo style={s.topChipFallback}>{browseCountry}</Typo>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={s.topChip}
+                  onPress={() => setCurrencyPickerOpen(true)}
+                  activeOpacity={0.8}
+                  accessibilityLabel={`Change display currency, currently ${displayCurrency}`}
+                >
+                  <Typo style={s.currencySymbol}>
+                    {currencySymbol || displayCurrency}
+                  </Typo>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={s.avatar}
+                  onPress={() =>
+                    navigation.navigate('CarRentalTabs', { screen: 'Profile' })
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Typo style={s.avatarText}>{avatarText}</Typo>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Greeting */}
@@ -275,6 +317,10 @@ const CarRentalHomeScreen = () => {
           </View>
         ) : (
           <>
+            {/* Admin-managed promo banners (HOME_HERO) — renders nothing if
+                there are no active banners, so no layout shift when empty. */}
+            <PromoBannerCarousel placement="HOME_HERO" topGap={16} bottomGap={4} />
+
             <SectionHeader
               title="Featured"
               onSeeAll={openSearchLocation}
@@ -346,6 +392,49 @@ const CarRentalHomeScreen = () => {
           </>
         )}
       </ScrollView>
+
+      <AppSelectSheet
+        visible={currencyPickerOpen}
+        title="Display Currency"
+        searchPlaceholder="Search currency"
+        options={SUPPORTED_CURRENCIES.map(c => {
+          const sym = symbolFor(c.code);
+          return {
+            label: `${sym ? `${sym}  ` : ''}${c.code} — ${c.name}`,
+            value: c.code,
+          };
+        })}
+        selected={displayCurrency}
+        onClose={() => setCurrencyPickerOpen(false)}
+        onSelect={opt => {
+          setDisplayCurrency(String(opt.value));
+          setCurrencyPickerOpen(false);
+        }}
+      />
+
+      <AppSelectSheet
+        visible={countryPickerOpen}
+        title="Browse cars in"
+        searchPlaceholder="Search country"
+        options={SUPPORTED_COUNTRIES.map(c => {
+          const flag = flagForCountry(c.code);
+          return {
+            label: `${flag ? `${flag}  ` : ''}${c.name}`,
+            value: c.code,
+          };
+        })}
+        selected={browseCountry}
+        onClose={() => setCountryPickerOpen(false)}
+        onSelect={opt => {
+          const code = String(opt.value);
+          setBrowseCountry(code);
+          // Pair the display currency to the country the user just picked.
+          // Reasonable default — they can still override via the currency chip.
+          const target = findCountry(code);
+          if (target) setDisplayCurrency(target.currency);
+          setCountryPickerOpen(false);
+        }}
+      />
     </ScreenWrapper>
   );
 };
@@ -596,6 +685,11 @@ const s = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 11,
   },
+  topRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   avatar: {
     width: 38,
     height: 38,
@@ -610,6 +704,33 @@ const s = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '700',
+  },
+  topChip: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  countryFlag: {
+    fontSize: 19,
+    // Flag emojis have inconsistent baselines on Android — small lineHeight
+    // bump keeps them visually centred inside the circle.
+    lineHeight: 22,
+  },
+  currencySymbol: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  topChipFallback: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 
   greetingBlock: {

@@ -4,7 +4,6 @@ import Icon from '@react-native-vector-icons/ionicons';
 
 import { Typo } from '@/components/AppText/Typo';
 import type { PricingPreview } from '@/services/pricing.service';
-import { symbolFor } from '@/helpers/currency';
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -16,6 +15,13 @@ type Props = {
   fallbackDailyRate?: number;
   fallbackDays?: number;
   insuranceLabel?: string;
+  /**
+   * Used when `pricing` hasn't loaded yet. Without this, the formatter has no
+   * source currency to convert from, the conversion silently no-ops, and the
+   * raw amount is formatted with the user's display-currency symbol — e.g.
+   * NGN 25,000 renders as "£25,000".
+   */
+  fallbackCurrency?: string;
 };
 
 export function PriceBreakdown({
@@ -24,13 +30,12 @@ export function PriceBreakdown({
   fallbackDailyRate,
   fallbackDays,
   insuranceLabel,
+  fallbackCurrency,
 }: Props) {
   const { currency: userCurrency } = useCurrency();
   const fmtMoney = useFormatMoney();
   const { colors } = useTheme();
-  const sourceCurrency = pricing?.currency;
-  const targetCurrency = userCurrency || sourceCurrency;
-  const symbol = symbolFor(targetCurrency);
+  const sourceCurrency = pricing?.currency ?? fallbackCurrency;
   const fmt = (amount?: number) => fmtMoney(amount, sourceCurrency, { round: true });
   const isConverted =
     !!sourceCurrency &&
@@ -60,7 +65,7 @@ export function PriceBreakdown({
   return (
     <View style={s.wrap}>
       <Row
-        label={`Car rental (${days} day${days !== 1 ? 's' : ''}${perDay ? ` × ${symbol}${perDay.toLocaleString()}` : ''})`}
+        label={`Car rental (${days} day${days !== 1 ? 's' : ''}${perDay ? ` × ${fmt(perDay)}` : ''})`}
         value={fmt(basePrice)}
       />
 

@@ -34,7 +34,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 const GREEN = '#0A6A4B';
 const SW = Dimensions.get('window').width;
-const HERO_H = 260;
+const HERO_H = 340;
 
 const PaymentScreen = () => {
   const navigation = useNavigation<any>();
@@ -277,14 +277,18 @@ const PaymentScreen = () => {
               <Image key={`${uri}-${idx}`} source={{ uri }} style={{ width: SW, height: HERO_H }} resizeMode="cover" />
             ))}
           </ScrollView>
-          <LinearGradient colors={['rgba(0,0,0,0.55)', 'transparent']} style={[s.gradTop, { height: insets.top + 60 }]} />
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={s.gradBottom} />
+          {/* Gradients are decoration only — let swipe gestures pass through */}
+          <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.55)', 'transparent']} style={[s.gradTop, { height: insets.top + 60 }]} />
+          <LinearGradient pointerEvents="none" colors={['transparent', 'rgba(0,0,0,0.8)']} style={s.gradBottom} />
 
           {/* Back */}
           <TouchableOpacity style={[s.backBtn, { top: insets.top + 10 }]} onPress={() => navigation.goBack()}>
             <Icon name="chevron-back" size={20} color="#fff" />
           </TouchableOpacity>
-          <View style={[s.headerTitle, { top: insets.top + 14 }]}>
+          <View
+            pointerEvents="box-none"
+            style={[s.headerTitle, { top: insets.top + 14 }]}
+          >
             <Typo style={s.headerTitleText}>Checkout</Typo>
           </View>
 
@@ -294,8 +298,9 @@ const PaymentScreen = () => {
             </View>
           )}
 
-          {/* Car name overlay */}
-          <View style={s.heroInfo}>
+          {/* Car name overlay — non-interactive so the underlying carousel still
+              receives the horizontal swipe gesture across the bottom of the hero */}
+          <View pointerEvents="none" style={s.heroInfo}>
             <Typo style={s.heroTitle}>{title}</Typo>
             <View style={s.heroMeta}>
               {car?.transmission && <View style={s.heroBadge}><Typo style={s.heroBadgeText}>{fmt(car.transmission)}</Typo></View>}
@@ -310,16 +315,19 @@ const PaymentScreen = () => {
           {/* Rental Period */}
           <SectionCard title="Rental Period" icon="calendar-outline">
             <TimelineLocation
+              label="Pick-up"
               icon="location" color={GREEN}
               date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
               place={pickupLocationName || locationName}
               address={locationAddress || 'Pickup location'}
             />
             <TimelineLocation
+              label="Drop-off"
               icon="location" color="#F59E0B"
               date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
               place={dropoffLocationName || locationName}
               address={locationAddress || 'Drop-off location'}
+              isLast
             />
           </SectionCard>
 
@@ -383,6 +391,7 @@ const PaymentScreen = () => {
                 loading={pricingLoading}
                 fallbackDailyRate={car?.dailyRate}
                 fallbackDays={totalDays}
+                fallbackCurrency={car?.currency ?? 'NGN'}
                 insuranceLabel={selectedInsurance?.name}
               />
             </View>

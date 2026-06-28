@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { CountryProvider } from '@/providers/CountryProvider';
 import { CurrencyProvider } from '@/providers/CurrencyProvider';
 import { FavoritesProvider } from '@/providers/FavoritesProvider';
 import { RootNavigator } from '@/navigation/RootNavigator';
@@ -14,13 +15,15 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <CurrencyProvider>
-          <FavoritesProvider>
-            <AuthProvider>
-              <NavigationContainer ref={navigationRef}>
-                <RootNavigator />
-              </NavigationContainer>
-            </AuthProvider>
-          </FavoritesProvider>
+          <CountryProvider>
+            <FavoritesProvider>
+              <AuthProvider>
+                <NavigationContainer ref={navigationRef}>
+                  <RootNavigator />
+                </NavigationContainer>
+              </AuthProvider>
+            </FavoritesProvider>
+          </CountryProvider>
         </CurrencyProvider>
       </ThemeProvider>
       <Toast />

@@ -10,6 +10,7 @@ export const StorageKeys = {
   HAS_SEEN_ONBOARDING: 'HAS_SEEN_ONBOARDING',
   DISPLAY_CURRENCY: 'DISPLAY_CURRENCY',
   FAVORITE_CARS: 'FAVORITE_CARS',
+  BROWSE_COUNTRY: 'BROWSE_COUNTRY',
 };
 
 export async function setItem<T>(key: string, value: T): Promise<void> {
