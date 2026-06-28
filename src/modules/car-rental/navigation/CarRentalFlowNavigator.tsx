@@ -10,6 +10,7 @@ import VehicleDetailsScreen from '../screens/VehicleDetailsScreen/VehicleDetails
 import PaymentScreen from '../screens/Payment/PaymentScreen';
 import BookingStatusScreen from '../screens/BookingStatus/BookingStatusScreen';
 import BookingDetailsScreen from '../screens/BookingDetails/BookingDetailScreen';
+import RequestLimousineScreen from '../screens/RequestLimousine/RequestLimousineScreen';
 
 export type CarRentalFlowParamList = {
   SearchLocation: {
@@ -51,6 +52,7 @@ export type CarRentalFlowParamList = {
   };
   BookingStatus: { status: 'success' | 'failure' };
   BookingDetails: { bookingId: string };
+  RequestLimousine: undefined;
 };
 
 const Stack = createNativeStackNavigator<CarRentalFlowParamList>();
@@ -73,6 +75,14 @@ export function CarRentalFlowNavigator() {
       <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
       <Stack.Screen name="BookingStatus" component={BookingStatusScreen} />
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+      <Stack.Screen
+        name="RequestLimousine"
+        component={RequestLimousineScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
     </Stack.Navigator>
   );
 }

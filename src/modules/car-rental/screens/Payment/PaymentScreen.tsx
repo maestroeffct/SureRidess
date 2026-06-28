@@ -31,6 +31,7 @@ import { previewBookingPrice, PricingPreview } from '@/services/pricing.service'
 import { PriceBreakdown } from '@/components/Rental/PriceBreakdown/PriceBreakdown';
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useTheme } from '@/theme/ThemeProvider';
+import { ImageSize, optimizeImageUrl } from '@/helpers/image';
 
 const GREEN = '#0A6A4B';
 const SW = Dimensions.get('window').width;
@@ -120,7 +121,10 @@ const PaymentScreen = () => {
     value ? value.replace(/_/g, ' ').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase()) : '';
 
   const images = car?.images ?? [];
-  const imageUrls = images.map(img => img.url).filter((url): url is string => !!url);
+  const imageUrls = images
+    .map(img => img.url)
+    .filter((url): url is string => !!url)
+    .map(url => optimizeImageUrl(url, { width: ImageSize.HERO }) ?? url);
   const FALLBACK = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
   const displayImages = imageUrls.length > 0 ? imageUrls : [FALLBACK];
 

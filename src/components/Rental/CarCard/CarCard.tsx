@@ -11,6 +11,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { useFormatMoney } from '@/providers/CurrencyProvider';
 import { FavoriteButton } from '@/components/FavoriteButton/FavoriteButton';
 import { StarRating } from '@/components/StarRating/StarRating';
+import { ImageSize, optimizeImageUrl } from '@/helpers/image';
 import styles from './styles';
 
 export function CarCard({
@@ -34,9 +35,10 @@ export function CarCard({
     typeof car?.dailyRate === 'number'
       ? fmtMoney(car.dailyRate, sourceCurrency, { round: true })
       : fmtMoney(250, sourceCurrency, { round: true });
-  const imageUrl =
+  const rawImageUrl =
     car?.images?.find(img => img.isPrimary)?.url ??
     car?.images?.[0]?.url;
+  const imageUrl = optimizeImageUrl(rawImageUrl, { width: ImageSize.THUMB });
   const imageSource = imageUrl
     ? { uri: imageUrl }
     : require('@/assets/images/car.png');

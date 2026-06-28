@@ -67,11 +67,26 @@ export function OnboardingScreen() {
 
   const isLast = activeIndex === SLIDES.length - 1;
 
-  const finish = useCallback(async () => {
+  const markOnboardingSeen = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     await setItem(StorageKeys.HAS_SEEN_ONBOARDING, true);
+  }, []);
+
+  // First-time path: marketing slides → country picker → auth. The country
+  // picker handles its own navigation to Auth once the user has chosen or
+  // skipped, so we replace into it here.
+  const finish = useCallback(async () => {
+    await markOnboardingSeen();
+    navigation.replace('CountrySelect');
+  }, [markOnboardingSeen, navigation]);
+
+  // "Skip" and "Sign In" paths jump straight to Auth — these users either
+  // already have an account or don't want to commit to a country yet. They
+  // can change country from the home pill later.
+  const goSignIn = useCallback(async () => {
+    await markOnboardingSeen();
     navigation.replace('Auth');
-  }, [navigation]);
+  }, [markOnboardingSeen, navigation]);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -122,7 +137,7 @@ export function OnboardingScreen() {
       <StatusBar barStyle="light-content" backgroundColor={currentAccent} />
       <SafeAreaView style={s.safe}>
         {/* Skip */}
-        <TouchableOpacity style={s.skipBtn} onPress={finish} activeOpacity={0.7}>
+        <TouchableOpacity style={s.skipBtn} onPress={goSignIn} activeOpacity={0.7}>
           <Typo style={s.skipText}>Skip</Typo>
         </TouchableOpacity>
 
@@ -175,7 +190,7 @@ export function OnboardingScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={finish}
+            onPress={goSignIn}
             activeOpacity={0.7}
             style={s.signinRow}>
             <Typo style={s.signinText}>Already have an account? </Typo>

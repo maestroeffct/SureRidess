@@ -7,6 +7,7 @@ import { AuthNavigator } from './Auth/AuthNavigator';
 import { MainDrawerNavigator } from './MainDrawerNavigator';
 import { KYCFlowNavigator } from '@/modules/kyc/navigation/KYCFlowNavigator';
 import { OnboardingScreen } from '@/screens/auth/Onboarding/OnboardingScreen';
+import { CountrySelectScreen } from '@/screens/auth/Onboarding/CountrySelectScreen';
 import { useAuth } from '@/providers/AuthProvider';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -111,7 +112,10 @@ export function RootNavigator() {
           <>
             {/* Onboarding is first screen when unseen — React Navigation picks first as initial */}
             {showOnboarding && (
-              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+              <>
+                <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                <Stack.Screen name="CountrySelect" component={CountrySelectScreen} />
+              </>
             )}
             <Stack.Screen name="Auth" component={AuthNavigator} />
           </>

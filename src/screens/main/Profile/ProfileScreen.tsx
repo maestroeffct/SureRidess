@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Linking,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -21,8 +22,15 @@ import { removeItem, StorageKeys } from '@/helpers/storage';
 import { showError, showSuccess } from '@/helpers/toast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useCurrency } from '@/providers/CurrencyProvider';
+import { useBrowseCountry } from '@/providers/CountryProvider';
 import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
-import { SUPPORTED_CURRENCIES } from '@/helpers/currency';
+import { SUPPORTED_CURRENCIES, symbolFor } from '@/helpers/currency';
+import {
+  findCountry,
+  flagForCountry,
+  SUPPORTED_COUNTRIES,
+} from '@/helpers/region';
+import { CURRENT_BUILD_CODE, CURRENT_VERSION_NAME } from '@/config/appVersion';
 import dayjs from 'dayjs';
 
 /* ──────────────────────────────────────────────── */
@@ -77,6 +85,76 @@ function SectionHeader({ title }: { title: string }) {
   return <Typo style={s.sectionHeader}>{title}</Typo>;
 }
 
+type ColorTokens = ReturnType<typeof useTheme>['colors'];
+
+function SectionLabel({ title, colors }: { title: string; colors: ColorTokens }) {
+  return (
+    <Typo style={[s.sectionLabel, { color: colors.textSecondary }]}>
+      {title.toUpperCase()}
+    </Typo>
+  );
+}
+
+type TrailingKind = 'pencil' | 'check' | 'chevron';
+
+// Single-line settings row used across Personal / Preferences / Support /
+// Legal. Pass `onPress` to make it tappable (pencil and chevron trailing
+// indicators imply tappable). `isFirst` suppresses the top border so the
+// first row doesn't show a double-rule against the card edge.
+function FieldRow({
+  label,
+  value,
+  trailing,
+  onPress,
+  isFirst,
+  verifiedColor,
+}: {
+  label: string;
+  value?: string | null;
+  trailing?: TrailingKind;
+  onPress?: () => void;
+  isFirst?: boolean;
+  verifiedColor?: string;
+}) {
+  const { colors } = useTheme();
+  const Component: any = onPress ? TouchableOpacity : View;
+  const hasValue = !!value && value !== '';
+
+  return (
+    <Component
+      style={[
+        s.fieldRow,
+        !isFirst && { borderTopWidth: 1, borderTopColor: colors.border },
+      ]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : undefined}
+    >
+      <Typo style={[s.fieldRowLabel, { color: colors.textSecondary }]}>
+        {label}
+      </Typo>
+      <Typo
+        style={[s.fieldRowValue, { color: colors.textPrimary }]}
+        numberOfLines={1}
+      >
+        {hasValue ? value : '—'}
+      </Typo>
+      {trailing === 'pencil' && (
+        <Icon name="pencil-outline" size={15} color={colors.textSecondary} />
+      )}
+      {trailing === 'check' && (
+        <Icon
+          name="checkmark-circle"
+          size={16}
+          color={verifiedColor ?? '#22C55E'}
+        />
+      )}
+      {trailing === 'chevron' && (
+        <Icon name="chevron-forward" size={16} color={colors.textSecondary} />
+      )}
+    </Component>
+  );
+}
+
 function ActionRow({
   icon,
   label,
@@ -122,10 +200,24 @@ export const ProfileScreen = () => {
   const { preference, setPreference, colors } = useTheme();
 
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
+  const { country: browseCountry, setCountry: setBrowseCountry } = useBrowseCountry();
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
   const [logoutAlert, setLogoutAlert] = useState(false);
   const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const [appearancePickerOpen, setAppearancePickerOpen] = useState(false);
+  const [switchAlert, setSwitchAlert] = useState(false);
+  const [comingSoonAlert, setComingSoonAlert] = useState(false);
+
+  const browseCountryMeta = findCountry(browseCountry);
+  const browseCountryFlag = flagForCountry(browseCountry);
+  const currencySymbol = symbolFor(displayCurrency);
+
+  const handleContact = () =>
+    Linking.openURL('mailto:support@sureride.ng').catch(() => {});
+  const handleComingSoon = () => setComingSoonAlert(true);
+  const handleSwitchModule = () => setSwitchAlert(true);
 
   /* edit name state */
   const [firstName, setFirstName] = useState('');
@@ -238,223 +330,242 @@ export const ProfileScreen = () => {
     <ScreenWrapper padded={false}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* ── AVATAR HEADER ── */}
-        <View style={[s.avatarSection, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-          <View style={s.avatarCircle}>
-            <Typo style={s.avatarText}>
-              {initials(user?.firstName, user?.lastName)}
-            </Typo>
-          </View>
-          <Typo style={[s.fullName, { color: colors.textPrimary }]}>{fullName}</Typo>
-          <Typo variant="caption" style={[s.emailSub, { color: colors.textSecondary }]}>{user?.email}</Typo>
-
-          {kycStatus && (() => {
-            const isVerified =
-              kycStatus === 'VERIFIED' || kycStatus === 'APPROVED';
-            const isPending =
-              kycStatus === 'PENDING' || kycStatus === 'PENDING_VERIFICATION';
-            const canOpen = !isVerified && !isPending;
-            const badge = (
-              <View style={[s.kycBadge, { borderColor: kycColor[kycStatus] ?? '#9CA3AF' }]}>
-                <View style={[s.kycDot, { backgroundColor: kycColor[kycStatus] ?? '#9CA3AF' }]} />
-                <Typo style={[s.kycText, { color: kycColor[kycStatus] ?? '#9CA3AF' }]}>
-                  KYC {kycLabel[kycStatus] ?? kycStatus}
-                </Typo>
-              </View>
-            );
-            return canOpen ? (
-              <TouchableOpacity
-                activeOpacity={0.75}
-                onPress={() => navigation.navigate('KYCFlow')}
+        {/* ── HEADER ── */}
+        {(() => {
+          const isVerified =
+            kycStatus === 'VERIFIED' || kycStatus === 'APPROVED';
+          const isPending =
+            kycStatus === 'PENDING' || kycStatus === 'PENDING_VERIFICATION';
+          const kycCanOpen = !!kycStatus && !isVerified && !isPending;
+          const kycBadge = kycStatus ? (
+            <View
+              style={[
+                s.kycBadge,
+                { borderColor: kycColor[kycStatus] ?? '#9CA3AF' },
+              ]}
+            >
+              <View
+                style={[
+                  s.kycDot,
+                  { backgroundColor: kycColor[kycStatus] ?? '#9CA3AF' },
+                ]}
+              />
+              <Typo
+                style={[
+                  s.kycText,
+                  { color: kycColor[kycStatus] ?? '#9CA3AF' },
+                ]}
               >
-                {badge}
-              </TouchableOpacity>
-            ) : (
-              badge
-            );
-          })()}
-        </View>
+                KYC {kycLabel[kycStatus] ?? kycStatus}
+              </Typo>
+            </View>
+          ) : null;
 
-        {/* ── PERSONAL INFO ── */}
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <SectionHeader title="Personal Info" />
-          <InfoRow icon="person-outline" label="Full Name" value={fullName} />
-          <InfoRow icon="mail-outline" label="Email" value={user?.email} verified={user?.isVerified} />
-          <InfoRow icon="call-outline" label="Phone" value={phone} verified={!!phone} />
-          <InfoRow icon="globe-outline" label="Nationality" value={user?.nationality} />
-          <InfoRow
-            icon="calendar-outline"
-            label="Date of Birth"
-            value={formatDate(user?.dateOfBirth ?? user?.dob)}
-          />
-        </View>
-
-        {/* ── ACCOUNT ACTIONS ── */}
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <SectionHeader title="Account" />
-          {(() => {
-            const verified = kycStatus === 'VERIFIED' || kycStatus === 'APPROVED';
-            const pending =
-              kycStatus === 'PENDING' || kycStatus === 'PENDING_VERIFICATION';
-            const rejected = kycStatus === 'REJECTED';
-            const label = verified
-              ? 'Identity Verified'
-              : pending
-              ? 'Identity Verification — Pending Review'
-              : rejected
-              ? 'Identity Verification — Resubmit'
-              : 'Verify Your Identity';
-            const sub = verified
-              ? 'Your documents are approved.'
-              : pending
-              ? 'We’re reviewing your documents.'
-              : rejected
-              ? 'Tap to upload again.'
-              : 'Required to book a vehicle.';
-
-            // Only let the user open KYCFlow when there's actually something
-            // for them to do there:
-            //   - Not started / Incomplete → start the flow
-            //   - Rejected → resubmit
-            // For Verified and Pending Review, the row is informational only.
-            const navigable = !verified && !pending;
-
-            return (
-              <TouchableOpacity
-                style={[s.actionRow, { borderTopColor: colors.border }]}
-                onPress={() =>
-                  navigable ? navigation.navigate('KYCFlow') : undefined
-                }
-                disabled={!navigable}
-                activeOpacity={0.7}
-              >
-                <View
+          return (
+            <View
+              style={[
+                s.header,
+                {
+                  backgroundColor: colors.background,
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
+              <View>
+                <View style={s.avatarCircle}>
+                  <Typo style={s.avatarText}>
+                    {initials(user?.firstName, user?.lastName)}
+                  </Typo>
+                </View>
+                <TouchableOpacity
                   style={[
-                    s.actionIconWrap,
-                    { backgroundColor: colors.background },
+                    s.avatarEditBtn,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
                   ]}
+                  onPress={handleComingSoon}
+                  activeOpacity={0.8}
                 >
                   <Icon
-                    name={
-                      verified
-                        ? 'shield-checkmark-outline'
-                        : pending
-                        ? 'time-outline'
-                        : rejected
-                        ? 'warning-outline'
-                        : 'shield-outline'
-                    }
-                    size={18}
-                    color={
-                      verified
-                        ? '#22C55E'
-                        : pending
-                        ? '#F59E0B'
-                        : rejected
-                        ? '#EF4444'
-                        : colors.textPrimary
-                    }
+                    name="camera-outline"
+                    size={14}
+                    color={colors.textPrimary}
                   />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Typo style={[s.actionLabel, { color: colors.textPrimary }]}>
-                    {label}
-                  </Typo>
-                  <Typo
-                    style={[s.infoLabel, { color: colors.textSecondary }]}
+                </TouchableOpacity>
+              </View>
+              <Typo style={[s.fullName, { color: colors.textPrimary }]}>
+                {fullName}
+              </Typo>
+              <Typo
+                variant="caption"
+                style={[s.emailSub, { color: colors.textSecondary }]}
+              >
+                {user?.email}
+              </Typo>
+              {kycBadge ? (
+                kycCanOpen ? (
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('KYCFlow')}
                   >
-                    {sub}
-                  </Typo>
-                </View>
-                {navigable ? (
-                  <Icon
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                ) : null}
-              </TouchableOpacity>
-            );
-          })()}
-          <ActionRow
-            icon="create-outline"
-            label="Edit Name"
+                    {kycBadge}
+                  </TouchableOpacity>
+                ) : (
+                  kycBadge
+                )
+              ) : null}
+            </View>
+          );
+        })()}
+
+        {/* ── PERSONAL ── */}
+        <SectionLabel title="Personal" colors={colors} />
+        <View
+          style={[
+            s.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <FieldRow
+            label="Full name"
+            value={fullName}
+            trailing="pencil"
             onPress={openEditName}
+            isFirst
           />
-          <ActionRow
-            icon="lock-closed-outline"
-            label="Change Password"
+          <FieldRow
+            label="Email"
+            value={user?.email}
+            trailing={user?.isVerified ? 'check' : undefined}
+            verifiedColor="#22C55E"
+          />
+          <FieldRow
+            label="Phone"
+            value={phone}
+            trailing={phone ? 'check' : undefined}
+            verifiedColor="#22C55E"
+          />
+          <FieldRow
+            label="Nationality"
+            value={user?.nationality}
+            trailing="pencil"
+            onPress={handleComingSoon}
+          />
+          <FieldRow
+            label="Date of birth"
+            value={formatDate(user?.dateOfBirth ?? user?.dob)}
+          />
+          <FieldRow
+            label="Password"
+            value="••••••••"
+            trailing="pencil"
             onPress={openChangePass}
           />
         </View>
 
-        {/* ── CURRENCY ── */}
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <SectionHeader title="Currency" />
-          <TouchableOpacity
-            style={[s.actionRow, { borderTopColor: colors.border }]}
-            onPress={() => setCurrencyPickerOpen(true)}
-            activeOpacity={0.7}
-          >
-            <View style={[s.actionIconWrap, { backgroundColor: colors.background }]}>
-              <Icon name="cash-outline" size={18} color={colors.textPrimary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Typo style={[s.actionLabel, { color: colors.textPrimary }]}>Display Currency</Typo>
-              <Typo style={[s.infoLabel, { color: colors.textSecondary }]}>
-                Prices show in {displayCurrency}
-              </Typo>
-            </View>
-            <Typo style={[s.infoValue, { color: colors.textSecondary, fontSize: 13 }]}>{displayCurrency}</Typo>
-            <Icon name="chevron-forward" size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* ── APPEARANCE ── */}
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <SectionHeader title="Appearance" />
-          <View style={s.themeRow}>
-            {(
-              [
-                { value: 'light', icon: 'sunny-outline',  label: 'Light' },
-                { value: 'dark',  icon: 'moon-outline',   label: 'Dark'  },
-                { value: 'system',icon: 'phone-portrait-outline', label: 'System' },
-              ] as { value: typeof preference; icon: string; label: string }[]
-            ).map(opt => {
-              const active = preference === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    s.themeOption,
-                    { backgroundColor: colors.background, borderColor: colors.border },
-                    active && s.themeOptionActive,
-                  ]}
-                  onPress={() => setPreference(opt.value)}
-                  activeOpacity={0.75}
-                >
-                  <Icon
-                    name={opt.icon as any}
-                    size={18}
-                    color={active ? '#fff' : colors.textSecondary}
-                  />
-                  <Typo style={[s.themeLabel, { color: colors.textSecondary }, active && s.themeLabelActive]}>
-                    {opt.label}
-                  </Typo>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* ── DANGER ZONE ── */}
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <ActionRow
-            icon="log-out-outline"
-            label="Log out"
-            onPress={handleLogout}
-            danger
+        {/* ── PREFERENCES ── */}
+        <SectionLabel title="Preferences" colors={colors} />
+        <View
+          style={[
+            s.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <FieldRow
+            label="Country"
+            value={`${browseCountryFlag}  ${browseCountryMeta?.name ?? browseCountry}`}
+            trailing="chevron"
+            onPress={() => setCountryPickerOpen(true)}
+            isFirst
           />
+          <FieldRow
+            label="Currency"
+            value={`${currencySymbol || ''}  ${displayCurrency}`.trim()}
+            trailing="chevron"
+            onPress={() => setCurrencyPickerOpen(true)}
+          />
+          <FieldRow
+            label="Appearance"
+            value={
+              preference === 'light'
+                ? 'Light'
+                : preference === 'dark'
+                ? 'Dark'
+                : 'System'
+            }
+            trailing="chevron"
+            onPress={() => setAppearancePickerOpen(true)}
+          />
+          <FieldRow
+            label="Notifications"
+            value="On"
+            trailing="chevron"
+            onPress={handleComingSoon}
+          />
+        </View>
+
+        {/* ── SUPPORT ── */}
+        <SectionLabel title="Support" colors={colors} />
+        <View
+          style={[
+            s.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <FieldRow
+            label="Help & FAQ"
+            trailing="chevron"
+            onPress={handleComingSoon}
+            isFirst
+          />
+          <FieldRow
+            label="Contact us"
+            trailing="chevron"
+            onPress={handleContact}
+          />
+          <FieldRow
+            label="Switch module"
+            trailing="chevron"
+            onPress={handleSwitchModule}
+          />
+        </View>
+
+        {/* ── LEGAL ── */}
+        <SectionLabel title="Legal" colors={colors} />
+        <View
+          style={[
+            s.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <FieldRow
+            label="Terms of Service"
+            trailing="chevron"
+            onPress={handleComingSoon}
+            isFirst
+          />
+          <FieldRow
+            label="Privacy Policy"
+            trailing="chevron"
+            onPress={handleComingSoon}
+          />
+        </View>
+
+        {/* ── FOOTER ── */}
+        <View style={s.footer}>
+          <Typo style={[s.footerVersion, { color: colors.textSecondary }]}>
+            SureRide {CURRENT_VERSION_NAME} ({CURRENT_BUILD_CODE})
+          </Typo>
+          <TouchableOpacity
+            style={[s.logoutBtn, { borderColor: colors.border }]}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Icon name="log-out-outline" size={18} color="#EF4444" />
+            <Typo style={s.logoutText}>Log out</Typo>
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />
@@ -575,15 +686,56 @@ export const ProfileScreen = () => {
         visible={currencyPickerOpen}
         title="Display Currency"
         searchPlaceholder="Search currency"
-        options={SUPPORTED_CURRENCIES.map(c => ({
-          label: `${c.code} — ${c.name}`,
-          value: c.code,
-        }))}
+        options={SUPPORTED_CURRENCIES.map(c => {
+          const sym = symbolFor(c.code);
+          return {
+            label: `${sym ? `${sym}  ` : ''}${c.code} — ${c.name}`,
+            value: c.code,
+          };
+        })}
         selected={displayCurrency}
         onClose={() => setCurrencyPickerOpen(false)}
         onSelect={opt => {
           setDisplayCurrency(String(opt.value));
           setCurrencyPickerOpen(false);
+        }}
+      />
+
+      <AppSelectSheet
+        visible={countryPickerOpen}
+        title="Browse cars in"
+        searchPlaceholder="Search country"
+        options={SUPPORTED_COUNTRIES.map(c => {
+          const flag = flagForCountry(c.code);
+          return {
+            label: `${flag ? `${flag}  ` : ''}${c.name}`,
+            value: c.code,
+          };
+        })}
+        selected={browseCountry}
+        onClose={() => setCountryPickerOpen(false)}
+        onSelect={opt => {
+          const code = String(opt.value);
+          setBrowseCountry(code);
+          const target = findCountry(code);
+          if (target) setDisplayCurrency(target.currency);
+          setCountryPickerOpen(false);
+        }}
+      />
+
+      <AppSelectSheet
+        visible={appearancePickerOpen}
+        title="Appearance"
+        options={[
+          { label: 'Light', value: 'light' },
+          { label: 'Dark', value: 'dark' },
+          { label: 'Match system', value: 'system' },
+        ]}
+        selected={preference}
+        onClose={() => setAppearancePickerOpen(false)}
+        onSelect={opt => {
+          setPreference(opt.value as typeof preference);
+          setAppearancePickerOpen(false);
         }}
       />
 
@@ -597,6 +749,35 @@ export const ProfileScreen = () => {
         ]}
         onDismiss={() => setLogoutAlert(false)}
       />
+
+      <AppAlert
+        visible={switchAlert}
+        title="Switch Module"
+        message="Go back to the SureRide home screen to choose a different service?"
+        buttons={[
+          { text: 'Cancel', style: 'cancel', onPress: () => setSwitchAlert(false) },
+          {
+            text: 'Switch',
+            style: 'default',
+            onPress: async () => {
+              setSwitchAlert(false);
+              await removeItem(StorageKeys.LAST_MODULE);
+              navigation.navigate('Home');
+            },
+          },
+        ]}
+        onDismiss={() => setSwitchAlert(false)}
+      />
+
+      <AppAlert
+        visible={comingSoonAlert}
+        title="Coming Soon"
+        message="This feature will be available in a future update."
+        buttons={[
+          { text: 'OK', style: 'default', onPress: () => setComingSoonAlert(false) },
+        ]}
+        onDismiss={() => setComingSoonAlert(false)}
+      />
     </ScreenWrapper>
   );
 };
@@ -608,22 +789,31 @@ export default ProfileScreen;
 /* ──────────────────────────────────────────────── */
 
 const s = StyleSheet.create({
-  avatarSection: {
+  header: {
     alignItems: 'center',
-    paddingTop: 36,
-    paddingBottom: 24,
-    backgroundColor: '#fff',
+    paddingTop: 28,
+    paddingBottom: 22,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   avatarCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: '#0A6A4B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
+  },
+  avatarEditBtn: {
+    position: 'absolute',
+    bottom: 8,
+    right: -4,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
   },
   avatarText: {
     fontSize: 30,
@@ -815,5 +1005,110 @@ const s = StyleSheet.create({
   themeLabelActive: {
     color: '#fff',
     fontWeight: '600',
+  },
+
+  /* switch module banner */
+  switchCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#0A6A4B',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  switchLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+  },
+  switchIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switchTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  switchSub: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  /* about rows */
+  aboutRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderTopWidth: 1,
+  },
+  aboutLabel: {
+    fontSize: 14,
+  },
+  aboutValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  /* ── new settings layout ── */
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: 8,
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  fieldRowLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  fieldRowValue: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'right',
+  },
+
+  footer: {
+    alignItems: 'center',
+    paddingTop: 28,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  footerVersion: {
+    fontSize: 12,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#EF4444',
   },
 });

@@ -15,12 +15,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Typo } from '@/components/AppText/Typo';
 import {
   fetchPromoBanners,
   type BannerPlacement,
   type PromoBanner,
 } from '@/services/banners.service';
+
+// Known in-app routes that banner CTAs can deep-link to. Keeps Linking for
+// external schemes (https, tel, mailto, whatsapp) but routes our own paths
+// through React Navigation so they don't bounce out to the browser.
+const IN_APP_ROUTES: Record<string, { stack: string; screen: string }> = {
+  'request-limousine': {
+    stack: 'CarRentalFlowNavigator',
+    screen: 'RequestLimousine',
+  },
+};
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_HORIZONTAL_PADDING = 16;
@@ -36,6 +47,7 @@ type Props = {
 };
 
 export function PromoBannerCarousel({ placement, topGap = 12, bottomGap = 8 }: Props) {
+  const navigation = useNavigation<any>();
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<FlatList<PromoBanner>>(null);
@@ -68,13 +80,28 @@ export function PromoBannerCarousel({ placement, topGap = 12, bottomGap = 8 }: P
     };
   }, [banners.length, activeIndex]);
 
-  const handlePress = useCallback((banner: PromoBanner) => {
-    const url = banner.ctaUrl?.trim();
-    if (!url) return;
-    // External URL → open in browser. In-app deep links would need the
-    // navigation ref; keep this MVP simple and route everything via Linking.
-    Linking.openURL(url).catch(() => {});
-  }, []);
+  const handlePress = useCallback(
+    (banner: PromoBanner) => {
+      const url = banner.ctaUrl?.trim();
+      if (!url) return;
+
+      // Match in-app routes first — supports both `sureride://request-limousine`
+      // and plain `/request-limousine` paths so admins don't have to remember
+      // the scheme. Fall through to Linking for https/tel/mailto/whatsapp.
+      const pathKey = url
+        .replace(/^sureride:\/\//, '')
+        .replace(/^\/+/, '')
+        .split(/[?#]/)[0];
+      const inApp = IN_APP_ROUTES[pathKey];
+      if (inApp) {
+        navigation.navigate(inApp.stack, { screen: inApp.screen });
+        return;
+      }
+
+      Linking.openURL(url).catch(() => {});
+    },
+    [navigation],
+  );
 
   if (banners.length === 0) return null;
 

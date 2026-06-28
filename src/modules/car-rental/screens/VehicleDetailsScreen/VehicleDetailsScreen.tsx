@@ -33,6 +33,7 @@ import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { FavoriteButton } from '@/components/FavoriteButton/FavoriteButton';
 import { ReviewsSection } from '@/components/Rental/ReviewsSection/ReviewsSection';
 import { useTheme } from '@/theme/ThemeProvider';
+import { ImageSize, optimizeImageUrl } from '@/helpers/image';
 
 const GREEN = '#0A6A4B';
 const SW = Dimensions.get('window').width;
@@ -119,7 +120,8 @@ const VehicleDetailsScreen = () => {
   >;
   const imageUrls = images
     .map(img => (typeof img === 'string' ? img : img.url ?? img.imageUrl ?? img.path))
-    .filter((url): url is string => !!url);
+    .filter((url): url is string => !!url)
+    .map(url => optimizeImageUrl(url, { width: ImageSize.HERO }) ?? url);
   const FALLBACK = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
   const displayImages = imageUrls.length > 0 ? imageUrls : [FALLBACK];
 

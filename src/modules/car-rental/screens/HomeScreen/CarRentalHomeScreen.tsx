@@ -26,6 +26,7 @@ import { listRentalCars } from '@/services/rental.service';
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { SUPPORTED_CURRENCIES, symbolFor } from '@/helpers/currency';
+import { ImageSize, optimizeImageUrl } from '@/helpers/image';
 import {
   findCountry,
   flagForCountry,
@@ -184,7 +185,7 @@ const CarRentalHomeScreen = () => {
                 <TouchableOpacity
                   style={s.avatar}
                   onPress={() =>
-                    navigation.navigate('CarRentalTabs', { screen: 'Profile' })
+                    navigation.navigate('CarRentalTabs', { screen: 'Settings' })
                   }
                   activeOpacity={0.8}
                 >
@@ -500,8 +501,9 @@ function FeaturedCard({
   const location = car.location?.name ?? 'Nigeria';
   const dailyRate = fmtMoney(car.dailyRate, car.currency ?? 'NGN', { round: true });
 
-  const imageUrl =
+  const rawImageUrl =
     car.images?.find(img => img.isPrimary)?.url ?? car.images?.[0]?.url;
+  const imageUrl = optimizeImageUrl(rawImageUrl, { width: ImageSize.CARD });
   const imageSource = imageUrl
     ? { uri: imageUrl }
     : require('@/assets/images/car.png');
