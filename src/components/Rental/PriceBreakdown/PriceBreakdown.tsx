@@ -111,8 +111,11 @@ export function PriceBreakdown({
         <View style={s.fxNote}>
           <Icon name="swap-horizontal-outline" size={12} color={colors.textSecondary} />
           <Typo style={[s.fxNoteText, { color: colors.textSecondary }]}>
-            Approx. converted from {sourceCurrency.toUpperCase()}. You'll be
-            charged in {sourceCurrency.toUpperCase()} at checkout.
+            Display is approximate. You'll be charged{' '}
+            <Typo style={[s.fxNoteText, { color: colors.textPrimary, fontWeight: '700' }]}>
+              {fmtMoney(total, sourceCurrency, { round: true, strict: true })}
+            </Typo>{' '}
+            in {sourceCurrency.toUpperCase()} at checkout.
           </Typo>
         </View>
       )}

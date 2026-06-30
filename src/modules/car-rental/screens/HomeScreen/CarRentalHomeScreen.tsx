@@ -27,11 +27,7 @@ import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { SUPPORTED_CURRENCIES, symbolFor } from '@/helpers/currency';
 import { ImageSize, optimizeImageUrl } from '@/helpers/image';
-import {
-  findCountry,
-  flagForCountry,
-  SUPPORTED_COUNTRIES,
-} from '@/helpers/region';
+import { flagForCountry } from '@/helpers/region';
 import type { RentalCar } from '@/types/rental';
 import { PromoBannerCarousel } from '@/components/PromoBannerCarousel/PromoBannerCarousel';
 
@@ -57,7 +53,12 @@ const CarRentalHomeScreen = () => {
   const { colors, mode } = useTheme();
   const { count: unreadCount } = useUnreadNotifications();
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
-  const { country: browseCountry, setCountry: setBrowseCountry } = useBrowseCountry();
+  const {
+    country: browseCountry,
+    setCountry: setBrowseCountry,
+    markets,
+    refreshMarkets,
+  } = useBrowseCountry();
 
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,7 +161,12 @@ const CarRentalHomeScreen = () => {
               <View style={s.topRightGroup}>
                 <TouchableOpacity
                   style={s.topChip}
-                  onPress={() => setCountryPickerOpen(true)}
+                  onPress={() => {
+                    // Refresh in the background so admin updates land in the
+                    // sheet by the time it's interactable.
+                    void refreshMarkets();
+                    setCountryPickerOpen(true);
+                  }}
                   activeOpacity={0.8}
                   accessibilityLabel={`Browse region, currently ${browseCountry}`}
                 >
@@ -417,7 +423,7 @@ const CarRentalHomeScreen = () => {
         visible={countryPickerOpen}
         title="Browse cars in"
         searchPlaceholder="Search country"
-        options={SUPPORTED_COUNTRIES.map(c => {
+        options={markets.map(c => {
           const flag = flagForCountry(c.code);
           return {
             label: `${flag ? `${flag}  ` : ''}${c.name}`,
@@ -431,7 +437,7 @@ const CarRentalHomeScreen = () => {
           setBrowseCountry(code);
           // Pair the display currency to the country the user just picked.
           // Reasonable default — they can still override via the currency chip.
-          const target = findCountry(code);
+          const target = markets.find(m => m.code === code);
           if (target) setDisplayCurrency(target.currency);
           setCountryPickerOpen(false);
         }}

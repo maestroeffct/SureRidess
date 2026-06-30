@@ -1,6 +1,7 @@
 const CURRENCY_SYMBOLS: Record<string, string> = {
   NGN: '₦',
   USD: '$',
+  XOF: 'CFA ', // West African CFA franc — no single glyph, prefix the code
   GBP: '£',
   EUR: '€',
   GHS: '₵',
@@ -20,6 +21,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 const COUNTRY_TO_CURRENCY: Record<string, string> = {
   NG: 'NGN',
   US: 'USD',
+  TG: 'XOF',
   GB: 'GBP',
   CA: 'CAD',
   AU: 'AUD',
@@ -70,6 +72,7 @@ const COUNTRY_NAME_TO_CURRENCY: Record<string, string> = {
 export const SUPPORTED_CURRENCIES = [
   { code: 'NGN', name: 'Nigerian Naira' },
   { code: 'USD', name: 'US Dollar' },
+  { code: 'XOF', name: 'West African CFA Franc' },
   { code: 'GBP', name: 'British Pound' },
   { code: 'EUR', name: 'Euro' },
   { code: 'CAD', name: 'Canadian Dollar' },
@@ -84,6 +87,7 @@ export const SUPPORTED_CURRENCIES = [
 const CURRENCY_TO_COUNTRY: Record<string, string> = {
   NGN: 'NG',
   USD: 'US',
+  XOF: 'TG', // West African CFA — flagged with Togo (our launch market)
   GBP: 'GB',
   EUR: 'EU', // Council of Europe emoji
   CAD: 'CA',
@@ -127,6 +131,7 @@ export const MOCK_FX = true;
 const FX_RATES_FROM_USD: Record<string, number> = {
   USD: 1,
   NGN: 1500,
+  XOF: 600, // 1 USD ≈ 600 West African CFA franc
   GBP: 0.79,
   EUR: 0.93,
   CAD: 1.35,

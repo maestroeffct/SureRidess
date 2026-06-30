@@ -10,15 +10,13 @@ export type BrowseCountry = {
   currency: string;
 };
 
+// Initial launch markets. Eventually this list will be served from the
+// dashboard via /platform/supported-markets so admins can add/remove countries
+// without an app release — the bundled list stays as a build-time fallback.
 export const SUPPORTED_COUNTRIES: BrowseCountry[] = [
   { code: 'NG', name: 'Nigeria', currency: 'NGN' },
-  { code: 'GB', name: 'United Kingdom', currency: 'GBP' },
   { code: 'US', name: 'United States', currency: 'USD' },
-  { code: 'GH', name: 'Ghana', currency: 'GHS' },
-  { code: 'KE', name: 'Kenya', currency: 'KES' },
-  { code: 'ZA', name: 'South Africa', currency: 'ZAR' },
-  { code: 'CA', name: 'Canada', currency: 'CAD' },
-  { code: 'AU', name: 'Australia', currency: 'AUD' },
+  { code: 'TG', name: 'Togo', currency: 'XOF' },
 ];
 
 export const DEFAULT_COUNTRY = 'NG';

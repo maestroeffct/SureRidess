@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dimensions,
   StatusBar,
@@ -14,12 +14,7 @@ import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import { useBrowseCountry } from '@/providers/CountryProvider';
 import { useCurrency } from '@/providers/CurrencyProvider';
-import {
-  DEFAULT_COUNTRY,
-  findCountry,
-  flagForCountry,
-  SUPPORTED_COUNTRIES,
-} from '@/helpers/region';
+import { DEFAULT_COUNTRY, flagForCountry } from '@/helpers/region';
 
 const { width: W } = Dimensions.get('window');
 const GREEN = '#0A6A4B';
@@ -30,13 +25,20 @@ const GREEN_DARK = '#064030';
 // and Auth so it's the LAST thing new users see before signing up.
 export function CountrySelectScreen() {
   const navigation = useNavigation<any>();
-  const { country: currentCountry, setCountry } = useBrowseCountry();
+  const { country: currentCountry, setCountry, markets, refreshMarkets } =
+    useBrowseCountry();
   const { setCurrency } = useCurrency();
   const [selected, setSelected] = useState<string>(currentCountry || DEFAULT_COUNTRY);
 
+  // Pull fresh markets on mount — onboarding is exactly the moment a brand
+  // new install needs the latest list, before the user makes a choice.
+  useEffect(() => {
+    void refreshMarkets();
+  }, [refreshMarkets]);
+
   const finish = (code: string) => {
     setCountry(code);
-    const target = findCountry(code);
+    const target = markets.find(m => m.code === code);
     if (target) setCurrency(target.currency);
     navigation.replace('Auth');
   };
@@ -63,7 +65,7 @@ export function CountrySelectScreen() {
           </Typo>
 
           <View style={s.grid}>
-            {SUPPORTED_COUNTRIES.map(c => {
+            {markets.map(c => {
               const isSelected = selected === c.code;
               return (
                 <TouchableOpacity
@@ -92,7 +94,7 @@ export function CountrySelectScreen() {
 
         <View style={s.bottom}>
           <AppButton
-            title={`Continue with ${findCountry(selected)?.name ?? 'Nigeria'}`}
+            title={`Continue with ${markets.find(m => m.code === selected)?.name ?? 'Nigeria'}`}
             onPress={() => finish(selected)}
             style={s.cta}
           />

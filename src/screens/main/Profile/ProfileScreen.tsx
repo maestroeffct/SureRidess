@@ -25,11 +25,7 @@ import { useCurrency } from '@/providers/CurrencyProvider';
 import { useBrowseCountry } from '@/providers/CountryProvider';
 import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { SUPPORTED_CURRENCIES, symbolFor } from '@/helpers/currency';
-import {
-  findCountry,
-  flagForCountry,
-  SUPPORTED_COUNTRIES,
-} from '@/helpers/region';
+import { flagForCountry } from '@/helpers/region';
 import { CURRENT_BUILD_CODE, CURRENT_VERSION_NAME } from '@/config/appVersion';
 import dayjs from 'dayjs';
 
@@ -200,7 +196,12 @@ export const ProfileScreen = () => {
   const { preference, setPreference, colors } = useTheme();
 
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
-  const { country: browseCountry, setCountry: setBrowseCountry } = useBrowseCountry();
+  const {
+    country: browseCountry,
+    setCountry: setBrowseCountry,
+    markets,
+    refreshMarkets,
+  } = useBrowseCountry();
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
   const [logoutAlert, setLogoutAlert] = useState(false);
@@ -210,7 +211,7 @@ export const ProfileScreen = () => {
   const [switchAlert, setSwitchAlert] = useState(false);
   const [comingSoonAlert, setComingSoonAlert] = useState(false);
 
-  const browseCountryMeta = findCountry(browseCountry);
+  const browseCountryMeta = markets.find(m => m.code === browseCountry);
   const browseCountryFlag = flagForCountry(browseCountry);
   const currencySymbol = symbolFor(displayCurrency);
 
@@ -477,7 +478,10 @@ export const ProfileScreen = () => {
             label="Country"
             value={`${browseCountryFlag}  ${browseCountryMeta?.name ?? browseCountry}`}
             trailing="chevron"
-            onPress={() => setCountryPickerOpen(true)}
+            onPress={() => {
+              void refreshMarkets();
+              setCountryPickerOpen(true);
+            }}
             isFirst
           />
           <FieldRow
@@ -705,7 +709,7 @@ export const ProfileScreen = () => {
         visible={countryPickerOpen}
         title="Browse cars in"
         searchPlaceholder="Search country"
-        options={SUPPORTED_COUNTRIES.map(c => {
+        options={markets.map(c => {
           const flag = flagForCountry(c.code);
           return {
             label: `${flag ? `${flag}  ` : ''}${c.name}`,
@@ -717,7 +721,7 @@ export const ProfileScreen = () => {
         onSelect={opt => {
           const code = String(opt.value);
           setBrowseCountry(code);
-          const target = findCountry(code);
+          const target = markets.find(m => m.code === code);
           if (target) setDisplayCurrency(target.currency);
           setCountryPickerOpen(false);
         }}
