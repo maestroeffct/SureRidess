@@ -268,6 +268,13 @@ const BookingDetailsScreen = () => {
             label="Insurance"
             amount={formatMoney(payment?.insuranceFee)}
           />
+          {booking?.addons?.map(line => (
+            <PaymentSummaryRow
+              key={line.id}
+              label={line.quantity > 1 ? `${line.name} × ${line.quantity}` : line.name}
+              amount={formatMoney(line.lineTotal)}
+            />
+          ))}
           {(payment?.taxAmount ?? 0) > 0 && (
             <PaymentSummaryRow
               label="Tax"

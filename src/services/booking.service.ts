@@ -8,6 +8,19 @@ export type CreateBookingPayload = {
   dropoffLocationId: string;
   insuranceId?: string;
   paymentMethod?: 'ONLINE' | 'COLLECTION';
+  /** Provider-offered extras. Prices are server-side authoritative. */
+  addons?: Array<{ addonId: string; quantity?: number }>;
+};
+
+export type BookingAddOnLine = {
+  id: string;
+  addonId: string;
+  name: string;
+  unit: 'PER_RENTAL' | 'PER_DAY' | 'PER_HOUR';
+  pricePerUnit: number;
+  currency: string;
+  quantity: number;
+  lineTotal: number;
 };
 
 export type BookingSummary = {
@@ -60,9 +73,12 @@ export type BookingDetails = {
     dailyPrice?: number;
   } | null;
 
+  addons?: BookingAddOnLine[];
+
   payment: {
     basePrice: number;
     insuranceFee: number;
+    addonsFee?: number;
     taxAmount: number;
     totalPrice: number;
     currency: string;

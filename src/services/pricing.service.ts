@@ -1,9 +1,32 @@
 import { api } from './api';
 
+export type AddOnUnit = 'PER_RENTAL' | 'PER_DAY' | 'PER_HOUR';
+
+export type AddOnPickerItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  pricePerUnit: number;
+  currency: string;
+  unit: AddOnUnit;
+};
+
+export type PricingAddOnLine = {
+  addonId: string;
+  name: string;
+  unit: AddOnUnit;
+  pricePerUnit: number;
+  quantity: number;
+  lineTotal: number;
+  currency: string;
+};
+
 export type PricingPreview = {
   rentalDays: number;
   basePrice: number;
   insuranceFee: number;
+  addonsFee: number;
+  addonLines: PricingAddOnLine[];
   subtotal: number;
   taxAmount: number;
   taxRate: number;
@@ -20,6 +43,14 @@ export type PricingPreview = {
   minRentalDays: number;
 };
 
+/** Fetch the provider's add-on catalogue for a car, unauth. */
+export async function listCarAddons(carId: string): Promise<AddOnPickerItem[]> {
+  const response = await api.get<{ items: AddOnPickerItem[] }>(
+    `/rental/cars/${encodeURIComponent(carId)}/addons`,
+  );
+  return response.data.items ?? [];
+}
+
 export async function previewBookingPrice(params: {
   carId: string;
   pickupAt: string;
@@ -28,6 +59,9 @@ export async function previewBookingPrice(params: {
   countryId?: string;
   /** ISO 4217 — backend may honour or ignore (FX support TBD). */
   displayCurrency?: string;
+  /** Optional add-ons the customer picked at checkout. Prices are
+   *  authoritative from the server — client cannot spoof. */
+  addons?: Array<{ addonId: string; quantity?: number }>;
 }): Promise<PricingPreview> {
   if (__DEV__) {
     console.log(

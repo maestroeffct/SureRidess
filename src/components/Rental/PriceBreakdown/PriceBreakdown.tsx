@@ -48,7 +48,9 @@ export function PriceBreakdown({
     : fallbackDailyRate;
   const basePrice = pricing?.basePrice ?? (fallbackDailyRate && days ? fallbackDailyRate * days : 0);
   const insuranceFee = pricing?.insuranceFee ?? 0;
-  const subtotal = pricing?.subtotal ?? basePrice + insuranceFee;
+  const addonsFee = pricing?.addonsFee ?? 0;
+  const addonLines = pricing?.addonLines ?? [];
+  const subtotal = pricing?.subtotal ?? basePrice + insuranceFee + addonsFee;
   const taxes = pricing?.taxes ?? [];
   const taxAmount = pricing?.taxAmount ?? 0;
   const total = pricing?.totalPrice ?? subtotal + taxAmount;
@@ -76,7 +78,19 @@ export function PriceBreakdown({
         />
       )}
 
-      {(insuranceFee > 0 || taxAmount > 0) && (
+      {addonLines.map(line => (
+        <Row
+          key={line.addonId}
+          label={
+            line.quantity > 1
+              ? `${line.name} × ${line.quantity}`
+              : line.name
+          }
+          value={fmt(line.lineTotal)}
+        />
+      ))}
+
+      {(insuranceFee > 0 || addonsFee > 0 || taxAmount > 0) && (
         <>
           <View style={[s.dividerLight, { backgroundColor: colors.border }]} />
           <Row label="Subtotal" value={fmt(subtotal)} muted />
@@ -87,13 +101,15 @@ export function PriceBreakdown({
         taxes.map(tax => (
           <Row
             key={tax.code || tax.label}
-            label={`${tax.label}${tax.rate ? ` (${(tax.rate * 100).toFixed(0)}%)` : ''}`}
+            // Backend returns rate as a percentage already (7.5 = 7.5%), not
+            // a decimal — don't multiply by 100.
+            label={`${tax.label}${tax.rate ? ` (${tax.rate.toFixed(1)}%)` : ''}`}
             value={fmt(tax.amount)}
           />
         ))
       ) : taxAmount > 0 ? (
         <Row
-          label={`Tax${pricing?.taxRate ? ` (${(pricing.taxRate * 100).toFixed(0)}%)` : ''}`}
+          label={`Tax${pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}`}
           value={fmt(taxAmount)}
         />
       ) : null}

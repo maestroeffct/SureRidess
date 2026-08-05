@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -27,7 +27,12 @@ import { STRIPE_MERCHANT_ID, STRIPE_URL_SCHEME } from '@env';
 import { showError, showSuccess } from '@/helpers/toast';
 import { fetchMe } from '@/services/user.service';
 import { DEV_BYPASS_KYC_VERIFICATION } from '@/config/devKyc';
-import { previewBookingPrice, PricingPreview } from '@/services/pricing.service';
+import {
+  previewBookingPrice,
+  PricingPreview,
+  listCarAddons,
+  AddOnPickerItem,
+} from '@/services/pricing.service';
 import { PriceBreakdown } from '@/components/Rental/PriceBreakdown/PriceBreakdown';
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -65,10 +70,24 @@ const PaymentScreen = () => {
   const [showKycModal, setShowKycModal] = useState(false);
   const [pricing, setPricing] = useState<PricingPreview | null>(null);
   const [pricingLoading, setPricingLoading] = useState(false);
+  const [addonCatalog, setAddonCatalog] = useState<AddOnPickerItem[]>([]);
+  // addonId → quantity (>=1). Absent = not selected.
+  const [selectedAddons, setSelectedAddons] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (routeCar) setCar(routeCar);
   }, [routeCar]);
+
+  const addonsPayload = useMemo(
+    () =>
+      Object.entries(selectedAddons)
+        .filter(([, qty]) => qty > 0)
+        .map(([addonId, quantity]) => ({ addonId, quantity })),
+    [selectedAddons],
+  );
+  const addonsKey = addonsPayload
+    .map(a => `${a.addonId}:${a.quantity}`)
+    .join('|');
 
   useEffect(() => {
     const carId = vehicleId || car?.id;
@@ -83,6 +102,7 @@ const PaymentScreen = () => {
           returnAt: search.returnAt,
           insuranceId,
           displayCurrency: userCurrency,
+          addons: addonsPayload.length ? addonsPayload : undefined,
         });
         if (!cancelled) setPricing(result);
       } catch {
@@ -93,7 +113,22 @@ const PaymentScreen = () => {
     };
     fetchPricing();
     return () => { cancelled = true; };
-  }, [vehicleId, car?.id, search?.pickupAt, search?.returnAt, insuranceId, userCurrency]);
+  }, [vehicleId, car?.id, search?.pickupAt, search?.returnAt, insuranceId, userCurrency, addonsKey]);
+
+  useEffect(() => {
+    const carId = vehicleId || car?.id;
+    if (!carId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const items = await listCarAddons(carId);
+        if (!cancelled) setAddonCatalog(items);
+      } catch {
+        if (!cancelled) setAddonCatalog([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [vehicleId, car?.id]);
 
   useEffect(() => {
     const loadDetails = async () => {
@@ -169,8 +204,38 @@ const PaymentScreen = () => {
     const pickupLocationIdValue = routePickupLocationId || search?.pickupLocationId || car?.location?.id;
     const dropoffLocationIdValue = routeDropoffLocationId || routePickupLocationId || search?.dropoffLocationId || search?.pickupLocationId || car?.location?.id;
     if (!carId || !pickupAtValue || !returnAtValue || !pickupLocationIdValue || !dropoffLocationIdValue) return null;
-    return { carId, pickupAt: pickupAtValue, returnAt: returnAtValue, pickupLocationId: pickupLocationIdValue, dropoffLocationId: dropoffLocationIdValue, insuranceId, paymentMethod };
+    return {
+      carId,
+      pickupAt: pickupAtValue,
+      returnAt: returnAtValue,
+      pickupLocationId: pickupLocationIdValue,
+      dropoffLocationId: dropoffLocationIdValue,
+      insuranceId,
+      paymentMethod,
+      addons: addonsPayload.length ? addonsPayload : undefined,
+    };
   };
+
+  const toggleAddon = (addonId: string) =>
+    setSelectedAddons(prev => {
+      const next = { ...prev };
+      if (next[addonId]) delete next[addonId];
+      else next[addonId] = 1;
+      return next;
+    });
+
+  const bumpAddon = (addonId: string, delta: number) =>
+    setSelectedAddons(prev => {
+      const current = prev[addonId] ?? 0;
+      const nextQty = Math.max(0, Math.min(20, current + delta));
+      const next = { ...prev };
+      if (nextQty <= 0) delete next[addonId];
+      else next[addonId] = nextQty;
+      return next;
+    });
+
+  const unitLabel = (unit: AddOnPickerItem['unit']) =>
+    unit === 'PER_DAY' ? '/day' : unit === 'PER_HOUR' ? '/hour' : '';
 
   const getProfileStatus = (me: any) => {
     const user = me?.user ?? me?.data?.user ?? me?.data ?? me;
@@ -371,6 +436,68 @@ const PaymentScreen = () => {
               </Typo>
             </View>
           </SectionCard>
+
+          {/* Add-ons */}
+          {addonCatalog.length > 0 && (
+            <SectionCard title="Add-ons (Optional)" icon="add-circle-outline">
+              {addonCatalog.map(item => {
+                const qty = selectedAddons[item.id] ?? 0;
+                const isSelected = qty > 0;
+                return (
+                  <View key={item.id} style={s.addonRow}>
+                    <TouchableOpacity
+                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                      onPress={() => toggleAddon(item.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View
+                        style={[
+                          s.addonCheck,
+                          { borderColor: colors.border },
+                          isSelected && { borderColor: GREEN, backgroundColor: GREEN },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Icon name="checkmark" size={14} color="#fff" />
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Typo style={[s.addonName, { color: colors.textPrimary }]}>
+                          {item.name}
+                        </Typo>
+                        {item.description ? (
+                          <Typo style={[s.addonDesc, { color: colors.textSecondary }]}>
+                            {item.description}
+                          </Typo>
+                        ) : null}
+                        <Typo style={[s.addonPrice, { color: colors.textSecondary }]}>
+                          {fmtMoney(item.pricePerUnit, item.currency, { round: true })}
+                          {unitLabel(item.unit)}
+                        </Typo>
+                      </View>
+                    </TouchableOpacity>
+                    {isSelected && (
+                      <View style={s.qtyWrap}>
+                        <TouchableOpacity
+                          style={[s.qtyBtn, { borderColor: colors.border }]}
+                          onPress={() => bumpAddon(item.id, -1)}
+                        >
+                          <Icon name="remove" size={16} color={colors.textPrimary} />
+                        </TouchableOpacity>
+                        <Typo style={[s.qtyValue, { color: colors.textPrimary }]}>{qty}</Typo>
+                        <TouchableOpacity
+                          style={[s.qtyBtn, { borderColor: colors.border }]}
+                          onPress={() => bumpAddon(item.id, +1)}
+                        >
+                          <Icon name="add" size={16} color={colors.textPrimary} />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </SectionCard>
+          )}
 
           {/* Important Notes */}
           <SectionCard title="Important Notes" icon="information-circle-outline">
@@ -632,6 +759,36 @@ const s = StyleSheet.create({
   insuranceDesc: { fontSize: 12, marginTop: 2 },
   insuranceFee: { fontSize: 14, fontWeight: '700' },
   insuranceFeeActive: { color: GREEN },
+
+  /* add-ons */
+  addonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  addonCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addonName: { fontSize: 14, fontWeight: '600' },
+  addonDesc: { fontSize: 12, marginTop: 2 },
+  addonPrice: { fontSize: 12, marginTop: 4, fontWeight: '600' },
+  qtyWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  qtyBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyValue: { fontSize: 14, fontWeight: '700', minWidth: 16, textAlign: 'center' },
 
   /* notes */
   noteRow: {
