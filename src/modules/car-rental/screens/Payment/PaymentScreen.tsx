@@ -21,7 +21,12 @@ import { formatDate, formatTime } from '@/helpers/dateTime';
 import type { RentalCar, RentalInsurancePackage } from '@/types/rental';
 import { getCarWithFeatures, listCarProtectionPlans } from '@/services/rental.service';
 import { createBooking, confirmCollectionBooking } from '@/services/booking.service';
-import { createPaymentSheetSession, getPaymentConfig } from '@/services/payment.service';
+import {
+  createPaymentSheetSession,
+  getPaymentConfig,
+  listPaymentGateways,
+  type PaymentGatewayOption,
+} from '@/services/payment.service';
 import { initPaymentSheet, initStripe, presentPaymentSheet } from '@stripe/stripe-react-native';
 import { STRIPE_MERCHANT_ID, STRIPE_URL_SCHEME } from '@env';
 import { showError, showSuccess } from '@/helpers/toast';
@@ -61,7 +66,11 @@ const PaymentScreen = () => {
   const fmtMoney = useFormatMoney();
   const { mode, colors } = useTheme();
   const [car, setCar] = useState<RentalCar | undefined>(routeCar);
-  const [gateway, setGateway] = useState<'stripe' | 'flutterwave'>('stripe');
+  // Admin-configured payment gateways (fetched from /payments/gateways).
+  // gatewayKey is the identifier we pass back to the backend on session
+  // creation — the backend uses it to pick the right runtime adapter.
+  const [gateways, setGateways] = useState<PaymentGatewayOption[]>([]);
+  const [gatewayKey, setGatewayKey] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [createdBookingId, setCreatedBookingId] = useState<string | undefined>(
@@ -133,6 +142,22 @@ const PaymentScreen = () => {
     })();
     return () => { cancelled = true; };
   }, [vehicleId, car?.id]);
+
+  useEffect(() => {
+    if (paymentMethod !== 'ONLINE') return;
+    let cancelled = false;
+    listPaymentGateways()
+      .then(items => {
+        if (cancelled) return;
+        setGateways(items);
+        // Auto-select the default gateway, or the first one when no
+        // default is flagged.
+        const preferred = items.find(g => g.isDefault) ?? items[0];
+        if (preferred) setGatewayKey(preferred.gatewayKey);
+      })
+      .catch(() => { if (!cancelled) setGateways([]); });
+    return () => { cancelled = true; };
+  }, [paymentMethod]);
 
   useEffect(() => {
     const carId = vehicleId || car?.id;
@@ -207,10 +232,13 @@ const PaymentScreen = () => {
   const isConverted =
     !!currency && !!userCurrency && currency.toUpperCase() !== userCurrency.toUpperCase();
 
-  const paymentGateways = [
-    { id: 'stripe' as const, name: 'Stripe', logo: require('@/assets/images/stripe.png') },
-    { id: 'flutterwave' as const, name: 'Flutterwave', logo: require('@/assets/images/Flutterwave_Logo.png') },
-  ];
+  // Bundled logos for the well-known gateways; anything else falls back
+  // to the logoUrl the admin uploaded (or a placeholder if neither).
+  const gatewayLogoFor = (adapter: string): any => {
+    if (adapter === 'STRIPE') return require('@/assets/images/stripe.png');
+    if (adapter === 'FLUTTERWAVE') return require('@/assets/images/Flutterwave_Logo.png');
+    return null;
+  };
 
   const buildBookingPayload = () => {
     const carId = vehicleId || car?.id;
@@ -304,7 +332,19 @@ const PaymentScreen = () => {
 
   const handleBookVehicle = async () => {
     if (processingPayment) return;
-    if (gateway !== 'stripe') { showError('Flutterwave will be added later. Please use Stripe.'); return; }
+    const selectedGateway = gateways.find(g => g.gatewayKey === gatewayKey);
+    if (!selectedGateway) {
+      showError('Pick a payment method to continue.');
+      return;
+    }
+    // Only STRIPE has a mobile SDK wired today; other adapters need
+    // their own runtime integration before they can accept payment on
+    // the app. Admin-configured but not-yet-implemented gateways still
+    // render on the picker so the customer knows what's coming.
+    if (selectedGateway.provider !== 'STRIPE') {
+      showError(`${selectedGateway.displayName} isn't available in-app yet — pick another method.`);
+      return;
+    }
     const canProceed = await ensureProfileEligible();
     if (!canProceed) return;
     const bookingPayload = createdBookingId ? null : buildBookingPayload();
@@ -319,7 +359,10 @@ const PaymentScreen = () => {
         setCreatedBookingId(bookingId);
       }
       const config = await getPaymentConfig();
-      const session = await createPaymentSheetSession({ bookingId });
+      const session = await createPaymentSheetSession({
+        bookingId,
+        gatewayKey: selectedGateway.gatewayKey,
+      });
       const provider = (session.provider || config.provider || '').toUpperCase();
       if (provider !== 'STRIPE') { showError('Only Stripe payment is currently available.'); return; }
       const publishableKey = session.publishableKey || config.publishableKey;
@@ -590,41 +633,70 @@ const PaymentScreen = () => {
             </SectionCard>
           ) : (
             <SectionCard title="Payment Gateway" icon="card-outline">
-              {paymentGateways.map(gw => (
-                <TouchableOpacity
-                  key={gw.id}
-                  style={[
-                    s.gatewayRow,
-                    { borderColor: colors.border },
-                    gateway === gw.id && {
-                      borderColor: GREEN,
-                      backgroundColor: mode === 'dark' ? '#0F3027' : '#F0FDF4',
-                    },
-                  ]}
-                  onPress={() => setGateway(gw.id)}
-                >
-                  <View style={s.gatewayLeft}>
-                    <View
+              {gateways.length === 0 ? (
+                <View style={{ padding: 16 }}>
+                  <Typo style={{ color: colors.textSecondary, fontSize: 13 }}>
+                    No online payment methods are enabled. Ask support to
+                    finish setting up your region's payment provider.
+                  </Typo>
+                </View>
+              ) : (
+                gateways.map(gw => {
+                  const selected = gatewayKey === gw.gatewayKey;
+                  const localLogo = gatewayLogoFor(gw.runtimeAdapter);
+                  const supported = gw.provider === 'STRIPE';
+                  return (
+                    <TouchableOpacity
+                      key={gw.gatewayKey}
                       style={[
-                        s.gatewayLogoWrap,
-                        { backgroundColor: colors.background, borderColor: colors.border },
+                        s.gatewayRow,
+                        { borderColor: colors.border },
+                        selected && {
+                          borderColor: GREEN,
+                          backgroundColor: mode === 'dark' ? '#0F3027' : '#F0FDF4',
+                        },
                       ]}
+                      onPress={() => setGatewayKey(gw.gatewayKey)}
                     >
-                      <Image source={gw.logo} style={s.gatewayLogo} />
-                    </View>
-                    <Typo style={[s.gatewayName, { color: colors.textPrimary }]}>{gw.name}</Typo>
-                  </View>
-                  <View
-                    style={[
-                      s.radio,
-                      { borderColor: colors.border },
-                      gateway === gw.id && s.radioActive,
-                    ]}
-                  >
-                    {gateway === gw.id && <View style={s.radioDot} />}
-                  </View>
-                </TouchableOpacity>
-              ))}
+                      <View style={s.gatewayLeft}>
+                        <View
+                          style={[
+                            s.gatewayLogoWrap,
+                            { backgroundColor: colors.background, borderColor: colors.border },
+                          ]}
+                        >
+                          {localLogo ? (
+                            <Image source={localLogo} style={s.gatewayLogo} />
+                          ) : gw.logoUrl ? (
+                            <Image source={{ uri: gw.logoUrl }} style={s.gatewayLogo} />
+                          ) : (
+                            <Icon name="card-outline" size={22} color={colors.textSecondary} />
+                          )}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Typo style={[s.gatewayName, { color: colors.textPrimary }]}>
+                            {gw.displayName}
+                          </Typo>
+                          {!supported && (
+                            <Typo style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                              Coming soon in-app
+                            </Typo>
+                          )}
+                        </View>
+                      </View>
+                      <View
+                        style={[
+                          s.radio,
+                          { borderColor: colors.border },
+                          selected && s.radioActive,
+                        ]}
+                      >
+                        {selected && <View style={s.radioDot} />}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </SectionCard>
           )}
         </View>

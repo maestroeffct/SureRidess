@@ -24,10 +24,35 @@ export async function getPaymentConfig() {
   return response.data;
 }
 
-export async function createPaymentSheetSession(payload: PaymentSheetPayload) {
+export async function createPaymentSheetSession(payload: PaymentSheetPayload & { gatewayKey?: string }) {
   const response = await api.post<PaymentSheetSession>(
     '/payments/payment-sheet',
     payload,
   );
   return response.data;
+}
+
+export type PaymentGatewayOption = {
+  gatewayKey: string;
+  displayName: string;
+  logoUrl: string | null;
+  runtimeAdapter: 'STRIPE' | 'PAYSTACK' | 'FLUTTERWAVE' | string;
+  provider: 'STRIPE' | 'PAYSTACK' | 'FLUTTERWAVE' | string | null;
+  mode: string;
+  isDefault: boolean;
+  publishableKey: string | null;
+  merchantDisplayName?: string;
+};
+
+/**
+ * Enabled + runtime-supported payment gateways as configured by admin in
+ * the third-party settings. The mobile checkout renders one tile per
+ * entry; falls back to whatever getPaymentConfig() returns if the list
+ * is empty (legacy backend without the /payments/gateways endpoint).
+ */
+export async function listPaymentGateways(): Promise<PaymentGatewayOption[]> {
+  const response = await api.get<{ items: PaymentGatewayOption[] }>(
+    '/payments/gateways',
+  );
+  return response.data.items ?? [];
 }
