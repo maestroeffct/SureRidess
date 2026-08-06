@@ -28,7 +28,6 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { showError, showSuccess } from '@/helpers/toast';
 import { loginUser } from '@/services/auth.service';
 import { DEV_AUTH_ENABLED, DEV_TEST_CREDENTIALS } from '@/config/devAuth';
-import { getGoogleAuthErrorMessage, signInOrSignUpWithGoogle } from '@/services/socialAuth.service';
 import { sendPhoneOtp } from '@/services/firebasePhoneAuth.service';
 import { AuthStackParamList } from '@/navigation/Auth/AuthNavigator';
 
@@ -44,7 +43,6 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [phoneCode, setPhoneCode] = useState('+234');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -115,23 +113,6 @@ export function LoginScreen() {
       showError(err?.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleAuth = async () => {
-    try {
-      setGoogleLoading(true);
-      const res = await signInOrSignUpWithGoogle();
-      await login(res.token, res.user);
-      if (res.isNewUser || res.needsProfileCompletion) {
-        showSuccess('Signed in with Google. Complete your profile to continue.');
-        return;
-      }
-      showSuccess('Signed in with Google');
-    } catch (error) {
-      showError(getGoogleAuthErrorMessage(error));
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -290,21 +271,6 @@ export function LoginScreen() {
 
           <TouchableOpacity
             style={[s.googleBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
-            onPress={handleGoogleAuth}
-            activeOpacity={0.8}
-            disabled={googleLoading}
-          >
-            <Image
-              source={require('@/assets/images/google-logo.png')}
-              style={s.googleIcon}
-            />
-            <Typo style={[s.googleText, { color: colors.textPrimary }]}>
-              {googleLoading ? 'Signing in…' : 'Continue with Google'}
-            </Typo>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[s.googleBtn, { borderColor: colors.border, backgroundColor: colors.surface, marginTop: 10 }]}
             onPress={() => setMode(m => (m === 'email' ? 'phone' : 'email'))}
             activeOpacity={0.8}
           >
