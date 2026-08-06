@@ -120,15 +120,16 @@ export function flagForCurrency(currency?: string | null): string {
 }
 
 // ── FX rates ────────────────────────────────────────────────────────────────
-// All rates expressed as "1 USD = X target". So 1 USD = 1500 NGN.
-// IMPORTANT: these are static placeholder rates for display purposes ONLY.
-// The actual amount charged at Stripe checkout is in the provider's currency
-// (the backend doesn't yet support FX). When the backend implements FX per
-// docs/backend-multi-currency.md, set MOCK_FX = false and the backend's
-// already-converted amounts will be used as-is.
-export const MOCK_FX = true;
+// Rates expressed as "1 USD = X target". The MOCK table is the bundled
+// fallback used when the backend's /platform/fx-rates endpoint hasn't
+// hydrated yet (first launch / no network). Once `setLiveFxRatesFromUsd` is
+// called, those rates take over.
+//
+// IMPORTANT: these convert prices for DISPLAY ONLY. The actual amount charged
+// at Stripe checkout uses the rate the backend persisted into FxQuote at
+// preview time — it's the only source of truth for what gets billed.
 
-const FX_RATES_FROM_USD: Record<string, number> = {
+const MOCK_FX_RATES_FROM_USD: Record<string, number> = {
   USD: 1,
   NGN: 1500,
   XOF: 600, // 1 USD ≈ 600 West African CFA franc
@@ -141,18 +142,36 @@ const FX_RATES_FROM_USD: Record<string, number> = {
   ZAR: 18.5,
 };
 
+let liveRatesFromUsd: Record<string, number> | null = null;
+
+/**
+ * Called by fxRates.service.ts after fetching /platform/fx-rates. Subsequent
+ * convertMoney calls use these live rates; bundled MOCK rates remain as a
+ * fallback when the live map doesn't cover the requested currency.
+ */
+export function setLiveFxRatesFromUsd(rates: Record<string, number>) {
+  liveRatesFromUsd = rates;
+}
+
+function rateFor(currency: string): number | undefined {
+  // Live rates take priority; fall back to bundled mock when a currency isn't
+  // in the response (e.g. older mobile build, newer backend currency).
+  const live = liveRatesFromUsd?.[currency];
+  if (typeof live === 'number' && isFinite(live) && live > 0) return live;
+  return MOCK_FX_RATES_FROM_USD[currency];
+}
+
 export function convertMoney(
   amount: number,
   fromCurrency?: string | null,
   toCurrency?: string | null,
 ): number {
-  if (!MOCK_FX) return amount;
   if (!fromCurrency || !toCurrency) return amount;
   const from = fromCurrency.toUpperCase();
   const to = toCurrency.toUpperCase();
   if (from === to) return amount;
-  const fromRate = FX_RATES_FROM_USD[from];
-  const toRate = FX_RATES_FROM_USD[to];
+  const fromRate = rateFor(from);
+  const toRate = rateFor(to);
   if (!fromRate || !toRate) return amount; // unknown currency, don't convert
   return (amount / fromRate) * toRate;
 }

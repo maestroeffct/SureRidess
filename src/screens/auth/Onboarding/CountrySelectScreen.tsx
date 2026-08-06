@@ -11,7 +11,6 @@ import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 
 import { Typo } from '@/components/AppText/Typo';
-import { AppButton } from '@/components/AppButton/CustomButton';
 import { useBrowseCountry } from '@/providers/CountryProvider';
 import { useCurrency } from '@/providers/CurrencyProvider';
 import { DEFAULT_COUNTRY, flagForCountry } from '@/helpers/region';
@@ -93,11 +92,18 @@ export function CountrySelectScreen() {
         </View>
 
         <View style={s.bottom}>
-          <AppButton
-            title={`Continue with ${markets.find(m => m.code === selected)?.name ?? 'Nigeria'}`}
-            onPress={() => finish(selected)}
+          {/* Custom CTA — AppButton's primary variant forces white text, which
+              would be invisible on this white-on-green pill. */}
+          <TouchableOpacity
             style={s.cta}
-          />
+            onPress={() => finish(selected)}
+            activeOpacity={0.85}
+          >
+            <Typo style={s.ctaText}>
+              Continue with{' '}
+              {markets.find(m => m.code === selected)?.name ?? 'Nigeria'}
+            </Typo>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </View>
@@ -198,5 +204,17 @@ const s = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
-  cta: { backgroundColor: '#fff' },
+  cta: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  ctaText: {
+    color: GREEN_DARK,
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

@@ -8,6 +8,7 @@ import React, {
 
 import { getItem, setItem, StorageKeys } from '@/helpers/storage';
 import { convertMoney, currencyForCountry, formatMoney } from '@/helpers/currency';
+import { hydrateFxRates } from '@/services/fxRates.service';
 
 type CurrencyContextValue = {
   /** User's chosen display currency (3-letter ISO code, e.g. NGN, USD). */
@@ -49,6 +50,11 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {})
       .finally(() => setReady(true));
+
+    // Warm the live FX rate cache so any convertMoney() / fmtMoney() call has
+    // real rates to work with. Fire-and-forget — failure falls back to the
+    // bundled mock rates and the UI keeps rendering.
+    void hydrateFxRates();
   }, []);
 
   const setCurrency = useCallback((code: string) => {
