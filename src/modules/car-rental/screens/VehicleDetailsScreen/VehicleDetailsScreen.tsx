@@ -38,7 +38,10 @@ import { ImageSize, optimizeImageUrl } from '@/helpers/image';
 
 const GREEN = '#0A6A4B';
 const SW = Dimensions.get('window').width;
-const HERO_H = 300;
+// Match the Payment screen hero height so the same car looks the
+// same size across both screens — customers spot inconsistencies
+// on the second scroll.
+const HERO_H = 340;
 
 const VehicleDetailsScreen = () => {
   const navigation = useNavigation<any>();

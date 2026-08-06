@@ -921,12 +921,13 @@ export default PaymentScreen;
 function SectionCard({ title, icon, children }: { title: string; icon?: string; children: React.ReactNode }) {
   const { colors } = useTheme();
   return (
-    <View style={[p.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={[p.sectionHeader, { borderBottomColor: colors.border }]}>
+    <View style={p.section}>
+      <View style={p.sectionHeader}>
         {icon && <Icon name={icon as any} size={16} color={GREEN} />}
         <Typo style={[p.sectionTitle, { color: colors.textPrimary }]}>{title}</Typo>
       </View>
-      {children}
+      <View style={p.sectionBody}>{children}</View>
+      <View style={[p.sectionDivider, { backgroundColor: colors.border }]} />
     </View>
   );
 }
@@ -942,23 +943,31 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 const p = StyleSheet.create({
-  sectionCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
+  // Flat section — no card, no border box. Header is just an icon +
+  // title; body renders directly on the screen with the same 16px
+  // horizontal rhythm; hairline divider under to separate sections.
+  section: {
+    marginTop: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    paddingTop: 18,
+    paddingBottom: 10,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '700' },
+  sectionTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.1 },
+  sectionBody: {
+    // Body children keep their own horizontal padding (they were
+    // designed for the card interior). No extra padding here.
+  },
+  sectionDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: 8,
+    marginHorizontal: 16,
+    opacity: 0.6,
+  },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
