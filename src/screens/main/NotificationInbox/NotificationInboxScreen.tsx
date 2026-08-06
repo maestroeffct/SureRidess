@@ -172,7 +172,7 @@ export function NotificationInboxScreen() {
       }
 
       if (target === 'kyc') {
-        nav.navigate('KYCFlow');
+        nav.navigate('KYCFlow', { screen: 'KycStatus' });
         return;
       }
 

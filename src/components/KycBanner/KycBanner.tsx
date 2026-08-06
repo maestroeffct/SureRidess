@@ -62,8 +62,12 @@ export const KycBanner = () => {
     setSnoozed(true);
   };
 
+  // Always land on the status screen — it branches on state:
+  //   pending  → shows "In review" (no docs restart)
+  //   rejected → shows reason + Re-upload
+  //   start    → Start button that navigates into PersonalInfo
   const openKyc = () =>
-    navigation.navigate('KYCFlow' as any);
+    navigation.navigate('KYCFlow' as any, { screen: 'KycStatus' });
 
   const palette = {
     unverified: {

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { AppAlert } from '@/components/AppAlert/AppAlert';
 import Icon from '@react-native-vector-icons/ionicons';
@@ -47,25 +48,35 @@ const BookingDetailsScreen = () => {
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelAlert, setCancelAlert] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!bookingId) return;
-
-    const load = async () => {
-      try {
-        const data = await fetchBookingDetails(bookingId);
-        setBooking(data);
-      } catch (e) {
-        console.warn('[BookingDetails] Failed to load booking', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    try {
+      const data = await fetchBookingDetails(bookingId);
+      setBooking(data);
+    } catch (e) {
+      console.warn('[BookingDetails] Failed to load booking', e);
+    } finally {
+      setLoading(false);
+    }
   }, [bookingId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const formatLabel = (value?: string) => {
     if (!value) return '';
@@ -163,7 +174,16 @@ const BookingDetailsScreen = () => {
 
   return (
     <ScreenWrapper padded={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#0A6A4B']}
+          />
+        }
+      >
         {/* HEADER */}
         <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>

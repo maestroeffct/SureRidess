@@ -156,7 +156,7 @@ export function RootNavigator() {
               onPress={() => {
                 setShowKycPrompt(false);
                 setKycPromptDismissed(true);
-                navigate('KYCFlow');
+                navigate('KYCFlow', { screen: 'KycStatus' });
               }}
             />
             <AppButton

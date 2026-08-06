@@ -409,7 +409,7 @@ export const ProfileScreen = () => {
                 kycCanOpen ? (
                   <TouchableOpacity
                     activeOpacity={0.75}
-                    onPress={() => navigation.navigate('KYCFlow')}
+                    onPress={() => navigation.navigate('KYCFlow', { screen: 'KycStatus' })}
                   >
                     {kycBadge}
                   </TouchableOpacity>

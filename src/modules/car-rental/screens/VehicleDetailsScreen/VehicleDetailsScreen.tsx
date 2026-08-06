@@ -592,7 +592,7 @@ const VehicleDetailsScreen = () => {
           }
           onPress={
             !isKycVerified
-              ? () => navigation.navigate('KYCFlow' as any)
+              ? () => navigation.navigate('KYCFlow' as any, { screen: 'KycStatus' })
               : handleProceedToPayment
           }
           style={s.bookBtn}

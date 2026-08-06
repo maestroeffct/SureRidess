@@ -5,6 +5,7 @@ import {
   FlatList,
   Image,
   ImageBackground,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -50,7 +51,7 @@ const CATEGORY_MAP: Record<string, string> = {
 const CarRentalHomeScreen = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { colors, mode } = useTheme();
   const { count: unreadCount } = useUnreadNotifications();
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
@@ -63,6 +64,7 @@ const CarRentalHomeScreen = () => {
 
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
@@ -73,6 +75,21 @@ const CarRentalHomeScreen = () => {
   const firstName = user?.firstName?.trim() || 'there';
   const avatarText =
     `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'SU';
+
+  // Pull-to-refresh: reloads cars, refetches the user (KYC status may
+  // have flipped on the server), and re-syncs markets.
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        listRentalCars({ country: browseCountry }).then(setCars).catch(() => {}),
+        refreshUser().catch(() => {}),
+        refreshMarkets().catch(() => {}),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const openSearchLocation = () =>
     navigation.navigate('CarRentalFlowNavigator', { screen: 'SearchLocation' });
@@ -136,6 +153,14 @@ const CarRentalHomeScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#fff"
+            colors={['#0A6A4B']}
+          />
+        }
       >
         {/* ──────────────── HERO ──────────────── */}
         <View style={s.heroWrap}>
