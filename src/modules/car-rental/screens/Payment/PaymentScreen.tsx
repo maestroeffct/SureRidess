@@ -6,6 +6,7 @@ import {
   Image,
   Dimensions,
   Modal,
+  RefreshControl,
   StyleSheet,
   StatusBar,
 } from 'react-native';
@@ -100,6 +101,7 @@ const PaymentScreen = () => {
   // insurance's name/tier/deductible even when the caller only handed us
   // the insurance ID).
   const [protectionPlans, setProtectionPlans] = useState<RentalInsurancePackage[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (routeCar) setCar(routeCar);
@@ -274,6 +276,57 @@ const PaymentScreen = () => {
     if (adapter === 'STRIPE') return require('@/assets/images/stripe.png');
     if (adapter === 'FLUTTERWAVE') return require('@/assets/images/Flutterwave_Logo.png');
     return null;
+  };
+
+  // Pull-to-refresh: re-fetches everything the checkout depends on —
+  // gateways (admin may have just enabled Flutterwave), protection
+  // plans (admin just APPROVED one), add-ons (provider added extras),
+  // live pricing (rate/tax changes), and the car (image/features
+  // updated). All in parallel; individual failures are swallowed so
+  // one down endpoint doesn't kill the whole refresh.
+  const handleRefresh = async () => {
+    const carId = vehicleId || car?.id;
+    setRefreshing(true);
+    try {
+      const tasks: Promise<unknown>[] = [];
+      if (paymentMethod === 'ONLINE') {
+        tasks.push(
+          listPaymentGateways()
+            .then(items => {
+              setGateways(items);
+              if (items.length && !items.find(g => g.gatewayKey === gatewayKey)) {
+                const preferred = items.find(g => g.isDefault) ?? items[0];
+                setGatewayKey(preferred.gatewayKey);
+              }
+            })
+            .catch(() => {}),
+        );
+      }
+      if (carId) {
+        tasks.push(
+          listCarProtectionPlans(carId).then(setProtectionPlans).catch(() => {}),
+          listCarAddons(carId).then(setAddonCatalog).catch(() => {}),
+          getCarWithFeatures(carId).then(setCar).catch(() => {}),
+        );
+      }
+      if (carId && search?.pickupAt && search?.returnAt) {
+        tasks.push(
+          previewBookingPrice({
+            carId,
+            pickupAt: search.pickupAt,
+            returnAt: search.returnAt,
+            insuranceId,
+            displayCurrency: userCurrency,
+            addons: addonsPayload.length ? addonsPayload : undefined,
+          })
+            .then(setPricing)
+            .catch(() => {}),
+        );
+      }
+      await Promise.all(tasks);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const buildBookingPayload = () => {
@@ -490,7 +543,21 @@ const PaymentScreen = () => {
     <View style={[s.root, { backgroundColor: colors.background }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#fff"
+            colors={['#0A6A4B']}
+            // Sit below the translucent hero so the spinner is visible
+            // against the dark image, not swallowed by the notch.
+            progressViewOffset={60}
+          />
+        }
+      >
         {/* ── IMAGE HERO ── */}
         <View style={s.hero}>
           <ScrollView
