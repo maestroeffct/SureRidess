@@ -13,6 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { WebView, type WebViewNavigation } from 'react-native-webview';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -81,6 +82,15 @@ const PaymentScreen = () => {
     route?.params?.bookingId,
   );
   const [showKycModal, setShowKycModal] = useState(false);
+  // Flutterwave hosted-checkout URL; when non-null we render an in-app
+  // WebView modal and watch for the redirect_url to fire.
+  const [flutterwaveUrl, setFlutterwaveUrl] = useState<string | null>(null);
+  // BookingId that owns the open Flutterwave modal — captured so the
+  // navigation listener can hand it off to BookingStatus without racing
+  // React state updates.
+  const [flutterwaveBookingId, setFlutterwaveBookingId] = useState<string | null>(
+    null,
+  );
   const [pricing, setPricing] = useState<PricingPreview | null>(null);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [addonCatalog, setAddonCatalog] = useState<AddOnPickerItem[]>([]);
@@ -363,11 +373,14 @@ const PaymentScreen = () => {
       showError('Pick a payment method to continue.');
       return;
     }
-    // Only STRIPE has a mobile SDK wired today; other adapters need
-    // their own runtime integration before they can accept payment on
-    // the app. Admin-configured but not-yet-implemented gateways still
-    // render on the picker so the customer knows what's coming.
-    if (selectedGateway.provider !== 'STRIPE') {
+    // STRIPE uses the native PaymentSheet SDK; FLUTTERWAVE uses a hosted
+    // checkout URL rendered in an in-app WebView. Any other adapter
+    // still surfaces on the picker but rejects here — admin-configured
+    // but not-yet-implemented gateways return a clean error.
+    if (
+      selectedGateway.provider !== 'STRIPE' &&
+      selectedGateway.provider !== 'FLUTTERWAVE'
+    ) {
       showError(`${selectedGateway.displayName} isn't available in-app yet — pick another method.`);
       return;
     }
@@ -390,7 +403,23 @@ const PaymentScreen = () => {
         gatewayKey: selectedGateway.gatewayKey,
       });
       const provider = (session.provider || config.provider || '').toUpperCase();
-      if (provider !== 'STRIPE') { showError('Only Stripe payment is currently available.'); return; }
+
+      if (provider === 'FLUTTERWAVE') {
+        // `paymentIntentClientSecret` doubles as the hosted checkout URL
+        // for Flutterwave (see backend/flutterwave.gateway.ts). We show
+        // it in a WebView; the actual paymentStatus flip happens via
+        // the /payments/webhook/flutterwave callback — this is UX only.
+        const checkoutUrl = session.paymentIntentClientSecret;
+        if (!checkoutUrl) {
+          showError('Flutterwave checkout URL is missing.');
+          return;
+        }
+        setFlutterwaveBookingId(bookingId);
+        setFlutterwaveUrl(checkoutUrl);
+        return;
+      }
+
+      if (provider !== 'STRIPE') { showError('Only Stripe and Flutterwave are currently supported.'); return; }
       const publishableKey = session.publishableKey || config.publishableKey;
       if (!publishableKey) { showError('Stripe publishable key is missing.'); return; }
       if (__DEV__) {
@@ -412,6 +441,49 @@ const PaymentScreen = () => {
       if (message === 'Complete your profile before booking') { showError('Complete your profile before booking.'); setShowKycModal(true); }
       else showError(message || 'Unable to process payment right now');
     } finally { setProcessingPayment(false); }
+  };
+
+  const closeFlutterwaveModal = () => {
+    setFlutterwaveUrl(null);
+    setFlutterwaveBookingId(null);
+    setProcessingPayment(false);
+  };
+
+  // Watches the WebView's URL — Flutterwave redirects back to
+  // ${PUBLIC_APP_URL}/payments/flutterwave/return?status=…&tx_ref=…
+  // when the customer finishes (or cancels) on their hosted page. The
+  // webhook is what actually flips paymentStatus server-side; this
+  // handler only navigates the app off the checkout screen.
+  const handleFlutterwaveNav = (event: WebViewNavigation) => {
+    const url = event?.url || '';
+    if (!url) return;
+    const isReturn =
+      url.includes('/payments/flutterwave/return') ||
+      /[?&]status=(successful|success|cancelled|canceled|failed)\b/i.test(url) ||
+      /[?&]tx_ref=/i.test(url);
+    if (!isReturn) return;
+
+    const lower = url.toLowerCase();
+    const bookingId = flutterwaveBookingId;
+    if (lower.includes('status=successful') || lower.includes('status=success')) {
+      closeFlutterwaveModal();
+      showSuccess('Payment received — confirming with our servers…');
+      navigation.navigate('BookingStatus', {
+        status: 'success',
+        bookingId: bookingId ?? undefined,
+      });
+      return;
+    }
+    if (lower.includes('status=cancelled') || lower.includes('status=canceled')) {
+      closeFlutterwaveModal();
+      showError('Payment cancelled');
+      return;
+    }
+    if (lower.includes('status=failed')) {
+      closeFlutterwaveModal();
+      showError('Payment failed');
+      return;
+    }
   };
 
   return (
@@ -670,7 +742,7 @@ const PaymentScreen = () => {
                 gateways.map(gw => {
                   const selected = gatewayKey === gw.gatewayKey;
                   const localLogo = gatewayLogoFor(gw.runtimeAdapter);
-                  const supported = gw.provider === 'STRIPE';
+                  const supported = gw.provider === 'STRIPE' || gw.provider === 'FLUTTERWAVE';
                   return (
                     <TouchableOpacity
                       key={gw.gatewayKey}
@@ -787,6 +859,56 @@ const PaymentScreen = () => {
               onPress={() => setShowKycModal(false)}
             />
           </View>
+        </View>
+      </Modal>
+
+      {/* ── FLUTTERWAVE CHECKOUT WEBVIEW ── */}
+      <Modal
+        visible={!!flutterwaveUrl}
+        animationType="slide"
+        hardwareAccelerated
+        presentationStyle="fullScreen"
+        onRequestClose={closeFlutterwaveModal}
+      >
+        <View style={[s.fwRoot, { backgroundColor: colors.background }]}>
+          <View
+            style={[
+              s.fwHeader,
+              {
+                paddingTop: insets.top + 8,
+                borderBottomColor: colors.border,
+                backgroundColor: colors.surface,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={closeFlutterwaveModal}
+              style={s.fwCloseBtn}
+              hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+            >
+              <Icon name="close" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <Typo style={[s.fwTitle, { color: colors.textPrimary }]}>
+              Complete Payment
+            </Typo>
+            <View style={{ width: 32 }} />
+          </View>
+          {flutterwaveUrl ? (
+            <WebView
+              source={{ uri: flutterwaveUrl }}
+              onNavigationStateChange={handleFlutterwaveNav}
+              onShouldStartLoadWithRequest={req => {
+                handleFlutterwaveNav({ url: req.url } as WebViewNavigation);
+                return true;
+              }}
+              startInLoadingState
+              javaScriptEnabled
+              domStorageEnabled
+              thirdPartyCookiesEnabled
+              setSupportMultipleWindows={false}
+              style={{ flex: 1, backgroundColor: colors.background }}
+            />
+          ) : null}
         </View>
       </Modal>
     </View>
@@ -1006,4 +1128,23 @@ const s = StyleSheet.create({
   },
   kycTitle: { fontSize: 18, fontWeight: '800' },
   kycHint: { fontSize: 13, textAlign: 'center', lineHeight: 20 },
+
+  /* flutterwave webview modal */
+  fwRoot: { flex: 1 },
+  fwHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+  },
+  fwCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fwTitle: { fontSize: 15, fontWeight: '700' },
 });
