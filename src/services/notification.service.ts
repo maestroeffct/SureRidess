@@ -1,10 +1,91 @@
 import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
+import notifee, {
+  AndroidImportance,
+  AndroidVisibility,
+} from '@notifee/react-native';
 import { Platform } from 'react-native';
 import { api } from './api';
 import { navigate } from '@/navigation/navigationRef';
 import { showNotificationToast } from '@/helpers/toast';
+
+// Must match the channel ID declared in AndroidManifest.xml + created in
+// MainApplication.kt. Notifee creates it again here defensively in case the
+// app is running on a fresh install where the native onCreate didn't get
+// the chance to fire before the first push arrives.
+const ANDROID_CHANNEL_ID = 'sureride_default';
+
+let channelEnsured = false;
+async function ensureAndroidChannel() {
+  if (Platform.OS !== 'android' || channelEnsured) return;
+  await notifee.createChannel({
+    id: ANDROID_CHANNEL_ID,
+    name: 'General',
+    importance: AndroidImportance.HIGH, // heads-up banner + sound
+    visibility: AndroidVisibility.PUBLIC,
+    sound: 'default',
+    vibration: true,
+  });
+  channelEnsured = true;
+}
+
+async function displayLocalBanner(
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+  imageUrl?: string,
+) {
+  try {
+    await ensureAndroidChannel();
+    await notifee.displayNotification({
+      title,
+      body,
+      data: data
+        ? Object.fromEntries(
+            Object.entries(data)
+              .filter(([, v]) => v != null)
+              .map(([k, v]) => [k, String(v)]),
+          )
+        : undefined,
+      android: {
+        channelId: ANDROID_CHANNEL_ID,
+        smallIcon: 'ic_launcher',
+        color: '#0A6A4B',
+        pressAction: { id: 'default' },
+        importance: AndroidImportance.HIGH,
+        // bigPicture = large expandable image below the text.
+        // Notifee downloads the URL and caches it.
+        ...(imageUrl
+          ? {
+              largeIcon: imageUrl,
+              style: { type: 1 /* BIG_PICTURE */, picture: imageUrl } as any,
+            }
+          : {}),
+      },
+      ios: {
+        // Force banner + sound when the app is in foreground. iOS suppresses
+        // these by default for FCM-pushed messages.
+        foregroundPresentationOptions: {
+          banner: true,
+          list: true,
+          sound: true,
+          badge: true,
+        },
+        ...(imageUrl
+          ? {
+              attachments: [{ url: imageUrl }],
+            }
+          : {}),
+      },
+    });
+  } catch (err) {
+    // Notifee failure shouldn't swallow the message — fall back to the
+    // existing in-app toast so the user still sees something.
+    console.warn('[notifee] displayNotification failed', err);
+    showNotificationToast(title, body);
+  }
+}
 
 export type NotificationPayload = {
   title?: string;
@@ -110,13 +191,37 @@ function bindNotificationHandlers() {
   unsubscribeForeground?.();
   unsubscribeOpenedApp?.();
 
-  // Foreground: show a toast (OS does NOT show a banner when app is foreground)
+  // Foreground: FCM does NOT auto-show a banner when the app is open. Use
+  // Notifee to display a heads-up local notification so the user sees the
+  // SAME banner experience in foreground as in background.
   unsubscribeForeground = messaging().onMessage(async msg => {
     const title = msg.notification?.title ?? 'Notification';
     const body = msg.notification?.body ?? '';
-    showNotificationToast(title, body, () =>
-      routeFromNotificationData(msg.data as Record<string, unknown>),
+    // FCM puts the image URL on either notification.imageUrl (v1
+    // canonical) or notification.android.imageUrl depending on payload
+    // shape. data.imageUrl is our own fallback.
+    const imageUrl =
+      (msg.notification as any)?.imageUrl ||
+      (msg.notification as any)?.android?.imageUrl ||
+      (msg.data?.imageUrl as string | undefined);
+    void displayLocalBanner(
+      title,
+      body,
+      msg.data as Record<string, unknown>,
+      imageUrl,
     );
+  });
+
+  // When the user taps a Notifee-displayed banner from inside the app, route
+  // them the same way as a system-tray tap would.
+  notifee.onForegroundEvent(({ type, detail }) => {
+    // type 1 = PRESS (notifee's EventType enum — kept as a literal so we don't
+    // need to import the enum just for this one comparison).
+    if (type === 1) {
+      routeFromNotificationData(
+        detail.notification?.data as Record<string, unknown> | undefined,
+      );
+    }
   });
 
   // Tapped from system tray while app was backgrounded

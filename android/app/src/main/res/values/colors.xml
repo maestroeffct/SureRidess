@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand green — used by the status-bar tint on push notifications
+         via default_notification_color meta-data in AndroidManifest. -->
+    <color name="notification_color">#0A6A4B</color>
+</resources>
