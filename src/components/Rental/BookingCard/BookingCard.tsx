@@ -28,6 +28,11 @@ type Props = {
    *  changes to "Complete payment" and tap jumps to the payment sheet
    *  instead of the details screen. */
   needsPayment?: boolean;
+  /** For COMPLETED bookings — true if the customer already left a
+   *  review. Card shows either a "Reviewed ★ X" chip or a "Write
+   *  review" CTA depending on this + reviewRating. */
+  hasReview?: boolean;
+  reviewRating?: number | null;
 };
 
 // Tint the "what's next" pill with the accent at low opacity. Hex + 1A/26
@@ -49,6 +54,8 @@ export const BookingCard = ({
   totalPrice,
   currency = 'NGN',
   needsPayment,
+  hasReview,
+  reviewRating,
 }: Props) => {
   const { colors, mode } = useTheme();
   const fmtMoney = useFormatMoney();
@@ -150,6 +157,19 @@ export const BookingCard = ({
             <View style={s.payCta}>
               <Typo style={s.payCtaText}>Complete payment</Typo>
               <Icon name="arrow-forward" size={12} color="#fff" />
+            </View>
+          ) : statusInfo.bucket === 'past' && status?.toUpperCase() === 'COMPLETED' && !hasReview ? (
+            <View style={s.reviewCta}>
+              <Icon name="star-outline" size={12} color="#fff" />
+              <Typo style={s.payCtaText}>Write review</Typo>
+            </View>
+          ) : hasReview && typeof reviewRating === 'number' ? (
+            <View style={s.reviewedChip}>
+              <Icon name="star" size={11} color="#F59E0B" />
+              <Typo style={[s.footerMeta, { color: colors.textPrimary, fontWeight: '700' }]}>
+                {reviewRating.toFixed(1)}
+              </Typo>
+              <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>Reviewed</Typo>
             </View>
           ) : (
             <>
@@ -263,5 +283,19 @@ const s = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
+  },
+  reviewCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#0A6A4B',
+  },
+  reviewedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });

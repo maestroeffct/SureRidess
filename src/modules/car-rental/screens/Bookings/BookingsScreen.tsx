@@ -31,6 +31,8 @@ type RawBooking = {
   currency?: string;
   pickupAt: string;
   returnAt: string;
+  hasReview?: boolean;
+  reviewRating?: number | null;
   car?: {
     brand: string;
     model: string;
@@ -288,6 +290,8 @@ const BookingsScreen = () => {
               totalPrice={b.totalPrice}
               currency={b.currency ?? 'NGN'}
               needsPayment={needsPayment(b)}
+              hasReview={b.hasReview ?? false}
+              reviewRating={b.reviewRating ?? null}
               onPress={() => {
                 // Unpaid + online → jump straight to checkout so the
                 // customer can complete payment without another tap.
