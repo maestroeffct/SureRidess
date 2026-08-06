@@ -303,6 +303,109 @@ const BookingDetailsScreen = () => {
           />
         </View>
 
+        {/* HANDOVER SIGNATURES — one card per PICKUP / RETURN row the
+             provider has already saved. Shows a big blue "Confirm & sign"
+             button when the customer hasn't signed yet; otherwise a
+             "Signed on <date>" pill so they know it's on the record. */}
+        {!!booking?.handovers?.length &&
+          (booking.status === 'CONFIRMED' ||
+            booking.status === 'COMPLETED') &&
+          booking.handovers.map(h => {
+            const isSigned = !!h.customerSignatureUrl;
+            const typeLabel = h.type === 'PICKUP' ? 'Pick-up' : 'Return';
+            return (
+              <View
+                key={h.id}
+                style={[styles.section, { borderColor: colors.border }]}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 8,
+                  }}
+                >
+                  <Typo variant="subheading">{typeLabel} inspection</Typo>
+                  {isSigned && (
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 999,
+                        backgroundColor: '#DCFCE7',
+                      }}
+                    >
+                      <Icon
+                        name="checkmark-circle"
+                        size={14}
+                        color="#166534"
+                      />
+                      <Typo
+                        style={{
+                          color: '#166534',
+                          fontSize: 11,
+                          fontWeight: '700',
+                        }}
+                      >
+                        Signed{' '}
+                        {h.customerSignedAt
+                          ? dayjs(h.customerSignedAt).format('DD MMM, HH:mm')
+                          : ''}
+                      </Typo>
+                    </View>
+                  )}
+                </View>
+
+                {isSigned ? (
+                  <Typo
+                    style={{ fontSize: 12, color: colors.textSecondary }}
+                  >
+                    Thanks — your signature is on file for this inspection.
+                  </Typo>
+                ) : (
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() =>
+                      navigation.navigate('HandoverSign', {
+                        bookingId: booking.id,
+                        type: h.type,
+                        carName,
+                      })
+                    }
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      backgroundColor: '#2563EB',
+                      paddingVertical: 14,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Icon
+                      name="create-outline"
+                      size={18}
+                      color="#fff"
+                    />
+                    <Typo
+                      style={{
+                        color: '#fff',
+                        fontWeight: '700',
+                        fontSize: 14,
+                      }}
+                    >
+                      Confirm & sign {typeLabel.toLowerCase()} inspection
+                    </Typo>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })}
+
         {/* PROTECTION */}
         {insurance ? (
           <ProtectionRow

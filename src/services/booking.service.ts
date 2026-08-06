@@ -86,6 +86,20 @@ export type BookingDetails = {
 
   addons?: BookingAddOnLine[];
 
+  /**
+   * Provider-recorded handover inspections for this booking. The mobile
+   * app renders a "Confirm & sign" button whenever an entry of the
+   * current type exists without a customer signature yet.
+   */
+  handovers?: Array<{
+    id: string;
+    type: 'PICKUP' | 'RETURN';
+    signedByCustomer: boolean;
+    customerSignatureUrl: string | null;
+    customerSignedAt: string | null;
+    createdAt: string;
+  }>;
+
   payment: {
     basePrice: number;
     insuranceFee: number;
