@@ -146,11 +146,11 @@ export function PriceBreakdown({
           <Icon name="lock-closed-outline" size={14} color={colors.textSecondary} />
           <View style={{ flex: 1 }}>
             <Typo style={[s.depositLabel, { color: colors.textPrimary }]}>
-              Refundable deposit (not charged)
+              Security deposit (not charged now)
             </Typo>
             <Typo style={[s.depositHint, { color: colors.textSecondary }]}>
-              Pre-authorized on your card at pickup, then released back to you
-              when the car is returned in good condition.
+              Held on your card at pickup and refunded within 7 days of return
+              in good condition. Separate from the protection plan.
             </Typo>
           </View>
           <Typo style={[s.depositValue, { color: colors.textPrimary }]}>{fmt(deposit)}</Typo>

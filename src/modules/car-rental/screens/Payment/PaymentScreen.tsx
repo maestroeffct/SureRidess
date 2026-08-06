@@ -649,7 +649,7 @@ const PaymentScreen = () => {
             <Typo style={s.totalValue}>{fmtAmount(totalPrice)}</Typo>
           )}
           {depositAmount > 0 && !pricingLoading && (
-            <Typo style={[s.depositHint, { color: colors.textSecondary }]}>+ {fmtAmount(depositAmount)} deposit</Typo>
+            <Typo style={[s.depositHint, { color: colors.textSecondary }]}>+ {fmtAmount(depositAmount)} security deposit</Typo>
           )}
           {isConverted && !pricingLoading && (
             <Typo style={[s.depositHint, { color: colors.textSecondary }]}>
