@@ -27,6 +27,7 @@ import type {
   RentalInsurancePackage,
 } from '@/types/rental';
 import { getCarWithFeatures, listCarProtectionPlans } from '@/services/rental.service';
+import { useAuth } from '@/providers/AuthProvider';
 import { previewBookingPrice, PricingPreview } from '@/services/pricing.service';
 import { PriceBreakdown } from '@/components/Rental/PriceBreakdown/PriceBreakdown';
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
@@ -46,6 +47,12 @@ const VehicleDetailsScreen = () => {
   const { currency: userCurrency } = useCurrency();
   const fmtMoney = useFormatMoney();
   const { mode, colors } = useTheme();
+  const { user } = useAuth();
+  // Verified customers see "Book Now" / "Choose Dates"; unverified see
+  // "Verify to Book" that jumps to KYC — moves the friction upstream
+  // instead of springing it on them at the payment sheet.
+  const kycRaw = (user?.profileStatus || user?.kycStatus || '').toUpperCase();
+  const isKycVerified = ['APPROVED', 'VERIFIED', 'COMPLETED'].includes(kycRaw);
 
   const routeCar: RentalCar | undefined = route?.params?.car;
   const vehicleId: string | undefined = route?.params?.vehicleId;
@@ -576,8 +583,18 @@ const VehicleDetailsScreen = () => {
           )}
         </View>
         <AppButton
-          title={hasBookingData ? 'Book Now' : 'Choose Dates'}
-          onPress={handleProceedToPayment}
+          title={
+            !isKycVerified
+              ? 'Verify to Book'
+              : hasBookingData
+                ? 'Book Now'
+                : 'Choose Dates'
+          }
+          onPress={
+            !isKycVerified
+              ? () => navigation.navigate('KYCFlow' as any)
+              : handleProceedToPayment
+          }
           style={s.bookBtn}
         />
       </View>

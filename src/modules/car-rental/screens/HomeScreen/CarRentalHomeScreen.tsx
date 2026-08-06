@@ -30,6 +30,7 @@ import { ImageSize, optimizeImageUrl } from '@/helpers/image';
 import { flagForCountry } from '@/helpers/region';
 import type { RentalCar } from '@/types/rental';
 import { PromoBannerCarousel } from '@/components/PromoBannerCarousel/PromoBannerCarousel';
+import { KycBanner } from '@/components/KycBanner/KycBanner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_BG = require('@/assets/images/car_back.png');
@@ -83,18 +84,26 @@ const CarRentalHomeScreen = () => {
     });
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
+      // Reset the list while we refetch so a flag swap doesn't briefly show
+      // cars from the previous country.
+      setLoading(true);
       try {
-        const data = await listRentalCars();
+        const data = await listRentalCars({ country: browseCountry });
+        if (cancelled) return;
         setCars(data);
       } catch (e) {
-        console.warn('Failed to load cars', e);
+        if (!cancelled) console.warn('Failed to load cars', e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    load();
-  }, []);
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [browseCountry]);
 
   const filteredCars = useMemo(
     () =>
@@ -316,14 +325,28 @@ const CarRentalHomeScreen = () => {
           <View style={s.emptyWrap}>
             <Ionicons name="car-outline" size={56} color={colors.border} />
             <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>
-              No vehicles available
+              No cars in {markets.find(m => m.code === browseCountry)?.name ?? browseCountry} yet
             </Typo>
             <Typo style={[s.emptyHint, { color: colors.textSecondary }]}>
-              Try a different category or check back later
+              {activeCategory === 'All'
+                ? 'Try another country or check back as new fleets are added.'
+                : `No ${activeCategory} cars in this country — try All or change region.`}
             </Typo>
+            <TouchableOpacity
+              style={s.emptyCta}
+              activeOpacity={0.85}
+              onPress={() => {
+                void refreshMarkets();
+                setCountryPickerOpen(true);
+              }}
+            >
+              <Ionicons name="earth-outline" size={16} color="#fff" />
+              <Typo style={s.emptyCtaText}>Change country</Typo>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
+            <KycBanner />
             {/* Admin-managed promo banners (HOME_HERO) — renders nothing if
                 there are no active banners, so no layout shift when empty. */}
             <PromoBannerCarousel placement="HOME_HERO" topGap={16} bottomGap={4} />
@@ -984,5 +1007,20 @@ const s = StyleSheet.create({
   emptyHint: {
     fontSize: 13,
     textAlign: 'center',
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  emptyCtaText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

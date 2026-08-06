@@ -26,6 +26,7 @@ import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { logoutUser } from '@/services/auth.service';
 import { AppAlert } from '@/components/AppAlert/AppAlert';
 import { PromoBannerCarousel } from '@/components/PromoBannerCarousel/PromoBannerCarousel';
+import { KycBanner } from '@/components/KycBanner/KycBanner';
 
 type NavProp = CompositeNavigationProp<
   DrawerNavigationProp<MainDrawerParamList>,
@@ -185,6 +186,7 @@ export function HomeScreen() {
       >
         {/* Admin-managed promo banners (HOME_HERO) — renders nothing if
             none are active, so no layout shift when the list is empty. */}
+        <KycBanner />
         <PromoBannerCarousel placement="HOME_HERO" topGap={16} bottomGap={4} />
 
         <Typo style={[s.listHeader, { color: colors.textSecondary }]}>
