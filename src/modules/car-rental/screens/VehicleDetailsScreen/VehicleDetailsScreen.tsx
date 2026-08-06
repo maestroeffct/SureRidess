@@ -26,7 +26,7 @@ import type {
   RentalCarFeatureLink,
   RentalInsurancePackage,
 } from '@/types/rental';
-import { getCarWithFeatures } from '@/services/rental.service';
+import { getCarWithFeatures, listCarProtectionPlans } from '@/services/rental.service';
 import { previewBookingPrice, PricingPreview } from '@/services/pricing.service';
 import { PriceBreakdown } from '@/components/Rental/PriceBreakdown/PriceBreakdown';
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
@@ -60,6 +60,7 @@ const VehicleDetailsScreen = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [pricing, setPricing] = useState<PricingPreview | null>(null);
   const [pricingLoading, setPricingLoading] = useState(false);
+  const [protectionPlans, setProtectionPlans] = useState<RentalInsurancePackage[] | null>(null);
 
   useEffect(() => {
     if (routeCar) setCar(routeCar);
@@ -86,6 +87,19 @@ const VehicleDetailsScreen = () => {
     };
     loadDetails();
   }, [vehicleId, car?.features, car?.groupedFeatures, car?.images?.length]);
+
+  // Fetch admin-APPROVED protection plans for this car. Preferred over
+  // the plans embedded on the car detail response because it filters out
+  // PENDING/REJECTED rows and includes provider-wide plans.
+  useEffect(() => {
+    const carId = vehicleId || car?.id;
+    if (!carId) return;
+    let cancelled = false;
+    listCarProtectionPlans(carId)
+      .then(items => { if (!cancelled) setProtectionPlans(items); })
+      .catch(() => { if (!cancelled) setProtectionPlans(null); });
+    return () => { cancelled = true; };
+  }, [vehicleId, car?.id]);
 
   // Fetch accurate pricing from the backend whenever dates or insurance changes
   useEffect(() => {
@@ -155,7 +169,13 @@ const VehicleDetailsScreen = () => {
 
   const hasBookingData = !!search?.pickupAt && !!search?.returnAt && !!(pickupLocationId || car?.location?.id);
 
-  const insurancePackages: RentalInsurancePackage[] = car?.insurancePackages ?? [];
+  // Protection plans from the dedicated APPROVED-only endpoint win; fall
+  // back to the plans embedded on the car detail response when that
+  // request hasn't landed (or errored on older backends).
+  const insurancePackages: RentalInsurancePackage[] =
+    (protectionPlans && protectionPlans.length > 0
+      ? protectionPlans
+      : car?.insurancePackages) ?? [];
   // Source currency: what the backend says these prices are in
   const sourceCurrency = pricing?.currency ?? car?.currency ?? 'NGN';
   const fmtPrice = (amount?: number) =>
@@ -413,14 +433,14 @@ const VehicleDetailsScreen = () => {
             </SectionCard>
           ) : null}
 
-          {/* Insurance */}
-          <SectionCard title="Insurance Packages">
+          {/* Protection Plans */}
+          <SectionCard title="Protection Plans">
             <InsuranceCard
-              title="No Insurance"
+              title="No Protection"
               price="Free"
               selected={insurance === 'none'}
               onPress={() => setInsurance('none')}
-              description="If you prefer not to include any insurance package for this rental"
+              description="Skip protection — you'll be liable for the full excess in the event of a claim"
             />
             {insurancePackages.length > 0
               ? insurancePackages.map(pkg => (
@@ -430,10 +450,17 @@ const VehicleDetailsScreen = () => {
                     price={fmtInsurance(pkg)}
                     selected={insurance === pkg.id}
                     onPress={() => setInsurance(pkg.id)}
-                    description={pkg.description || 'Insurance package provided by the host'}
+                    description={pkg.description || 'Protection plan provided by the host'}
+                    tier={pkg.tier}
+                    deductibleLabel={
+                      typeof pkg.deductibleAmount === 'number' && pkg.deductibleAmount > 0
+                        ? fmtMoney(pkg.deductibleAmount, pkg.currency ?? sourceCurrency, { round: true })
+                        : undefined
+                    }
+                    highlights={pkg.productHighlights ?? undefined}
                   />
                 ))
-              : <InfoText label="No insurance packages available for this car." />}
+              : <InfoText label="No protection plans available for this car." />}
           </SectionCard>
 
           {/* Pick-up & Drop-off */}

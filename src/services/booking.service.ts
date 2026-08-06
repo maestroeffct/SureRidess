@@ -71,6 +71,10 @@ export type BookingDetails = {
     name: string;
     description?: string;
     dailyPrice?: number;
+    tier?: 'BASIC' | 'STANDARD' | 'PREMIUM' | 'ELITE';
+    deductibleAmount?: number | null;
+    coverageType?: string | null;
+    underwriter?: string | null;
   } | null;
 
   addons?: BookingAddOnLine[];
@@ -79,6 +83,10 @@ export type BookingDetails = {
     basePrice: number;
     insuranceFee: number;
     addonsFee?: number;
+    // Same money as insuranceFee, protection-plan vocabulary
+    protectionFeeTotal?: number;
+    protectionDeductibleAmount?: number | null;
+    protectionTier?: 'BASIC' | 'STANDARD' | 'PREMIUM' | 'ELITE' | null;
     taxAmount: number;
     totalPrice: number;
     currency: string;

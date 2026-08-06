@@ -241,17 +241,21 @@ const BookingDetailsScreen = () => {
         {insurance ? (
           <ProtectionRow
             title={insurance.name}
-            subtitle={insurance.description || 'Insurance package'}
-            price={formatMoney(
-              insurance.dailyPrice
-                ? insurance.dailyPrice * totalDays
-                : undefined,
-            )}
+            subtitle={insurance.description || 'Protection plan'}
+            price={formatMoney(payment?.protectionFeeTotal ?? payment?.insuranceFee)}
+            tier={payment?.protectionTier ?? insurance.tier ?? undefined}
+            deductibleLabel={
+              payment?.protectionDeductibleAmount
+                ? formatMoney(payment.protectionDeductibleAmount)
+                : insurance.deductibleAmount
+                  ? formatMoney(insurance.deductibleAmount)
+                  : undefined
+            }
           />
         ) : (
           <ProtectionRow
-            title="No Insurance"
-            subtitle="No insurance added to this booking"
+            title="No Protection"
+            subtitle="Skipped — full excess is your responsibility"
             price="Free"
           />
         )}
@@ -265,8 +269,8 @@ const BookingDetailsScreen = () => {
             amount={formatMoney(payment?.basePrice)}
           />
           <PaymentSummaryRow
-            label="Insurance"
-            amount={formatMoney(payment?.insuranceFee)}
+            label={payment?.protectionTier ? `Protection · ${payment.protectionTier}` : 'Protection'}
+            amount={formatMoney(payment?.protectionFeeTotal ?? payment?.insuranceFee)}
           />
           {booking?.addons?.map(line => (
             <PaymentSummaryRow

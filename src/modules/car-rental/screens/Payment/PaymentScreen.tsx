@@ -19,7 +19,7 @@ import { AppButton } from '@/components/AppButton/CustomButton';
 import { TimelineLocation } from '@/components/Timeline/TimelineLocation';
 import { formatDate, formatTime } from '@/helpers/dateTime';
 import type { RentalCar, RentalInsurancePackage } from '@/types/rental';
-import { getCarWithFeatures } from '@/services/rental.service';
+import { getCarWithFeatures, listCarProtectionPlans } from '@/services/rental.service';
 import { createBooking, confirmCollectionBooking } from '@/services/booking.service';
 import { createPaymentSheetSession, getPaymentConfig } from '@/services/payment.service';
 import { initPaymentSheet, initStripe, presentPaymentSheet } from '@stripe/stripe-react-native';
@@ -73,6 +73,10 @@ const PaymentScreen = () => {
   const [addonCatalog, setAddonCatalog] = useState<AddOnPickerItem[]>([]);
   // addonId → quantity (>=1). Absent = not selected.
   const [selectedAddons, setSelectedAddons] = useState<Record<string, number>>({});
+  // Admin-approved protection plans (source of truth for the selected
+  // insurance's name/tier/deductible even when the caller only handed us
+  // the insurance ID).
+  const [protectionPlans, setProtectionPlans] = useState<RentalInsurancePackage[]>([]);
 
   useEffect(() => {
     if (routeCar) setCar(routeCar);
@@ -131,6 +135,16 @@ const PaymentScreen = () => {
   }, [vehicleId, car?.id]);
 
   useEffect(() => {
+    const carId = vehicleId || car?.id;
+    if (!carId) return;
+    let cancelled = false;
+    listCarProtectionPlans(carId)
+      .then(items => { if (!cancelled) setProtectionPlans(items); })
+      .catch(() => { if (!cancelled) setProtectionPlans([]); });
+    return () => { cancelled = true; };
+  }, [vehicleId, car?.id]);
+
+  useEffect(() => {
     const loadDetails = async () => {
       if (!vehicleId) return;
       const hasInsurance = (car?.insurancePackages?.length ?? 0) > 0;
@@ -174,7 +188,8 @@ const PaymentScreen = () => {
     : 1);
   const basePrice = pricing?.basePrice ?? (car?.dailyRate && totalDays ? car.dailyRate * totalDays : 0);
 
-  const insurancePackages: RentalInsurancePackage[] = car?.insurancePackages ?? [];
+  const insurancePackages: RentalInsurancePackage[] =
+    (protectionPlans.length > 0 ? protectionPlans : car?.insurancePackages) ?? [];
   const selectedInsurance = insurancePackages.find(pkg => pkg.id === insuranceId);
   const insuranceDaily =
     selectedInsurance?.dailyPrice ?? selectedInsurance?.dailyRate;
@@ -400,8 +415,8 @@ const PaymentScreen = () => {
             />
           </SectionCard>
 
-          {/* Insurance */}
-          <SectionCard title="Insurance" icon="shield-checkmark-outline">
+          {/* Protection Plan */}
+          <SectionCard title="Protection Plan" icon="shield-checkmark-outline">
             <View style={s.insuranceRow}>
               <View
                 style={[
@@ -418,12 +433,33 @@ const PaymentScreen = () => {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Typo style={[s.insuranceName, { color: colors.textPrimary }]}>
-                  {selectedInsurance?.name || 'No Insurance'}
-                </Typo>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Typo style={[s.insuranceName, { color: colors.textPrimary }]}>
+                    {selectedInsurance?.name || 'No Protection'}
+                  </Typo>
+                  {selectedInsurance?.tier && (
+                    <View
+                      style={{
+                        paddingHorizontal: 7,
+                        paddingVertical: 2,
+                        borderRadius: 999,
+                        backgroundColor: `${GREEN}20`,
+                      }}
+                    >
+                      <Typo style={{ fontSize: 10, fontWeight: '800', color: GREEN, letterSpacing: 0.5 }}>
+                        {selectedInsurance.tier}
+                      </Typo>
+                    </View>
+                  )}
+                </View>
                 <Typo style={[s.insuranceDesc, { color: colors.textSecondary }]}>
-                  {selectedInsurance?.description || 'No insurance package selected'}
+                  {selectedInsurance?.description || 'Skip protection — you cover the full excess'}
                 </Typo>
+                {selectedInsurance?.deductibleAmount ? (
+                  <Typo style={[s.insuranceDesc, { color: colors.textSecondary, marginTop: 2 }]}>
+                    Deductible {fmtAmount(selectedInsurance.deductibleAmount)}
+                  </Typo>
+                ) : null}
               </View>
               <Typo
                 style={[

@@ -24,6 +24,8 @@ export type RentalCarFeatureLink = {
   feature?: RentalCarFeature | null;
 };
 
+export type ProtectionTier = 'BASIC' | 'STANDARD' | 'PREMIUM' | 'ELITE';
+
 export type RentalInsurancePackage = {
   id: string;
   name: string;
@@ -35,6 +37,20 @@ export type RentalInsurancePackage = {
   price?: number;
   amount?: number;
   currency?: string;
+
+  // Protection Plan fields — present when the row is an admin-APPROVED
+  // protection plan. Optional so the older lightweight insurance shape
+  // still typechecks.
+  tier?: ProtectionTier;
+  deductibleAmount?: number | null;
+  liabilityLimit?: number | null;
+  physicalDamageLimit?: number | null;
+  coverageType?: string | null;
+  coveredPerils?: string[] | null;
+  exclusions?: string[] | null;
+  productHighlights?: string[] | null;
+  underwriter?: string | null;
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
 };
 
 export type RentalCarLocation = {
