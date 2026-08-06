@@ -20,7 +20,11 @@ import { TimelineLocation } from '@/components/Timeline/TimelineLocation';
 import { formatDate, formatTime } from '@/helpers/dateTime';
 import type { RentalCar, RentalInsurancePackage } from '@/types/rental';
 import { getCarWithFeatures, listCarProtectionPlans } from '@/services/rental.service';
-import { createBooking, confirmCollectionBooking } from '@/services/booking.service';
+import {
+  createBooking,
+  confirmCollectionBooking,
+  fetchBookingDetails,
+} from '@/services/booking.service';
 import {
   createPaymentSheetSession,
   getPaymentConfig,
@@ -190,6 +194,28 @@ const PaymentScreen = () => {
     };
     loadDetails();
   }, [vehicleId, car?.insurancePackages?.length, car?.images?.length]);
+
+  // Resume flow: caller only handed us bookingId (from Bookings list or
+  // BookingDetails "Pay now" banner). Fetch the booking so we know
+  // which car to render + which insurance was already picked.
+  useEffect(() => {
+    const resumeId = route?.params?.bookingId;
+    if (!resumeId || car || vehicleId) return;
+    let cancelled = false;
+    fetchBookingDetails(resumeId)
+      .then(details => {
+        if (cancelled) return;
+        if (details.car?.id) {
+          getCarWithFeatures(details.car.id)
+            .then(detail => { if (!cancelled) setCar(detail); })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {
+        showError('Unable to load booking. Try again from your bookings list.');
+      });
+    return () => { cancelled = true; };
+  }, [route?.params?.bookingId, car, vehicleId]);
 
   const fmt = (value?: string) =>
     value ? value.replace(/_/g, ' ').toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase()) : '';

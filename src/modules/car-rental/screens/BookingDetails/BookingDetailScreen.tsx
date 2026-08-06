@@ -134,6 +134,24 @@ const BookingDetailsScreen = () => {
   const isCollection = booking?.paymentMethod === 'COLLECTION';
   const collectionCode = booking?.collectionCode;
 
+  // Unpaid booking that still needs an online charge — shows a big CTA
+  // that jumps back into the payment sheet with this booking's id.
+  const paymentPending =
+    !!booking &&
+    !isCollection &&
+    (booking.status ?? '').toUpperCase() === 'PENDING' &&
+    ['UNPAID', 'REQUIRES_ACTION', 'FAILED'].includes(
+      (payment?.status ?? '').toUpperCase(),
+    );
+
+  const handleCompletePayment = () => {
+    if (!bookingId) return;
+    navigation.navigate('PaymentScreen' as any, {
+      bookingId,
+      paymentMethod: 'ONLINE',
+    });
+  };
+
   const totalDays =
     pickupAt && returnAt
       ? Math.max(1, Math.ceil((returnAt.getTime() - pickupAt.getTime()) / 86400000))
@@ -158,6 +176,54 @@ const BookingDetailsScreen = () => {
             <Icon name="ellipsis-horizontal" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
+
+        {/* PAY-NOW BANNER — only when the booking is unpaid + online */}
+        {paymentPending && (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={handleCompletePayment}
+            style={{
+              margin: 16,
+              padding: 14,
+              borderRadius: 12,
+              backgroundColor: '#FEF3C7',
+              borderWidth: 1,
+              borderColor: '#F59E0B',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <Icon name="alert-circle" size={22} color="#B45309" />
+            <View style={{ flex: 1 }}>
+              <Typo style={{ fontSize: 14, fontWeight: '700', color: '#7C2D12' }}>
+                Your booking isn't confirmed yet
+              </Typo>
+              <Typo style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>
+                Complete payment to lock in this car. The reservation
+                expires if left unpaid.
+              </Typo>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 999,
+                backgroundColor: '#B45309',
+              }}
+            >
+              <Typo style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
+                {typeof payment?.totalPrice === 'number'
+                  ? `Pay ${formatMoney(payment.totalPrice)}`
+                  : 'Pay now'}
+              </Typo>
+              <Icon name="arrow-forward" size={13} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* IMAGE */}
         <View>

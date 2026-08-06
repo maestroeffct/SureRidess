@@ -24,6 +24,10 @@ type Props = {
   status?: string;
   totalPrice?: number;
   currency?: string;
+  /** True when the booking still needs an online payment. Card CTA
+   *  changes to "Complete payment" and tap jumps to the payment sheet
+   *  instead of the details screen. */
+  needsPayment?: boolean;
 };
 
 // Tint the "what's next" pill with the accent at low opacity. Hex + 1A/26
@@ -44,6 +48,7 @@ export const BookingCard = ({
   status,
   totalPrice,
   currency = 'NGN',
+  needsPayment,
 }: Props) => {
   const { colors, mode } = useTheme();
   const fmtMoney = useFormatMoney();
@@ -141,15 +146,24 @@ export const BookingCard = ({
           <View />
         )}
         <View style={s.footerRight}>
-          {days !== null && (
-            <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>
-              {days} day{days !== 1 ? 's' : ''}
-            </Typo>
+          {needsPayment ? (
+            <View style={s.payCta}>
+              <Typo style={s.payCtaText}>Complete payment</Typo>
+              <Icon name="arrow-forward" size={12} color="#fff" />
+            </View>
+          ) : (
+            <>
+              {days !== null && (
+                <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>
+                  {days} day{days !== 1 ? 's' : ''}
+                </Typo>
+              )}
+              <View style={[s.footerDot, { backgroundColor: colors.border }]} />
+              <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>
+                #{shortId}
+              </Typo>
+            </>
           )}
-          <View style={[s.footerDot, { backgroundColor: colors.border }]} />
-          <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>
-            #{shortId}
-          </Typo>
         </View>
       </View>
     </TouchableOpacity>
@@ -236,4 +250,18 @@ const s = StyleSheet.create({
   },
   footerMeta: { fontSize: 12, fontWeight: '500' },
   footerDot: { width: 3, height: 3, borderRadius: 1.5 },
+  payCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#F59E0B',
+  },
+  payCtaText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });

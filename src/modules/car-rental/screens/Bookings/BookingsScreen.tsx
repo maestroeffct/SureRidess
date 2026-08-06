@@ -26,6 +26,7 @@ type RawBooking = {
   status: string;
   collectionCode?: string | null;
   paymentMethod?: string | null;
+  paymentStatus?: string | null;
   totalPrice?: number;
   currency?: string;
   pickupAt: string;
@@ -37,6 +38,18 @@ type RawBooking = {
     location?: { name?: string; address?: string } | null;
   } | null;
 };
+
+/** True when the booking still needs an online payment before it's
+ *  usable. COLLECTION bookings don't count — they pay in cash. */
+function needsPayment(b: RawBooking): boolean {
+  const ps = (b.paymentStatus ?? '').toUpperCase();
+  const method = (b.paymentMethod ?? 'ONLINE').toUpperCase();
+  return (
+    b.status?.toUpperCase() === 'PENDING' &&
+    method !== 'COLLECTION' &&
+    (ps === 'UNPAID' || ps === 'REQUIRES_ACTION' || ps === 'FAILED')
+  );
+}
 
 type EnrichedBooking = RawBooking & { bucket: BookingBucket };
 
@@ -274,12 +287,26 @@ const BookingsScreen = () => {
               status={b.status}
               totalPrice={b.totalPrice}
               currency={b.currency ?? 'NGN'}
-              onPress={() =>
+              needsPayment={needsPayment(b)}
+              onPress={() => {
+                // Unpaid + online → jump straight to checkout so the
+                // customer can complete payment without another tap.
+                if (needsPayment(b)) {
+                  navigation.navigate('CarRentalFlowNavigator', {
+                    screen: 'PaymentScreen',
+                    params: {
+                      bookingId: b.id,
+                      vehicleId: undefined,
+                      paymentMethod: 'ONLINE',
+                    },
+                  });
+                  return;
+                }
                 navigation.navigate('CarRentalFlowNavigator', {
                   screen: 'BookingDetails',
                   params: { bookingId: b.id },
-                })
-              }
+                });
+              }}
             />
           ))
         )}

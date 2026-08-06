@@ -28,6 +28,13 @@ export type BookingSummary = {
   status: string;
   collectionCode?: string;
   paymentMethod?: string;
+  paymentStatus?:
+    | 'UNPAID'
+    | 'REQUIRES_ACTION'
+    | 'PROCESSING'
+    | 'SUCCEEDED'
+    | 'FAILED'
+    | 'CANCELED';
   totalPrice?: number;
   currency?: string;
 };
