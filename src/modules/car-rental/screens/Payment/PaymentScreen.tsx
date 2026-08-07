@@ -77,6 +77,11 @@ const PaymentScreen = () => {
   // creation — the backend uses it to pick the right runtime adapter.
   const [gateways, setGateways] = useState<PaymentGatewayOption[]>([]);
   const [gatewayKey, setGatewayKey] = useState<string | null>(null);
+  // "idle" until first fetch completes, then "ok" or "error". Lets the
+  // picker show a Loading state and a real error message instead of
+  // pretending the admin hasn't configured anything.
+  const [gatewaysStatus, setGatewaysStatus] = useState<'idle' | 'ok' | 'error'>('idle');
+  const [gatewaysError, setGatewaysError] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [createdBookingId, setCreatedBookingId] = useState<string | undefined>(
@@ -162,16 +167,37 @@ const PaymentScreen = () => {
   useEffect(() => {
     if (paymentMethod !== 'ONLINE') return;
     let cancelled = false;
+    console.log('[Payment] fetching /payments/gateways…');
+    setGatewaysStatus('idle');
+    setGatewaysError(null);
     listPaymentGateways()
       .then(items => {
         if (cancelled) return;
+        console.log(
+          `[Payment] /payments/gateways →`,
+          items.length,
+          'gateway(s):',
+          items.map(g => `${g.gatewayKey}(${g.provider})`).join(', ') || '(empty)',
+        );
         setGateways(items);
-        // Auto-select the default gateway, or the first one when no
-        // default is flagged.
+        setGatewaysStatus('ok');
         const preferred = items.find(g => g.isDefault) ?? items[0];
         if (preferred) setGatewayKey(preferred.gatewayKey);
       })
-      .catch(() => { if (!cancelled) setGateways([]); });
+      .catch(err => {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.message || err?.message || 'Network error';
+        console.warn(
+          '[Payment] /payments/gateways failed:',
+          status,
+          msg,
+        );
+        if (!cancelled) {
+          setGateways([]);
+          setGatewaysStatus('error');
+          setGatewaysError(status ? `${status} — ${msg}` : msg);
+        }
+      });
     return () => { cancelled = true; };
   }, [paymentMethod]);
 
@@ -798,7 +824,22 @@ const PaymentScreen = () => {
             </SectionCard>
           ) : (
             <SectionCard title="Payment Gateway" icon="card-outline">
-              {gateways.length === 0 ? (
+              {gatewaysStatus === 'idle' ? (
+                <View style={{ padding: 16 }}>
+                  <Typo style={{ color: colors.textSecondary, fontSize: 13 }}>
+                    Loading payment methods…
+                  </Typo>
+                </View>
+              ) : gatewaysStatus === 'error' ? (
+                <View style={{ padding: 16 }}>
+                  <Typo style={{ color: '#F87171', fontSize: 13, fontWeight: '600' }}>
+                    Couldn't load payment methods
+                  </Typo>
+                  <Typo style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+                    {gatewaysError || 'Pull down to try again.'}
+                  </Typo>
+                </View>
+              ) : gateways.length === 0 ? (
                 <View style={{ padding: 16 }}>
                   <Typo style={{ color: colors.textSecondary, fontSize: 13 }}>
                     No online payment methods are enabled. Ask support to
