@@ -452,13 +452,15 @@ const PaymentScreen = () => {
       showError('Pick a payment method to continue.');
       return;
     }
-    // STRIPE uses the native PaymentSheet SDK; FLUTTERWAVE uses a hosted
-    // checkout URL rendered in an in-app WebView. Any other adapter
-    // still surfaces on the picker but rejects here — admin-configured
-    // but not-yet-implemented gateways return a clean error.
+    // STRIPE uses the native PaymentSheet SDK; FLUTTERWAVE and PAYSTACK
+    // both use a hosted checkout URL rendered in an in-app WebView. Any
+    // other adapter still surfaces on the picker but rejects here —
+    // admin-configured but not-yet-implemented gateways return a clean
+    // error.
     if (
       selectedGateway.provider !== 'STRIPE' &&
-      selectedGateway.provider !== 'FLUTTERWAVE'
+      selectedGateway.provider !== 'FLUTTERWAVE' &&
+      selectedGateway.provider !== 'PAYSTACK'
     ) {
       showError(`${selectedGateway.displayName} isn't available in-app yet — pick another method.`);
       return;
@@ -483,14 +485,16 @@ const PaymentScreen = () => {
       });
       const provider = (session.provider || config.provider || '').toUpperCase();
 
-      if (provider === 'FLUTTERWAVE') {
+      if (provider === 'FLUTTERWAVE' || provider === 'PAYSTACK') {
         // `paymentIntentClientSecret` doubles as the hosted checkout URL
-        // for Flutterwave (see backend/flutterwave.gateway.ts). We show
-        // it in a WebView; the actual paymentStatus flip happens via
-        // the /payments/webhook/flutterwave callback — this is UX only.
+        // for both Flutterwave and Paystack (their SDKs return one).
+        // The WebView flow is identical — customer completes on the
+        // hosted page, we watch for the return URL to know when to
+        // close and jump to BookingStatus. The real paymentStatus flip
+        // happens server-side via the provider's webhook.
         const checkoutUrl = session.paymentIntentClientSecret;
         if (!checkoutUrl) {
-          showError('Flutterwave checkout URL is missing.');
+          showError(`${provider} checkout URL is missing.`);
           return;
         }
         setFlutterwaveBookingId(bookingId);
@@ -498,7 +502,7 @@ const PaymentScreen = () => {
         return;
       }
 
-      if (provider !== 'STRIPE') { showError('Only Stripe and Flutterwave are currently supported.'); return; }
+      if (provider !== 'STRIPE') { showError('Only Stripe, Paystack, and Flutterwave are supported.'); return; }
       const publishableKey = session.publishableKey || config.publishableKey;
       if (!publishableKey) { showError('Stripe publishable key is missing.'); return; }
       if (__DEV__) {
@@ -528,18 +532,21 @@ const PaymentScreen = () => {
     setProcessingPayment(false);
   };
 
-  // Watches the WebView's URL — Flutterwave redirects back to
-  // ${PUBLIC_APP_URL}/payments/flutterwave/return?status=…&tx_ref=…
-  // when the customer finishes (or cancels) on their hosted page. The
-  // webhook is what actually flips paymentStatus server-side; this
-  // handler only navigates the app off the checkout screen.
+  // Watches the WebView URL for the hosted-checkout return.
+  //   Flutterwave  → ${PUBLIC_APP_URL}/payments/flutterwave/return?status=…&tx_ref=…
+  //   Paystack     → ${PUBLIC_APP_URL}/payments/paystack/return?ref=…&status=…
+  // Success on Paystack is generally implicit (no failure status =
+  // succeeded per Paystack docs); we treat both providers' return-path
+  // hit as success unless a status=cancelled/failed is present.
   const handleFlutterwaveNav = (event: WebViewNavigation) => {
     const url = event?.url || '';
     if (!url) return;
     const isReturn =
       url.includes('/payments/flutterwave/return') ||
+      url.includes('/payments/paystack/return') ||
       /[?&]status=(successful|success|cancelled|canceled|failed)\b/i.test(url) ||
-      /[?&]tx_ref=/i.test(url);
+      /[?&]tx_ref=/i.test(url) ||
+      /[?&]reference=/i.test(url);
     if (!isReturn) return;
 
     const lower = url.toLowerCase();
@@ -561,6 +568,21 @@ const PaymentScreen = () => {
     if (lower.includes('status=failed')) {
       closeFlutterwaveModal();
       showError('Payment failed');
+      return;
+    }
+    // Paystack often returns just ?trxref=... with no status when the
+    // customer completes payment. Treat a return-path hit as success —
+    // the webhook is the source of truth server-side.
+    if (
+      url.includes('/payments/paystack/return') &&
+      !lower.includes('status=')
+    ) {
+      closeFlutterwaveModal();
+      showSuccess('Payment received — confirming with our servers…');
+      navigation.navigate('BookingStatus', {
+        status: 'success',
+        bookingId: flutterwaveBookingId ?? undefined,
+      });
       return;
     }
   };
@@ -850,7 +872,10 @@ const PaymentScreen = () => {
                 gateways.map(gw => {
                   const selected = gatewayKey === gw.gatewayKey;
                   const localLogo = gatewayLogoFor(gw.runtimeAdapter);
-                  const supported = gw.provider === 'STRIPE' || gw.provider === 'FLUTTERWAVE';
+                  const supported =
+                    gw.provider === 'STRIPE' ||
+                    gw.provider === 'FLUTTERWAVE' ||
+                    gw.provider === 'PAYSTACK';
                   return (
                     <TouchableOpacity
                       key={gw.gatewayKey}
