@@ -343,11 +343,35 @@ const VehicleDetailsScreen = () => {
           {/* Car name + location overlay — non-interactive so the underlying
               carousel still receives swipe gestures across the bottom of the hero */}
           <View pointerEvents="none" style={s.heroInfo}>
-            {car?.category && (
-              <View style={s.categoryBadge}>
-                <Typo style={s.categoryBadgeText}>{fmt(car.category)}</Typo>
-              </View>
-            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {car?.category && (
+                <View style={s.categoryBadge}>
+                  <Typo style={s.categoryBadgeText}>{fmt(car.category)}</Typo>
+                </View>
+              )}
+              {/* Availability chip: prefer availableQuantity from search;
+                  fall back to totalQuantity when opened directly. Hidden
+                  when the listing has only one vehicle (nothing to say). */}
+              {typeof car?.totalQuantity === 'number' && car.totalQuantity > 1 && (
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 3,
+                    borderRadius: 999,
+                    backgroundColor:
+                      typeof car.availableQuantity === 'number' && car.availableQuantity <= 1
+                        ? 'rgba(245,158,11,0.95)'
+                        : 'rgba(10,106,75,0.95)',
+                  }}
+                >
+                  <Typo style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+                    {typeof car.availableQuantity === 'number'
+                      ? `${car.availableQuantity} of ${car.totalQuantity} available`
+                      : `${car.totalQuantity} in fleet`}
+                  </Typo>
+                </View>
+              )}
+            </View>
             <Typo style={s.heroTitle}>{title}</Typo>
             {locationName ? (
               <View style={s.heroLocRow}>

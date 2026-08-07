@@ -88,6 +88,13 @@ export type RentalCar = {
   reviewCount?: number;
   /** ISO date string from the backend — used to sort the "Newest arrivals" rail. */
   createdAt?: string;
+  /** Total fleet count for this listing (what the provider owns). Always
+   *  present; defaults to 1 for legacy rows. */
+  totalQuantity?: number;
+  /** How many are free for the requested date range. Only set on the
+   *  search endpoint's response — the detail endpoint returns just
+   *  totalQuantity since it doesn't know the range yet. */
+  availableQuantity?: number;
 };
 
 export type RentalCarReview = {

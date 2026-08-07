@@ -232,6 +232,33 @@ export function CarCard({
             <Typo style={styles.price}>{dailyRate}</Typo>
           </View>
         </View>
+
+        {/* Availability chip — only when the search backend attached
+            availableQuantity. Amber when only 1 left, green otherwise;
+            we don't render for totalQuantity===1 listings since "1
+            available" is noise on a single-car listing. */}
+        {typeof car?.availableQuantity === 'number' &&
+          typeof car?.totalQuantity === 'number' &&
+          car.totalQuantity > 1 && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 999,
+                backgroundColor:
+                  car.availableQuantity <= 1
+                    ? 'rgba(245,158,11,0.95)'
+                    : 'rgba(10,106,75,0.95)',
+              }}
+            >
+              <Typo style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+                {car.availableQuantity} of {car.totalQuantity} available
+              </Typo>
+            </View>
+          )}
       </View>
     </TouchableOpacity>
   );
