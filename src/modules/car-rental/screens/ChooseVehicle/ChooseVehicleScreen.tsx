@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -116,6 +117,33 @@ const ChooseVehicleScreen = () => {
   );
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    const pickupLocationId = search?.pickupLocationId;
+    const dropoffLocationId = search?.dropoffLocationId ?? pickupLocationId;
+    const pickupIso = search?.pickupAt;
+    const returnIso = search?.returnAt;
+    if (!pickupLocationId || !pickupIso || !returnIso) return;
+    setRefreshing(true);
+    try {
+      const res = await searchRentalCars({
+        pickupLocationId,
+        dropoffLocationId,
+        pickupAt: pickupIso,
+        returnAt: returnIso,
+        countryCode:
+          pickupLocation?.country?.code ||
+          dropoffLocation?.country?.code ||
+          'NG',
+      });
+      setCars(res.cars);
+      setSearch(res.search);
+    } catch {}
+    finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
@@ -311,6 +339,13 @@ const ChooseVehicleScreen = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={s.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#0A6A4B']}
+            />
+          }
         >
           {filtered.length === 0 ? (
             <View style={s.emptyState}>

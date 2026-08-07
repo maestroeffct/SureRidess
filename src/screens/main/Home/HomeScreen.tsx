@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import {
@@ -49,13 +50,24 @@ function initials(first?: string | null, last?: string | null) {
 
 export function HomeScreen() {
   const { colors, mode } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigation = useNavigation<NavProp>();
   const { count: unreadCount } = useUnreadNotifications();
 
   const insets = useSafeAreaInsets();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [logoutAlertOpen, setLogoutAlertOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+    } catch {}
+    finally {
+      setRefreshing(false);
+    }
+  };
 
   const firstName = user?.firstName?.trim() || 'there';
 
@@ -183,6 +195,13 @@ export function HomeScreen() {
         style={[s.sheet, { backgroundColor: colors.background }]}
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#0A6A4B']}
+          />
+        }
       >
         {/* Admin-managed promo banners (HOME_HERO) — renders nothing if
             none are active, so no layout shift when the list is empty. */}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
@@ -109,7 +109,16 @@ export default function KycStatusScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={s.body}>
+      <ScrollView
+        contentContainerStyle={s.body}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#0A6A4B']}
+          />
+        }
+      >
         <View style={[s.iconWrap, { backgroundColor: config.bg }]}>
           {refreshing && state === 'pending' ? (
             <ActivityIndicator size="large" color={config.color} />
@@ -126,6 +135,7 @@ export default function KycStatusScreen() {
             <Icon name="information-circle-outline" size={16} color={colors.textSecondary} />
             <Typo style={[s.metaText, { color: colors.textSecondary }]}>
               You will get a push notification and an email when a decision is made.
+              Pull down to check again.
             </Typo>
           </View>
         )}
@@ -137,7 +147,7 @@ export default function KycStatusScreen() {
             loading={refreshing && state === 'pending'}
           />
         </View>
-      </View>
+      </ScrollView>
     </ScreenWrapper>
   );
 }
@@ -151,10 +161,14 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   body: {
-    flex: 1,
+    // ScrollView contentContainerStyle — flexGrow so it fills the
+    // viewport when content is short (needed for pull-to-refresh to
+    // register on tall screens).
+    flexGrow: 1,
     alignItems: 'center',
     paddingHorizontal: 28,
     paddingTop: 32,
+    paddingBottom: 32,
   },
   iconWrap: {
     width: 96,

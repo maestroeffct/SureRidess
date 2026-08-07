@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -210,6 +211,19 @@ export const ProfileScreen = () => {
   const [appearancePickerOpen, setAppearancePickerOpen] = useState(false);
   const [switchAlert, setSwitchAlert] = useState(false);
   const [comingSoonAlert, setComingSoonAlert] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refreshUser().catch(() => {}),
+        refreshMarkets().catch(() => {}),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const browseCountryMeta = markets.find(m => m.code === browseCountry);
   const browseCountryFlag = flagForCountry(browseCountry);
@@ -329,7 +343,16 @@ export const ProfileScreen = () => {
 
   return (
     <ScreenWrapper padded={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#0A6A4B']}
+          />
+        }
+      >
 
         {/* ── HEADER ── */}
         {(() => {

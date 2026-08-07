@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  RefreshControl,
   StyleSheet,
   StatusBar,
 } from 'react-native';
@@ -71,6 +72,37 @@ const VehicleDetailsScreen = () => {
   const [pricing, setPricing] = useState<PricingPreview | null>(null);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [protectionPlans, setProtectionPlans] = useState<RentalInsurancePackage[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    const carId = vehicleId || car?.id;
+    setRefreshing(true);
+    try {
+      const tasks: Promise<unknown>[] = [];
+      if (carId) {
+        tasks.push(
+          getCarWithFeatures(carId).then(setCar).catch(() => {}),
+          listCarProtectionPlans(carId).then(setProtectionPlans).catch(() => {}),
+        );
+        if (search?.pickupAt && search?.returnAt) {
+          tasks.push(
+            previewBookingPrice({
+              carId,
+              pickupAt: search.pickupAt,
+              returnAt: search.returnAt,
+              insuranceId: insurance === 'none' ? undefined : insurance,
+              displayCurrency: userCurrency,
+            })
+              .then(setPricing)
+              .catch(() => {}),
+          );
+        }
+      }
+      await Promise.all(tasks);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (routeCar) setCar(routeCar);
@@ -238,7 +270,19 @@ const VehicleDetailsScreen = () => {
     <View style={[s.root, { backgroundColor: colors.background }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#fff"
+            colors={['#0A6A4B']}
+            progressViewOffset={60}
+          />
+        }
+      >
         {/* ── IMAGE HERO ── */}
         <View style={s.hero}>
           <ScrollView
