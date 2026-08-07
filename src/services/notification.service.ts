@@ -14,11 +14,26 @@ import { showNotificationToast } from '@/helpers/toast';
 // MainApplication.kt. Notifee creates it again here defensively in case the
 // app is running on a fresh install where the native onCreate didn't get
 // the chance to fire before the first push arrives.
-const ANDROID_CHANNEL_ID = 'sureride_default';
+// Bumped from 'sureride_default' → 'sureride_default_v2' because
+// Android notification channels are IMMUTABLE once created. If a
+// previous install created the channel at a lower importance
+// (or a user manually lowered it), no amount of code change can
+// raise it back — the OS silently keeps the old importance. Bumping
+// the id creates a fresh channel that starts at HIGH importance again.
+// Old channel is left in Settings; it just no longer receives anything.
+const ANDROID_CHANNEL_ID = 'sureride_default_v2';
+const LEGACY_CHANNEL_IDS = ['sureride_default'];
 
 let channelEnsured = false;
 async function ensureAndroidChannel() {
   if (Platform.OS !== 'android' || channelEnsured) return;
+  // Best-effort cleanup of the old channel so it doesn't sit in the
+  // user's settings screen forever. Notifee no-ops if it doesn't exist.
+  for (const legacy of LEGACY_CHANNEL_IDS) {
+    try {
+      await notifee.deleteChannel(legacy);
+    } catch {}
+  }
   await notifee.createChannel({
     id: ANDROID_CHANNEL_ID,
     name: 'General',

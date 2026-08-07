@@ -14,7 +14,7 @@
       android:supportsRtl="true">
       <meta-data
         android:name="com.google.firebase.messaging.default_notification_channel_id"
-        android:value="sureride_default"
+        android:value="sureride_default_v2"
         tools:replace="android:value" />
       <meta-data
         android:name="com.google.firebase.messaging.default_notification_icon"
