@@ -32,6 +32,25 @@ export async function createPaymentSheetSession(payload: PaymentSheetPayload & {
   return response.data;
 }
 
+/**
+ * Client-triggered verify — the mobile WebView flow calls this the
+ * moment the hosted checkout closes so the booking flips SUCCEEDED
+ * without waiting on the provider's webhook. Backend re-checks with
+ * the provider (Paystack /transaction/verify) so nothing is trusted
+ * from the WebView URL alone.
+ */
+export async function verifyBookingPayment(
+  bookingId: string,
+  reference?: string,
+): Promise<{ paymentStatus: string; alreadyResolved?: boolean; pending?: boolean }> {
+  const response = await api.post<{
+    paymentStatus: string;
+    alreadyResolved?: boolean;
+    pending?: boolean;
+  }>(`/payments/verify-booking/${encodeURIComponent(bookingId)}`, { reference });
+  return response.data;
+}
+
 export type PaymentGatewayOption = {
   gatewayKey: string;
   displayName: string;

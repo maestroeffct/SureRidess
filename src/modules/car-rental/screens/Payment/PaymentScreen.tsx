@@ -31,6 +31,7 @@ import {
   createPaymentSheetSession,
   getPaymentConfig,
   listPaymentGateways,
+  verifyBookingPayment,
   type PaymentGatewayOption,
 } from '@/services/payment.service';
 import { initPaymentSheet, initStripe, presentPaymentSheet } from '@stripe/stripe-react-native';
@@ -551,13 +552,60 @@ const PaymentScreen = () => {
 
     const lower = url.toLowerCase();
     const bookingId = flutterwaveBookingId;
-    if (lower.includes('status=successful') || lower.includes('status=success')) {
+
+    // Extract the payment reference from the URL — Paystack sends
+    // ?reference= or ?trxref=, Flutterwave sends ?tx_ref=. Passed to
+    // the verify endpoint so the server can hit the provider even if
+    // it has no reference stored yet.
+    const refMatch = url.match(/[?&](?:reference|trxref|tx_ref)=([^&]+)/i);
+    const reference = refMatch ? decodeURIComponent(refMatch[1]) : undefined;
+
+    // Ask the backend to verify + flip the booking status. Called for
+    // both successful-looking returns AND ambiguous Paystack returns
+    // (which frequently omit status=). Without this the booking sits
+    // as PENDING/UNPAID until the webhook eventually fires — which in
+    // dev may never happen because Paystack can't reach localhost.
+    const verifyAndNavigate = async () => {
       closeFlutterwaveModal();
-      showSuccess('Payment received — confirming with our servers…');
-      navigation.navigate('BookingStatus', {
-        status: 'success',
-        bookingId: bookingId ?? undefined,
-      });
+      if (!bookingId) {
+        showSuccess('Payment received — confirming with our servers…');
+        navigation.navigate('BookingStatus', { status: 'success' });
+        return;
+      }
+      try {
+        const result = await verifyBookingPayment(bookingId, reference);
+        if (result.paymentStatus === 'SUCCEEDED') {
+          showSuccess('Payment confirmed');
+          navigation.navigate('BookingStatus', {
+            status: 'success',
+            bookingId,
+          });
+        } else if (result.paymentStatus === 'FAILED') {
+          showError('Payment could not be verified');
+        } else {
+          // Provider still ambiguous (Paystack "pending") — trust the
+          // return URL enough to send them to BookingStatus; webhook
+          // will finish the flip.
+          showSuccess('Payment received — confirming with our servers…');
+          navigation.navigate('BookingStatus', {
+            status: 'success',
+            bookingId,
+          });
+        }
+      } catch {
+        // Verify endpoint failed (network / provider outage). Fall
+        // back to optimistic navigation — webhook will still land
+        // eventually.
+        showSuccess('Payment received — confirming with our servers…');
+        navigation.navigate('BookingStatus', {
+          status: 'success',
+          bookingId,
+        });
+      }
+    };
+
+    if (lower.includes('status=successful') || lower.includes('status=success')) {
+      void verifyAndNavigate();
       return;
     }
     if (lower.includes('status=cancelled') || lower.includes('status=canceled')) {
@@ -571,18 +619,13 @@ const PaymentScreen = () => {
       return;
     }
     // Paystack often returns just ?trxref=... with no status when the
-    // customer completes payment. Treat a return-path hit as success —
-    // the webhook is the source of truth server-side.
+    // customer completes payment. Verify to know for sure.
     if (
-      url.includes('/payments/paystack/return') &&
-      !lower.includes('status=')
+      url.includes('/payments/paystack/return') ||
+      lower.includes('trxref=') ||
+      lower.includes('reference=')
     ) {
-      closeFlutterwaveModal();
-      showSuccess('Payment received — confirming with our servers…');
-      navigation.navigate('BookingStatus', {
-        status: 'success',
-        bookingId: flutterwaveBookingId ?? undefined,
-      });
+      void verifyAndNavigate();
       return;
     }
   };

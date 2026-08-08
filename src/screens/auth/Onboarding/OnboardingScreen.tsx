@@ -18,7 +18,7 @@ const { width: W, height: H } = Dimensions.get('window');
 const GREEN = '#0A6A4B';
 const GREEN_DARK = '#052A1D';
 
-const HERO = require('@/assets/images/car_back.png');
+const HERO = require('@/assets/images/car.png');
 const LOGO = require('@/assets/images/logo-text.png');
 
 /**

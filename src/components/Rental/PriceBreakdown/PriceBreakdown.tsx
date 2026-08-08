@@ -90,38 +90,76 @@ export function PriceBreakdown({
         />
       ))}
 
-      {(insuranceFee > 0 || addonsFee > 0 || taxAmount > 0) && (
+      {/*
+        Two totally different rendering modes.
+
+        EXCLUSIVE (tax added on top):
+          Base + Insurance + Add-ons
+          Subtotal
+          VAT (7.5%)   ← adds to the total
+          ─
+          Charged at checkout = subtotal + tax
+
+        INCLUSIVE (tax already baked into base):
+          Base (includes VAT)
+          ─
+          Charged at checkout = base
+          "Includes ₦X VAT (7.5%)" — muted note under total
+
+        Was rendering the same way for both, which made inclusive
+        mode look like a math error: "Subtotal 15,000 + VAT 1,047 =
+        Total 15,000?"
+      */}
+      {pricing?.taxInclusivePricing ? (
         <>
-          <View style={[s.dividerLight, { backgroundColor: colors.border }]} />
-          <Row label="Subtotal" value={fmt(subtotal)} muted />
+          <View style={[s.divider, { backgroundColor: colors.border }]} />
+          <View style={s.totalRow}>
+            <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>
+              Charged at checkout
+            </Typo>
+            <Typo style={s.totalValue}>{fmt(total)}</Typo>
+          </View>
+          {taxAmount > 0 && (
+            <Typo style={[s.inclNote, { color: colors.textSecondary }]}>
+              Includes {fmt(taxAmount)} VAT
+              {pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}
+            </Typo>
+          )}
+        </>
+      ) : (
+        <>
+          {(insuranceFee > 0 || addonsFee > 0 || taxAmount > 0) && (
+            <>
+              <View style={[s.dividerLight, { backgroundColor: colors.border }]} />
+              <Row label="Subtotal" value={fmt(subtotal)} muted />
+            </>
+          )}
+
+          {taxes.length > 0 ? (
+            taxes.map(tax => (
+              <Row
+                key={tax.code || tax.label}
+                label={`${tax.label}${tax.rate ? ` (${tax.rate.toFixed(1)}%)` : ''}`}
+                value={fmt(tax.amount)}
+              />
+            ))
+          ) : taxAmount > 0 ? (
+            <Row
+              label={`Tax${pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}`}
+              value={fmt(taxAmount)}
+            />
+          ) : null}
+
+          <View style={[s.divider, { backgroundColor: colors.border }]} />
+
+          <View style={s.totalRow}>
+            <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>
+              Charged at checkout
+            </Typo>
+            <Typo style={s.totalValue}>{fmt(total)}</Typo>
+          </View>
         </>
       )}
-
-      {taxes.length > 0 ? (
-        taxes.map(tax => (
-          <Row
-            key={tax.code || tax.label}
-            // Backend returns rate as a percentage already (7.5 = 7.5%), not
-            // a decimal — don't multiply by 100.
-            label={`${tax.label}${tax.rate ? ` (${tax.rate.toFixed(1)}%)` : ''}`}
-            value={fmt(tax.amount)}
-          />
-        ))
-      ) : taxAmount > 0 ? (
-        <Row
-          label={`Tax${pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}`}
-          value={fmt(taxAmount)}
-        />
-      ) : null}
-
-      <View style={[s.divider, { backgroundColor: colors.border }]} />
-
-      <View style={s.totalRow}>
-        <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>
-          Charged at checkout
-        </Typo>
-        <Typo style={s.totalValue}>{fmt(total)}</Typo>
-      </View>
 
       {isConverted && sourceCurrency && (
         <View style={s.fxNote}>
@@ -217,6 +255,12 @@ const s = StyleSheet.create({
   },
   totalLabel: { fontSize: 15, fontWeight: '700' },
   totalValue: { fontSize: 18, fontWeight: '800', color: GREEN },
+  inclNote: {
+    fontSize: 11,
+    textAlign: 'right' as const,
+    marginTop: 2,
+    marginRight: 2,
+  },
   depositRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
