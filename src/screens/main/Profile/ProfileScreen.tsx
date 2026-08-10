@@ -489,6 +489,23 @@ export const ProfileScreen = () => {
           />
         </View>
 
+        {/* ── FINANCES ── */}
+        <SectionLabel title="Finances" colors={colors} />
+        <View
+          style={[
+            s.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <FieldRow
+            label="My finances"
+            value="Fines, damage claims, deposits"
+            trailing="chevron"
+            onPress={() => navigation.navigate('Finance')}
+            isFirst
+          />
+        </View>
+
         {/* ── PREFERENCES ── */}
         <SectionLabel title="Preferences" colors={colors} />
         <View

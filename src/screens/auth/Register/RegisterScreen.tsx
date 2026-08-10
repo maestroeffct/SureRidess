@@ -34,6 +34,10 @@ import {
 import { getFlagEmoji } from '@/helpers/countryFlag';
 import { registerUser } from '@/services/auth.service';
 import { AuthStackParamList } from '@/navigation/Auth/AuthNavigator';
+import {
+  getGoogleAuthErrorMessage,
+  signInWithGoogle,
+} from '@/services/socialAuth.service';
 
 export function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
@@ -54,6 +58,7 @@ export function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const passwordStrength = getPasswordStrength(password);
   const filteredCountries = countries.filter(c =>
@@ -88,6 +93,23 @@ export function RegisterScreen() {
       showError(err?.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      setGoogleLoading(true);
+      const res = await signInWithGoogle();
+      await login(res.token, res.user);
+      if (res.isNewUser || res.needsProfileCompletion) {
+        showSuccess('Account created with Google. Complete your profile to continue.');
+        return;
+      }
+      showSuccess('Signed in with Google');
+    } catch (error) {
+      showError(getGoogleAuthErrorMessage(error));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -244,6 +266,25 @@ export function RegisterScreen() {
           </Typo>
 
           <AppButton title={loading ? 'Creating Account…' : 'Create Account'} loading={loading} onPress={handleRegister} />
+
+          {/* Divider */}
+          <View style={s.dividerRow}>
+            <View style={[s.dividerLine, { backgroundColor: colors.border }]} />
+            <Typo style={[s.dividerText, { color: colors.textSecondary }]}>or</Typo>
+            <View style={[s.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
+          <TouchableOpacity
+            style={[s.googleBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+            onPress={handleGoogleAuth}
+            activeOpacity={0.8}
+            disabled={googleLoading}
+          >
+            <Image source={require('@/assets/images/google-logo.png')} style={s.googleIcon} />
+            <Typo style={[s.googleText, { color: colors.textPrimary }]}>
+              {googleLoading ? 'Please wait…' : 'Continue with Google'}
+            </Typo>
+          </TouchableOpacity>
 
           <View style={s.footer}>
             <Typo style={[s.footerText, { color: colors.textSecondary }]}>Already have an account? </Typo>

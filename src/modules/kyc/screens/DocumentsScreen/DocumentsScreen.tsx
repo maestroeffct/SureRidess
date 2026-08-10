@@ -21,6 +21,7 @@ import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { showError, showSuccess } from '@/helpers/toast';
 import { uploadKycDocuments } from '@/services/kyc.service';
 import { useAuth } from '@/providers/AuthProvider';
+import { PassportCameraModal } from '@/modules/kyc/components/PassportCameraModal';
 
 const GOVERNMENT_ID_TYPES = ['International Passport', 'National Id Card'] as const;
 type GovernmentIdType = (typeof GOVERNMENT_ID_TYPES)[number];
@@ -51,6 +52,7 @@ export default function DocumentsScreen() {
     useState<Date | null>(null);
   const [showLicenseExpiryPicker, setShowLicenseExpiryPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassportCamera, setShowPassportCamera] = useState(false);
 
   const [passportPhotoAsset, setPassportPhotoAsset] = useState<Asset | null>(null);
   const [governmentIdFrontAsset, setGovernmentIdFrontAsset] =
@@ -281,9 +283,9 @@ export default function DocumentsScreen() {
         )}
 
         <UploadField
-          label="Passport Photograph Upload"
+          label="Passport Photograph (in-app camera)"
           selectedFileName={getAssetLabel(passportPhotoAsset)}
-          onPress={() => pickImage(setPassportPhotoAsset, 'Passport photograph')}
+          onPress={() => setShowPassportCamera(true)}
         />
 
         <UploadField
@@ -305,6 +307,15 @@ export default function DocumentsScreen() {
           onPress={handleCompleteVerification}
         />
       </ScrollView>
+
+      <PassportCameraModal
+        visible={showPassportCamera}
+        onClose={() => setShowPassportCamera(false)}
+        onCapture={asset => {
+          setPassportPhotoAsset(asset);
+          showSuccess('Passport photograph captured');
+        }}
+      />
 
       <AppSelectSheet
         visible={showGovernmentIdTypeModal}

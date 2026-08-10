@@ -51,6 +51,46 @@ export async function saveKycAddressInfo(payload: SaveKycAddressPayload) {
   return response.data;
 }
 
+export type SmileJobType =
+  | 'BASIC_KYC'
+  | 'SMART_SELFIE_AUTHENTICATION'
+  | 'ENHANCED_KYC';
+
+export type SmileSignedSpec = {
+  partner_id: string;
+  timestamp: string;
+  signature: string;
+  partner_params: {
+    user_id: string;
+    job_id: string;
+    job_type: SmileJobType;
+  };
+  callback_url: string;
+  env: 'sandbox' | 'production';
+};
+
+export type SmileVerdict = 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW';
+
+export type KycStatusResponse = {
+  profileStatus: 'INCOMPLETE' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+  kycStatus: string | null;
+  smileJobId: string | null;
+  smileVerdict: SmileVerdict | null;
+  smileConfidenceScore: number | null;
+};
+
+export async function signSmileIdentityJob(jobType: SmileJobType) {
+  const response = await api.post<SmileSignedSpec>('/kyc/smile-identity/sign', {
+    jobType,
+  });
+  return response.data;
+}
+
+export async function fetchKycStatus() {
+  const response = await api.get<KycStatusResponse>('/kyc/status');
+  return response.data;
+}
+
 export async function uploadKycDocuments(payload: UploadKycDocumentsPayload) {
   const formData = new FormData();
 

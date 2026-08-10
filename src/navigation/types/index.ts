@@ -8,4 +8,5 @@ export type MainStackParamList = {
   Profile: undefined;
   CarRentalFlowNavigator: undefined;
   NotificationInbox: undefined;
+  Finance: undefined;
 };

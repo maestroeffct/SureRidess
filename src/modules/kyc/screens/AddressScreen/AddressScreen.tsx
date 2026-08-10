@@ -167,7 +167,10 @@ export default function AddressScreen() {
 
       showSuccess('Address saved');
 
-      navigation.navigate('Documents', {
+      // Route through the face-liveness step first — Documents is now
+      // the last screen in the flow so the selfie check runs before
+      // the user is asked to upload passport + ID + licence photos.
+      navigation.navigate('FaceLiveness', {
         countryName,
         state: stateValue,
         region: regionValue || null,

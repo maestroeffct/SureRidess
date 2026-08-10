@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '@/screens/main/Home/HomeScreen';
 import { ProfileScreen } from '@/screens/main/Profile/ProfileScreen';
 import { NotificationInboxScreen } from '@/screens/main/NotificationInbox/NotificationInboxScreen';
+import { FinanceScreen } from '@/screens/main/Finance/FinanceScreen';
 import { CarRentalTabsNavigator } from '@/modules/car-rental/navigation/CarRentalTabNavigator';
 import { CarRentalFlowNavigator } from '@/modules/car-rental/navigation/CarRentalFlowNavigator';
 import { getItem, StorageKeys } from '@/helpers/storage';
@@ -52,6 +53,7 @@ export function MainNavigator() {
         name="NotificationInbox"
         component={NotificationInboxScreen}
       />
+      <Stack.Screen name="Finance" component={FinanceScreen} />
     </Stack.Navigator>
   );
 }

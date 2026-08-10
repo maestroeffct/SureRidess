@@ -376,6 +376,52 @@ const CarRentalHomeScreen = () => {
                 there are no active banners, so no layout shift when empty. */}
             <PromoBannerCarousel placement="HOME_HERO" topGap={16} bottomGap={4} />
 
+            {/* Request a Limousine tile — was previously only reachable via
+                a promo banner deep-link, so customers couldn't discover it. */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() =>
+                navigation.navigate('CarRentalFlowNavigator', {
+                  screen: 'RequestLimousine',
+                })
+              }
+              style={{
+                marginHorizontal: 20,
+                marginTop: 16,
+                marginBottom: 4,
+                padding: 16,
+                borderRadius: 16,
+                backgroundColor: '#0F172A',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(212,175,55,0.35)',
+              }}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(212,175,55,0.15)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="car-sport-outline" size={22} color="#D4AF37" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Typo style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+                  Request a Limousine
+                </Typo>
+                <Typo style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>
+                  Chauffeur service for airport pickups, weddings, events
+                </Typo>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.5)" />
+            </TouchableOpacity>
+
             <SectionHeader
               title="Featured"
               onSeeAll={openSearchLocation}

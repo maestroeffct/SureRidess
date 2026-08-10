@@ -4,6 +4,7 @@ import KycStatusScreen from '../screens/KycStatusScreen/KycStatusScreen';
 import PersonalInfoScreen from '../screens/PersonalInfoScreen/PersonalInfoScreen';
 import AddressScreen from '../screens/AddressScreen/AddressScreen';
 import DocumentsScreen from '../screens/DocumentsScreen/DocumentsScreen';
+import FaceLivenessScreen from '../screens/FaceLivenessScreen/FaceLivenessScreen';
 
 export type KYCStackParamList = {
   KycStatus: undefined;
@@ -12,6 +13,14 @@ export type KYCStackParamList = {
     | {
         countryName?: string | null;
         countryCode?: string | null;
+      }
+    | undefined;
+  FaceLiveness:
+    | {
+        countryName?: string | null;
+        state?: string | null;
+        region?: string | null;
+        homeAddress?: string | null;
       }
     | undefined;
   Documents:
@@ -42,6 +51,7 @@ export function KYCFlowNavigator() {
       <Stack.Screen name="KycStatus" component={KycStatusScreen} />
       <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
       <Stack.Screen name="Address" component={AddressScreen} />
+      <Stack.Screen name="FaceLiveness" component={FaceLivenessScreen} />
       <Stack.Screen name="Documents" component={DocumentsScreen} />
     </Stack.Navigator>
   );
