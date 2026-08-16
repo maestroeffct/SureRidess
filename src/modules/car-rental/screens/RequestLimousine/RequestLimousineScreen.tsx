@@ -1,10 +1,10 @@
 /**
  * Request a Limousine — concierge form opened from the in-app limousine
- * banner. Submits to /limousine-requests; admin matches a provider manually
- * via the dashboard's Limousine Requests queue.
+ * tile. Submits to /limousine-requests; admin matches a provider
+ * manually via the dashboard's Limousine Requests queue.
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,21 +18,26 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 
 import { Typo } from '@/components/AppText/Typo';
+import { AppInput } from '@/components/AppInput/Input';
+import { AppButton } from '@/components/AppButton/CustomButton';
 import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { submitLimousineRequest } from '@/services/limousine.service';
 
 const GREEN = '#0A6A4B';
+const GREEN_DARK = '#064030';
+const GOLD = '#D4AF37';
 
 type FormState = {
   customerName: string;
   contactEmail: string;
   contactPhone: string;
-  pickupDate: string; // YYYY-MM-DD
-  pickupTime: string; // HH:MM
+  pickupAt: Date | null;
   pickupLocation: string;
   dropoffLocation: string;
   passengerCount: string;
@@ -40,27 +45,44 @@ type FormState = {
   notes: string;
 };
 
-const EVENT_TYPES = [
-  'Airport pickup',
-  'Wedding',
-  'Corporate event',
-  'Birthday',
-  'Prom / Graduation',
-  'Other',
+const EVENT_TYPES: Array<{
+  label: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+}> = [
+  { label: 'Airport pickup', icon: 'airplane-outline' },
+  { label: 'Wedding', icon: 'heart-outline' },
+  { label: 'Corporate event', icon: 'briefcase-outline' },
+  { label: 'Birthday', icon: 'gift-outline' },
+  { label: 'Prom / Graduation', icon: 'school-outline' },
+  { label: 'Other', icon: 'ellipsis-horizontal-outline' },
 ];
+
+function pad(n: number) {
+  return String(n).padStart(2, '0');
+}
+function formatDate(d: Date) {
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+function formatTime(d: Date) {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export default function RequestLimousineScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { user } = useAuth();
 
   const [form, setForm] = useState<FormState>({
     customerName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
     contactEmail: user?.email ?? '',
     contactPhone: `${user?.phoneCountry ?? ''}${user?.phoneNumber ?? ''}`.trim(),
-    pickupDate: '',
-    pickupTime: '',
+    pickupAt: null,
     pickupLocation: '',
     dropoffLocation: '',
     passengerCount: '1',
@@ -68,23 +90,25 @@ export default function RequestLimousineScreen() {
     notes: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm(prev => ({ ...prev, [k]: v }));
+
+  const passengerNum = useMemo(
+    () => Math.max(1, Math.min(20, Number(form.passengerCount) || 1)),
+    [form.passengerCount],
+  );
 
   const validate = (): string | null => {
     if (!form.customerName.trim()) return 'Please enter your name';
     if (!form.contactEmail.includes('@')) return 'Enter a valid email';
     if (form.contactPhone.replace(/\D/g, '').length < 7)
       return 'Enter a valid phone';
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.pickupDate))
-      return 'Pickup date format must be YYYY-MM-DD';
-    if (!/^\d{1,2}:\d{2}$/.test(form.pickupTime))
-      return 'Pickup time format must be HH:MM (24h)';
+    if (!form.pickupAt) return 'Pick a pickup date and time';
+    if (form.pickupAt.getTime() < Date.now() - 60 * 1000)
+      return 'Pickup time must be in the future';
     if (!form.pickupLocation.trim()) return 'Please enter pickup location';
-    const passengers = Number(form.passengerCount);
-    if (!Number.isFinite(passengers) || passengers < 1)
-      return 'Passenger count must be at least 1';
     return null;
   };
 
@@ -94,17 +118,18 @@ export default function RequestLimousineScreen() {
       Toast.show({ type: 'error', text1: err });
       return;
     }
+    const pickupAt = form.pickupAt as Date;
     try {
       setSubmitting(true);
       await submitLimousineRequest({
         customerName: form.customerName.trim(),
         contactEmail: form.contactEmail.trim().toLowerCase(),
         contactPhone: form.contactPhone.trim(),
-        pickupDate: form.pickupDate,
-        pickupTime: form.pickupTime,
+        pickupDate: `${pickupAt.getFullYear()}-${pad(pickupAt.getMonth() + 1)}-${pad(pickupAt.getDate())}`,
+        pickupTime: formatTime(pickupAt),
         pickupLocation: form.pickupLocation.trim(),
         dropoffLocation: form.dropoffLocation.trim() || undefined,
-        passengerCount: Number(form.passengerCount),
+        passengerCount: passengerNum,
         eventType: form.eventType || undefined,
         notes: form.notes.trim() || undefined,
       });
@@ -125,296 +150,484 @@ export default function RequestLimousineScreen() {
     }
   };
 
+  const handleDateChange = (_: unknown, selected?: Date) => {
+    if (!selected) {
+      setPickerMode(null);
+      return;
+    }
+    const base = form.pickupAt ?? new Date();
+    if (pickerMode === 'date') {
+      const merged = new Date(base);
+      merged.setFullYear(selected.getFullYear());
+      merged.setMonth(selected.getMonth());
+      merged.setDate(selected.getDate());
+      set('pickupAt', merged);
+    } else {
+      const merged = new Date(base);
+      merged.setHours(selected.getHours());
+      merged.setMinutes(selected.getMinutes());
+      set('pickupAt', merged);
+    }
+    setPickerMode(null);
+  };
+
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
-      <View style={[s.header, { paddingTop: insets.top + 6 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-          <Ionicons name="close" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={s.headerTitleWrap}>
-          <Ionicons name="car-sport" size={18} color={GREEN} />
-          <Typo style={[s.headerTitle, { color: colors.textPrimary }]}>
-            Request a Limousine
+      {/* ── HERO ── */}
+      <View style={[s.hero, { paddingTop: insets.top + 8 }]}>
+        <LinearGradient
+          colors={[GREEN_DARK, GREEN]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={s.heroTopBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} style={s.closeBtn}>
+            <Ionicons name="close" size={22} color="#fff" />
+          </TouchableOpacity>
+          <View style={[s.tierChip, { borderColor: `${GOLD}66` }]}>
+            <View style={[s.tierDot, { backgroundColor: GOLD }]} />
+            <Typo style={s.tierChipText}>Concierge</Typo>
+          </View>
+        </View>
+
+        <View style={s.heroBody}>
+          <View style={[s.heroIcon, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
+            <Ionicons name="car-sport" size={30} color={GOLD} />
+          </View>
+          <Typo style={s.heroTitle}>Request a Limousine</Typo>
+          <Typo style={s.heroSubtitle}>
+            Chauffeur service for airports, weddings, corporate events, and
+            special occasions. Our concierge team confirms availability and
+            pricing within a few hours.
           </Typo>
         </View>
-        <View style={{ width: 26 }} />
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           contentContainerStyle={{
-            padding: 18,
-            paddingBottom: insets.bottom + 100,
+            padding: 20,
+            paddingBottom: insets.bottom + 120,
           }}
           showsVerticalScrollIndicator={false}
         >
-          <Typo style={[s.intro, { color: colors.textSecondary }]}>
-            Tell us a bit about your trip and we&rsquo;ll match you with a
-            provider. Our team will contact you within a few hours to confirm
-            availability and final pricing.
-          </Typo>
+          {/* ── CONTACT ── */}
+          <SectionHeader icon="person-outline" title="Contact details" colors={colors} />
+          <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <AppInput
+              label="Full name"
+              value={form.customerName}
+              onChangeText={t => set('customerName', t)}
+              placeholder="Your name"
+            />
+            <AppInput
+              label="Email"
+              value={form.contactEmail}
+              onChangeText={t => set('contactEmail', t)}
+              placeholder="email@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <AppInput
+              label="Phone"
+              value={form.contactPhone}
+              onChangeText={t => set('contactPhone', t)}
+              placeholder="+234..."
+              keyboardType="phone-pad"
+            />
+          </View>
 
-          <Section title="Contact details" colors={colors}>
-            <Field label="Full name" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.customerName}
-                onChangeText={t => set('customerName', t)}
-                placeholder="Your name"
-                placeholderTextColor={colors.textSecondary}
+          {/* ── TRIP ── */}
+          <SectionHeader icon="location-outline" title="Trip details" colors={colors} />
+          <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {/* Date + time row */}
+            <View style={s.row2}>
+              <PickerField
+                icon="calendar-outline"
+                label="Pickup date"
+                value={form.pickupAt ? formatDate(form.pickupAt) : ''}
+                placeholder="Select date"
+                onPress={() => setPickerMode('date')}
+                colors={colors}
               />
-            </Field>
-            <Field label="Email" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.contactEmail}
-                onChangeText={t => set('contactEmail', t)}
-                placeholder="email@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </Field>
-            <Field label="Phone" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.contactPhone}
-                onChangeText={t => set('contactPhone', t)}
-                placeholder="+234..."
-                keyboardType="phone-pad"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Trip details" colors={colors}>
-            <Field label="Pickup date (YYYY-MM-DD)" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.pickupDate}
-                onChangeText={t => set('pickupDate', t)}
-                placeholder="2026-07-12"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </Field>
-            <Field label="Pickup time (24h)" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.pickupTime}
-                onChangeText={t => set('pickupTime', t)}
-                placeholder="14:30"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </Field>
-            <Field label="Pickup location" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.pickupLocation}
-                onChangeText={t => set('pickupLocation', t)}
-                placeholder="Address or landmark"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </Field>
-            <Field label="Drop-off location (optional)" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.dropoffLocation}
-                onChangeText={t => set('dropoffLocation', t)}
-                placeholder="Address or venue"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </Field>
-            <Field label="Number of passengers" colors={colors}>
-              <TextInput
-                style={[s.input, { color: colors.textPrimary }]}
-                value={form.passengerCount}
-                onChangeText={t =>
-                  set('passengerCount', t.replace(/[^0-9]/g, ''))
+              <PickerField
+                icon="time-outline"
+                label="Pickup time"
+                value={form.pickupAt ? formatTime(form.pickupAt) : ''}
+                placeholder="—"
+                onPress={() =>
+                  form.pickupAt
+                    ? setPickerMode('time')
+                    : Toast.show({ type: 'info', text1: 'Pick a date first' })
                 }
-                keyboardType="number-pad"
-                placeholder="1"
-                placeholderTextColor={colors.textSecondary}
+                colors={colors}
               />
-            </Field>
-          </Section>
+            </View>
 
-          <Section title="Occasion (optional)" colors={colors}>
+            <AppInput
+              label="Pickup location"
+              value={form.pickupLocation}
+              onChangeText={t => set('pickupLocation', t)}
+              placeholder="Address, hotel, or landmark"
+              leftIcon={<Ionicons name="pin-outline" size={18} color={colors.textSecondary} />}
+            />
+            <AppInput
+              label="Drop-off location (optional)"
+              value={form.dropoffLocation}
+              onChangeText={t => set('dropoffLocation', t)}
+              placeholder="Address or venue"
+              leftIcon={<Ionicons name="flag-outline" size={18} color={colors.textSecondary} />}
+            />
+
+            {/* Passengers stepper */}
+            <View style={{ marginTop: 6 }}>
+              <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>
+                Number of passengers
+              </Typo>
+              <View style={[s.stepper, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <TouchableOpacity
+                  onPress={() => set('passengerCount', String(Math.max(1, passengerNum - 1)))}
+                  style={s.stepperBtn}
+                  hitSlop={8}
+                >
+                  <Ionicons name="remove" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+                <View style={s.stepperValueWrap}>
+                  <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
+                  <Typo style={[s.stepperValue, { color: colors.textPrimary }]}>{passengerNum}</Typo>
+                </View>
+                <TouchableOpacity
+                  onPress={() => set('passengerCount', String(Math.min(20, passengerNum + 1)))}
+                  style={s.stepperBtn}
+                  hitSlop={8}
+                >
+                  <Ionicons name="add" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* ── OCCASION ── */}
+          <SectionHeader icon="sparkles-outline" title="Occasion (optional)" colors={colors} />
+          <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={s.chipsRow}>
               {EVENT_TYPES.map(opt => {
-                const active = form.eventType === opt;
+                const active = form.eventType === opt.label;
                 return (
                   <Pressable
-                    key={opt}
-                    onPress={() => set('eventType', active ? '' : opt)}
+                    key={opt.label}
+                    onPress={() => set('eventType', active ? '' : opt.label)}
                     style={[
                       s.chip,
                       {
                         borderColor: active ? GREEN : colors.border,
-                        backgroundColor: active ? `${GREEN}22` : 'transparent',
+                        backgroundColor: active
+                          ? mode === 'dark'
+                            ? 'rgba(10,106,75,0.25)'
+                            : '#E7F5F0'
+                          : 'transparent',
                       },
                     ]}
                   >
+                    <Ionicons
+                      name={opt.icon}
+                      size={14}
+                      color={active ? GREEN : colors.textSecondary}
+                    />
                     <Typo
                       style={[
                         s.chipText,
-                        { color: active ? GREEN : colors.textSecondary },
+                        { color: active ? GREEN : colors.textPrimary, fontWeight: active ? '700' : '500' },
                       ]}
                     >
-                      {opt}
+                      {opt.label}
                     </Typo>
                   </Pressable>
                 );
               })}
             </View>
-            <Field label="Anything else we should know?" colors={colors}>
+
+            <View style={{ marginTop: 16 }}>
+              <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>
+                Anything else we should know?
+              </Typo>
               <TextInput
                 style={[
-                  s.input,
-                  { color: colors.textPrimary, minHeight: 90, textAlignVertical: 'top' },
+                  s.notesInput,
+                  {
+                    color: colors.textPrimary,
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
                 ]}
                 value={form.notes}
                 onChangeText={t => set('notes', t)}
-                placeholder="Optional notes for the provider"
+                placeholder="Preferred vehicle style, event dress code, luggage, VIP requirements…"
                 placeholderTextColor={colors.textSecondary}
                 multiline
+                numberOfLines={4}
               />
-            </Field>
-          </Section>
+            </View>
+          </View>
+
+          {/* ── HOW IT WORKS ── */}
+          <View
+            style={[
+              s.infoCard,
+              {
+                backgroundColor: mode === 'dark' ? 'rgba(212,175,55,0.08)' : '#FEF7E0',
+                borderColor: `${GOLD}55`,
+              },
+            ]}
+          >
+            <Ionicons name="information-circle" size={16} color={GOLD} style={{ marginTop: 1 }} />
+            <View style={{ flex: 1 }}>
+              <Typo style={[s.infoTitle, { color: mode === 'dark' ? '#F5D373' : '#7C5E00' }]}>
+                What happens next
+              </Typo>
+              <Typo style={[s.infoText, { color: colors.textSecondary }]}>
+                Your request goes to our concierge queue. A team member
+                confirms vehicle availability, final pricing, and payment
+                details by call or WhatsApp within a few hours.
+              </Typo>
+            </View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* ── BOTTOM BAR ── */}
       <View
         style={[
           s.footer,
-          { paddingBottom: insets.bottom + 12, borderTopColor: colors.border },
+          {
+            paddingBottom: insets.bottom + 12,
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+          },
         ]}
       >
-        <TouchableOpacity
-          activeOpacity={0.85}
+        <AppButton
+          title={submitting ? 'Sending…' : 'Send Request'}
           onPress={onSubmit}
-          disabled={submitting}
-          style={[s.cta, { opacity: submitting ? 0.55 : 1 }]}
-        >
-          <Ionicons name="paper-plane" size={16} color="#fff" />
-          <Typo style={s.ctaText}>
-            {submitting ? 'Sending…' : 'Send request'}
-          </Typo>
-        </TouchableOpacity>
+          loading={submitting}
+        />
       </View>
+
+      {pickerMode && (
+        <DateTimePicker
+          value={form.pickupAt ?? new Date(Date.now() + 60 * 60 * 1000)}
+          mode={pickerMode}
+          minimumDate={pickerMode === 'date' ? new Date() : undefined}
+          onChange={handleDateChange}
+        />
+      )}
     </View>
   );
 }
 
-function Section({
+/* ── local helpers ─────────────────────────────────────────────────── */
+
+function SectionHeader({
+  icon,
   title,
-  children,
   colors,
 }: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   title: string;
-  children: React.ReactNode;
   colors: any;
 }) {
   return (
-    <View style={s.section}>
-      <Typo style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        {title}
-      </Typo>
-      <View
-        style={[
-          s.sectionBody,
-          { borderColor: colors.border, backgroundColor: colors.surface },
-        ]}
-      >
-        {children}
-      </View>
+    <View style={s.sectionHead}>
+      <Ionicons name={icon} size={16} color={GREEN} />
+      <Typo style={[s.sectionTitle, { color: colors.textPrimary }]}>{title}</Typo>
     </View>
   );
 }
 
-function Field({
+function PickerField({
+  icon,
   label,
-  children,
+  value,
+  placeholder,
+  onPress,
   colors,
 }: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
-  children: React.ReactNode;
+  value: string;
+  placeholder: string;
+  onPress: () => void;
   colors: any;
 }) {
   return (
-    <View style={s.field}>
-      <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>
-        {label}
-      </Typo>
-      {children}
+    <View style={{ flex: 1 }}>
+      <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>{label}</Typo>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.85}
+        style={[s.pickerField, { borderColor: colors.border, backgroundColor: colors.background }]}
+      >
+        <Ionicons name={icon} size={16} color={colors.textSecondary} />
+        <Typo
+          style={{
+            flex: 1,
+            color: value ? colors.textPrimary : colors.textSecondary,
+            fontSize: 14,
+          }}
+          numberOfLines={1}
+        >
+          {value || placeholder}
+        </Typo>
+        <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+      </TouchableOpacity>
     </View>
   );
 }
+
+/* ── styles ───────────────────────────────────────────────────────── */
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  header: {
+
+  hero: {
+    paddingBottom: 22,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    overflow: 'hidden',
+  },
+  heroTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
-  headerTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 16, fontWeight: '700' },
-  intro: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 14,
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  section: { marginBottom: 18 },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  sectionBody: {
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-  },
-  field: { gap: 6 },
-  fieldLabel: { fontSize: 12, fontWeight: '600' },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    borderWidth: 1,
+  tierChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderWidth: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
-  chipText: { fontSize: 12, fontWeight: '600' },
-  footer: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    borderTopWidth: 1,
+  tierDot: { width: 6, height: 6, borderRadius: 3 },
+  tierChipText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  heroBody: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 8, gap: 8 },
+  heroIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  cta: {
-    backgroundColor: GREEN,
+  heroTitle: { color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
+  heroSubtitle: {
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: 12.5,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 18,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sectionTitle: { fontSize: 14, fontWeight: '800', letterSpacing: 0.1 },
+
+  card: {
     borderRadius: 14,
-    height: 52,
+    borderWidth: 1,
+    padding: 16,
+    gap: 4,
+  },
+
+  row2: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+
+  fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6, marginLeft: 2 },
+  pickerField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 48,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    height: 48,
+    overflow: 'hidden',
+  },
+  stepperBtn: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  stepperValueWrap: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  ctaText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  stepperValue: { fontSize: 15, fontWeight: '700' },
+
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  chipText: { fontSize: 12.5 },
+
+  notesInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    minHeight: 96,
+    textAlignVertical: 'top',
+  },
+
+  infoCard: {
+    marginTop: 18,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  infoTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4, textTransform: 'uppercase' },
+  infoText: { fontSize: 12, marginTop: 3, lineHeight: 17 },
+
+  footer: {
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
 });
