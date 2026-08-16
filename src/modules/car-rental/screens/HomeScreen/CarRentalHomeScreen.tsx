@@ -32,6 +32,7 @@ import { flagForCountry } from '@/helpers/region';
 import type { RentalCar } from '@/types/rental';
 import { PromoBannerCarousel } from '@/components/PromoBannerCarousel/PromoBannerCarousel';
 import { KycBanner } from '@/components/KycBanner/KycBanner';
+import { ResumeCard } from '@/components/Rental/ResumeCard/ResumeCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_BG = require('@/assets/images/car_back.png');
@@ -396,6 +397,11 @@ const CarRentalHomeScreen = () => {
         ) : (
           <>
             <KycBanner />
+            {/* "Continue where you left off" — reads the local Checkout
+                draft written by PaymentScreen and, if present, offers a
+                one-tap resume back into the same flow. Renders nothing
+                when there's no live draft. */}
+            <ResumeCard />
             {/* Admin-managed promo banners (HOME_HERO) — renders nothing if
                 there are no active banners, so no layout shift when empty. */}
             <PromoBannerCarousel placement="HOME_HERO" topGap={16} bottomGap={4} />

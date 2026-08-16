@@ -49,6 +49,12 @@ import { PriceBreakdown } from '@/components/Rental/PriceBreakdown/PriceBreakdow
 import { useCurrency, useFormatMoney } from '@/providers/CurrencyProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ImageSize, optimizeImageUrl } from '@/helpers/image';
+import {
+  clearDraft,
+  loadDraft,
+  makeDebouncedSaver,
+  type CheckoutDraft,
+} from '@/services/drafts.service';
 
 const GREEN = '#0A6A4B';
 const SW = Dimensions.get('window').width;
@@ -164,6 +170,59 @@ const PaymentScreen = () => {
     })();
     return () => { cancelled = true; };
   }, [vehicleId, car?.id]);
+
+  // ── Checkout draft persistence ─────────────────────────────────
+  // Debounced writer keeps a live snapshot of the checkout in
+  // AsyncStorage so a user who quits mid-flow can resume from the
+  // Home banner. Cleared on successful booking + payment confirmation.
+  const saveCheckoutDraft = useMemo(
+    () => makeDebouncedSaver<CheckoutDraft>('checkout', 400),
+    [],
+  );
+
+  useEffect(() => {
+    const carId = vehicleId || car?.id;
+    if (!carId || !search?.pickupAt || !search?.returnAt) return;
+    // Don't overwrite the draft once the booking is created — from
+    // that point the Booking Details screen owns the "resume payment"
+    // affordance (the reservation exists server-side).
+    if (createdBookingId) return;
+    saveCheckoutDraft({
+      carId,
+      carName: car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle',
+      carImage: car?.images?.find(i => i.isPrimary)?.url ?? car?.images?.[0]?.url,
+      pickupAt: search.pickupAt,
+      returnAt: search.returnAt,
+      pickupLocationId: routePickupLocationId ?? search?.pickupLocationId ?? '',
+      dropoffLocationId: routeDropoffLocationId ?? search?.dropoffLocationId ?? '',
+      pickupLocationName,
+      insuranceId,
+      addons: addonsPayload,
+      gatewayKey: gatewayKey ?? undefined,
+      paymentMethod,
+      currency: userCurrency,
+      totalPreview: pricing?.totalPrice,
+      step: 'CHECKOUT',
+    });
+  }, [
+    vehicleId,
+    car?.id,
+    car?.brand,
+    car?.model,
+    search?.pickupAt,
+    search?.returnAt,
+    routePickupLocationId,
+    routeDropoffLocationId,
+    pickupLocationName,
+    insuranceId,
+    addonsKey,
+    gatewayKey,
+    paymentMethod,
+    userCurrency,
+    pricing?.totalPrice,
+    createdBookingId,
+    saveCheckoutDraft,
+  ]);
 
   useEffect(() => {
     if (paymentMethod !== 'ONLINE') return;
@@ -435,6 +494,7 @@ const PaymentScreen = () => {
         setCreatedBookingId(bookingId);
       }
       await confirmCollectionBooking(bookingId);
+      void clearDraft('checkout');
       showSuccess('Booking confirmed! Pay on collection.');
       navigation.navigate('BookingStatus', { status: 'success', bookingId, paymentMethod: 'COLLECTION' });
     } catch (error: any) {
@@ -518,6 +578,7 @@ const PaymentScreen = () => {
       if (initError) { showError(initError.message || 'Unable to initialize payment sheet'); return; }
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) { const code = String(presentError.code || '').toLowerCase(); showError(code.includes('canceled') ? 'Payment cancelled' : presentError.message || 'Payment failed'); return; }
+      void clearDraft('checkout');
       showSuccess('Payment successful');
       navigation.navigate('BookingStatus', { status: 'success', bookingId });
     } catch (error: any) {
@@ -575,6 +636,7 @@ const PaymentScreen = () => {
       try {
         const result = await verifyBookingPayment(bookingId, reference);
         if (result.paymentStatus === 'SUCCEEDED') {
+          void clearDraft('checkout');
           showSuccess('Payment confirmed');
           navigation.navigate('BookingStatus', {
             status: 'success',
