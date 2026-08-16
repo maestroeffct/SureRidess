@@ -8,6 +8,8 @@ export type CreateReviewPayload = {
   bookingId: string;
   rating: number;
   comment?: string;
+  providerRating?: number;
+  providerComment?: string;
 };
 
 export async function listCarReviews(

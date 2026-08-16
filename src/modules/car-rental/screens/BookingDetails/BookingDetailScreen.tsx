@@ -654,6 +654,7 @@ const BookingDetailScreen = () => {
           carId={booking.car.id}
           bookingId={booking.id}
           carTitle={carName}
+          providerName={provider?.name}
           onClose={() => setReviewOpen(false)}
           onSubmitted={async () => {
             try {
