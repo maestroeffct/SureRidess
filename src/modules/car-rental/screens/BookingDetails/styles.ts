@@ -1,6 +1,15 @@
 import { StyleSheet } from 'react-native';
 import { Spacing, Radius } from '@/theme';
 
+/**
+ * Booking Details visual scaffold.
+ *
+ * The screen matches the Payment/Checkout pattern — a full-width photo
+ * hero followed by flat sections separated by hairline dividers. Each
+ * `section` provides horizontal + vertical padding; the divider is
+ * baked into the styles (borderBottom) so callers don't have to draw
+ * one manually. Hero + bottom bar live inside the screen component.
+ */
 export default StyleSheet.create({
   header: {
     height: 56,
@@ -27,9 +36,11 @@ export default StyleSheet.create({
   },
 
   section: {
-    padding: Spacing.lg,
-    borderBottomWidth: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: '#E5E7EB',
+    gap: 10,
   },
 
   vehicleName: {
@@ -53,13 +64,18 @@ export default StyleSheet.create({
   },
 
   infoRow: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
   },
 
   pickupCode: {
     marginHorizontal: Spacing.lg,
+    marginTop: 10,
     padding: Spacing.md,
     backgroundColor: '#ECFDF5',
     borderRadius: Radius.sm,
@@ -74,18 +90,23 @@ export default StyleSheet.create({
 
   totalRow: {
     marginTop: Spacing.md,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
 
   total: {
-    fontWeight: '700',
+    fontWeight: '800',
+    fontSize: 16,
     color: '#0A6A4B',
   },
 
   cancelBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -97,12 +118,13 @@ export default StyleSheet.create({
 
   cancelText: {
     color: '#DC2626',
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
   receiptBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -114,6 +136,6 @@ export default StyleSheet.create({
 
   receiptText: {
     color: '#0A6A4B',
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

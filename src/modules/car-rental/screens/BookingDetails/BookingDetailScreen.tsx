@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { AppAlert } from '@/components/AppAlert/AppAlert';
 import Icon from '@react-native-vector-icons/ionicons';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
 import dayjs from 'dayjs';
 
-import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import styles from './styles';
 import { ProviderRow } from '@/components/Rental/ProviderRow/ProviderRow';
@@ -38,10 +41,15 @@ type RouteParams = {
   status?: 'in_progress' | 'completed';
 };
 
+const GREEN = '#0A6A4B';
+const HERO_H = 260;
+const SW = Dimensions.get('window').width;
+
 const BookingDetailsScreen = () => {
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const fmtMoney = useFormatMoney();
 
   const { bookingId, status = 'in_progress' } = route.params || {};
@@ -105,20 +113,14 @@ const BookingDetailsScreen = () => {
 
   if (loading) {
     return (
-      <ScreenWrapper padded={false}>
-        <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 16 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} color={colors.textPrimary} />
+            <Icon name="chevron-back" size={26} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Typo variant="subheading">Booking Details</Typo>
-          <View style={{ width: 24 }} />
         </View>
-        <ActivityIndicator
-          size="large"
-          color="#0A6A4B"
-          style={{ marginTop: 80 }}
-        />
-      </ScreenWrapper>
+        <ActivityIndicator size="large" color={GREEN} style={{ marginTop: 80 }} />
+      </View>
     );
   }
 
@@ -174,110 +176,75 @@ const BookingDetailsScreen = () => {
   const formatMoney = (amount?: number) => fmtMoney(amount, rawCurrency, { round: true });
 
   return (
-    <ScreenWrapper padded={false}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: paymentPending ? 140 : 40 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#0A6A4B']}
+            colors={[GREEN]}
           />
         }
       >
-        {/* HEADER */}
-        <View style={[styles.header, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
-
-          <Typo variant="subheading">Booking Details</Typo>
-
-          <TouchableOpacity>
-            <Icon name="ellipsis-horizontal" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* PAY-NOW BANNER — only when the booking is unpaid + online */}
-        {paymentPending && (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleCompletePayment}
-            style={{
-              margin: 16,
-              padding: 14,
-              borderRadius: 12,
-              backgroundColor: '#FEF3C7',
-              borderWidth: 1,
-              borderColor: '#F59E0B',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <Icon name="alert-circle" size={22} color="#B45309" />
-            <View style={{ flex: 1 }}>
-              <Typo style={{ fontSize: 14, fontWeight: '700', color: '#7C2D12' }}>
-                Your booking isn't confirmed yet
-              </Typo>
-              <Typo style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>
-                Complete payment to lock in this car. The reservation
-                expires if left unpaid.
-              </Typo>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-                borderRadius: 999,
-                backgroundColor: '#B45309',
-              }}
-            >
-              <Typo style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
-                {typeof payment?.totalPrice === 'number'
-                  ? `Pay ${formatMoney(payment.totalPrice)}`
-                  : 'Pay now'}
-              </Typo>
-              <Icon name="arrow-forward" size={13} color="#fff" />
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* IMAGE */}
-        <View>
-          <Image
-            source={imageSource}
-            style={styles.image}
-            resizeMode="cover"
+        {/* ── HERO ── */}
+        <View style={hero.wrap}>
+          <Image source={imageSource} style={hero.img} resizeMode="cover" />
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(0,0,0,0.55)', 'transparent']}
+            style={[hero.gradTop, { height: insets.top + 60 }]}
+          />
+          <LinearGradient
+            pointerEvents="none"
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            style={hero.gradBottom}
           />
 
-          <View style={[styles.imageCounter, { backgroundColor: colors.background }]}>
-            <Typo variant="caption">1/{car?.images?.length ?? 1}</Typo>
-          </View>
-        </View>
-
-        {/* VEHICLE INFO */}
-        <View style={[styles.section, { borderColor: colors.border }]}>
-          <Typo style={styles.vehicleName}>{carName}</Typo>
-
-          <View style={styles.locationRow}>
-            <Icon name="location-outline" size={16} />
-            <Typo variant="caption">{pickupName}</Typo>
+          <TouchableOpacity
+            style={[hero.backBtn, { top: insets.top + 10 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="chevron-back" size={20} color="#fff" />
+          </TouchableOpacity>
+          <View pointerEvents="box-none" style={[hero.title, { top: insets.top + 14 }]}>
+            <Typo style={hero.titleText}>Booking Details</Typo>
           </View>
 
-          <View style={styles.tagsRow}>
-            {!!car?.category && <Tag label={formatLabel(car.category)} />}
-            {!!car?.transmission && <Tag label={formatLabel(car.transmission)} />}
-            {typeof car?.seats === 'number' && <Tag label={String(car.seats)} icon="people-outline" />}
-            {typeof car?.hasAC === 'boolean' && (
-              <Tag label={car.hasAC ? 'A/C' : 'No A/C'} />
-            )}
-            {!!car?.mileagePolicy && (
-              <Tag label={`${formatLabel(car.mileagePolicy)} Mileage`} />
-            )}
+          <View style={hero.counterPill}>
+            <Typo style={hero.counterText}>1/{car?.images?.length ?? 1}</Typo>
+          </View>
+
+          {/* Car name + tags overlay */}
+          <View pointerEvents="none" style={hero.info}>
+            <Typo style={hero.name}>{carName}</Typo>
+            <View style={hero.locationRow}>
+              <Icon name="location-outline" size={13} color="rgba(255,255,255,0.9)" />
+              <Typo style={hero.locationText}>{pickupName}</Typo>
+            </View>
+            <View style={hero.tagsRow}>
+              {!!car?.transmission && (
+                <View style={hero.tag}>
+                  <Typo style={hero.tagText}>{formatLabel(car.transmission)}</Typo>
+                </View>
+              )}
+              {typeof car?.seats === 'number' && (
+                <View style={hero.tag}>
+                  <Typo style={hero.tagText}>{car.seats} Seats</Typo>
+                </View>
+              )}
+              {typeof car?.hasAC === 'boolean' && (
+                <View style={hero.tag}>
+                  <Typo style={hero.tagText}>{car.hasAC ? 'A/C' : 'No A/C'}</Typo>
+                </View>
+              )}
+              {!!car?.mileagePolicy && (
+                <View style={hero.tag}>
+                  <Typo style={hero.tagText}>{formatLabel(car.mileagePolicy)} mileage</Typo>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -623,6 +590,39 @@ const BookingDetailsScreen = () => {
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* ── STICKY BOTTOM BAR — main action for the current state ── */}
+      {paymentPending && (
+        <View
+          style={[
+            bottomBar.wrap,
+            {
+              paddingBottom: insets.bottom + 12,
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+            },
+          ]}
+        >
+          <View style={{ flex: 1 }}>
+            <Typo style={[bottomBar.hint, { color: colors.textSecondary }]}>
+              Reservation expires if unpaid
+            </Typo>
+            <Typo style={bottomBar.total}>
+              {typeof payment?.totalPrice === 'number'
+                ? formatMoney(payment.totalPrice)
+                : ''}
+            </Typo>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleCompletePayment}
+            style={bottomBar.btn}
+          >
+            <Typo style={bottomBar.btnText}>Complete payment</Typo>
+            <Icon name="arrow-forward" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <AppAlert
         visible={cancelAlert}
         title="Cancel Booking"
@@ -657,9 +657,66 @@ const BookingDetailsScreen = () => {
           }}
         />
       ) : null}
-    </ScreenWrapper>
+    </View>
   );
 };
+
+/* ── Hero styles matching Payment/Checkout screen ── */
+const hero = StyleSheet.create({
+  wrap: { height: HERO_H, backgroundColor: '#111', overflow: 'hidden' },
+  img: { width: SW, height: HERO_H },
+  gradTop: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 },
+  gradBottom: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 130, zIndex: 1,
+  },
+  backBtn: {
+    position: 'absolute', left: 16, zIndex: 2,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  title: { position: 'absolute', left: 0, right: 0, zIndex: 2, alignItems: 'center' },
+  titleText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  counterPill: {
+    position: 'absolute', right: 16, top: 60, zIndex: 2,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4,
+  },
+  counterText: { fontSize: 12, color: '#fff', fontWeight: '600' },
+  info: {
+    position: 'absolute', bottom: 14, left: 16, right: 16, zIndex: 2, gap: 6,
+  },
+  name: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationText: { fontSize: 12, color: 'rgba(255,255,255,0.9)' },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  tag: {
+    backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 3,
+  },
+  tagText: { fontSize: 11, color: '#fff', fontWeight: '600' },
+});
+
+const bottomBar = StyleSheet.create({
+  wrap: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    borderTopWidth: 1,
+    paddingHorizontal: 20, paddingTop: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+  },
+  hint: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  total: { fontSize: 20, fontWeight: '800', color: GREEN, marginTop: 2 },
+  btn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: GREEN,
+    paddingHorizontal: 18, paddingVertical: 14,
+    borderRadius: 12,
+  },
+  btnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+});
 
 const leaveReviewStyles = {
   row: {
