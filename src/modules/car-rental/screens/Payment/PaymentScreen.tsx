@@ -697,21 +697,23 @@ const PaymentScreen = () => {
         <View style={s.body}>
           {/* Rental Period */}
           <SectionCard title="Rental Period" icon="calendar-outline">
-            <TimelineLocation
-              label="Pick-up"
-              icon="location" color={GREEN}
-              date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
-              place={pickupLocationName || locationName}
-              address={locationAddress || 'Pickup location'}
-            />
-            <TimelineLocation
-              label="Drop-off"
-              icon="location" color="#F59E0B"
-              date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
-              place={dropoffLocationName || locationName}
-              address={locationAddress || 'Drop-off location'}
-              isLast
-            />
+            <View style={s.timelineWrap}>
+              <TimelineLocation
+                label="Pick-up"
+                icon="location" color={GREEN}
+                date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
+                place={pickupLocationName || locationName}
+                address={locationAddress || 'Pickup location'}
+              />
+              <TimelineLocation
+                label="Drop-off"
+                icon="location" color="#F59E0B"
+                date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
+                place={dropoffLocationName || locationName}
+                address={locationAddress || 'Drop-off location'}
+                isLast
+              />
+            </View>
           </SectionCard>
 
           {/* Protection Plan */}
@@ -922,9 +924,13 @@ const PaymentScreen = () => {
                   return (
                     <TouchableOpacity
                       key={gw.gatewayKey}
+                      activeOpacity={0.85}
                       style={[
                         s.gatewayRow,
-                        { borderColor: colors.border },
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.surface,
+                        },
                         selected && {
                           borderColor: GREEN,
                           backgroundColor: mode === 'dark' ? '#0F3027' : '#F0FDF4',
@@ -933,29 +939,28 @@ const PaymentScreen = () => {
                       onPress={() => setGatewayKey(gw.gatewayKey)}
                     >
                       <View style={s.gatewayLeft}>
-                        <View
-                          style={[
-                            s.gatewayLogoWrap,
-                            { backgroundColor: colors.background, borderColor: colors.border },
-                          ]}
-                        >
+                        <View style={s.gatewayLogoBare}>
                           {localLogo ? (
                             <Image source={localLogo} style={s.gatewayLogo} />
                           ) : gw.logoUrl ? (
                             <Image source={{ uri: gw.logoUrl }} style={s.gatewayLogo} />
                           ) : (
-                            <Icon name="card-outline" size={22} color={colors.textSecondary} />
+                            <Icon name="card-outline" size={26} color={colors.textSecondary} />
                           )}
                         </View>
                         <View style={{ flex: 1 }}>
                           <Typo style={[s.gatewayName, { color: colors.textPrimary }]}>
                             {gw.displayName}
                           </Typo>
-                          {!supported && (
+                          {!supported ? (
                             <Typo style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
                               Coming soon in-app
                             </Typo>
-                          )}
+                          ) : selected ? (
+                            <Typo style={{ fontSize: 11, color: GREEN, marginTop: 2, fontWeight: '700' }}>
+                              Selected
+                            </Typo>
+                          ) : null}
                         </View>
                       </View>
                       <View
@@ -965,7 +970,9 @@ const PaymentScreen = () => {
                           selected && s.radioActive,
                         ]}
                       >
-                        {selected && <View style={s.radioDot} />}
+                        {selected && (
+                          <Icon name="checkmark" size={14} color="#fff" />
+                        )}
                       </View>
                     </TouchableOpacity>
                   );
@@ -1261,27 +1268,30 @@ const s = StyleSheet.create({
   collectionTitle: { fontSize: 14, fontWeight: '700' },
   collectionHint: { fontSize: 12, lineHeight: 18 },
 
+  /* timeline wrap — keeps timeline content off the phone edge */
+  timelineWrap: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
+
   /* gateways */
   gatewayRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginHorizontal: 12, marginBottom: 8, marginTop: 4,
+    marginHorizontal: 16, marginBottom: 10, marginTop: 4,
     borderWidth: 1.5,
-    borderRadius: 12, padding: 12,
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 14,
+    minHeight: 68,
   },
-  gatewayLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  gatewayLogoWrap: {
-    width: 40, height: 40, borderRadius: 10,
+  gatewayLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  gatewayLogoBare: {
+    width: 40, height: 40,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1,
   },
-  gatewayLogo: { width: 28, height: 28, resizeMode: 'contain' },
-  gatewayName: { fontSize: 14, fontWeight: '600' },
+  gatewayLogo: { width: 36, height: 36, resizeMode: 'contain' },
+  gatewayName: { fontSize: 15, fontWeight: '700' },
   radio: {
-    width: 22, height: 22, borderRadius: 11,
+    width: 24, height: 24, borderRadius: 12,
     borderWidth: 2,
     alignItems: 'center', justifyContent: 'center',
   },
-  radioActive: { borderColor: GREEN },
+  radioActive: { borderColor: GREEN, backgroundColor: GREEN },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: GREEN },
 
   /* bottom bar */
