@@ -124,6 +124,9 @@ export type BookingDetails = {
     protectionTier?: 'BASIC' | 'STANDARD' | 'PREMIUM' | 'ELITE' | null;
     taxAmount: number;
     totalPrice: number;
+    depositAmount?: number;
+    platformFee?: number;
+    providerEarning?: number;
     currency: string;
     pricingUnit: string;
     status: string;
