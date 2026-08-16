@@ -31,6 +31,7 @@ import { showError, showSuccess } from '@/helpers/toast';
 import { useFormatMoney } from '@/providers/CurrencyProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { WriteReviewModal } from '@/components/Rental/WriteReviewModal/WriteReviewModal';
+import { PickupReturnChain } from '@/components/Rental/PickupReturnChain/PickupReturnChain';
 
 type RouteParams = {
   bookingId: string;
@@ -286,6 +287,15 @@ const BookingDetailsScreen = () => {
           description="Professional rental service"
           verified
         />
+
+        {/* TWO-TAP PICKUP / RETURN CHAIN — timeline strip + contextual
+             card (waiting → code → confirm → in-trip → returned → done) */}
+        {!isCollection && booking && (
+          <PickupReturnChain
+            booking={booking}
+            onChanged={load}
+          />
+        )}
 
         {/* BOOKING ID */}
         <View style={[styles.infoRow, { borderBottomWidth: 1, borderColor: colors.border }]}>

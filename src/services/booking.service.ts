@@ -100,6 +100,20 @@ export type BookingDetails = {
     createdAt: string;
   }>;
 
+  /**
+   * Two-tap pickup / return confirmation chain state. The mobile app
+   * drives its status timeline + code cards + action buttons off these
+   * fields — see BookingDetailScreen's `deriveChainStep`.
+   */
+  chain?: {
+    pickupCode: string | null;
+    returnCode: string | null;
+    providerMarkedReadyAt: string | null;
+    customerConfirmedPickupAt: string | null;
+    customerMarkedReturnAt: string | null;
+    providerConfirmedReturnAt: string | null;
+  };
+
   payment: {
     basePrice: number;
     insuranceFee: number;
@@ -152,4 +166,19 @@ export async function fetchUserBookings(status?: string) {
   const params = status ? { status } : undefined;
   const response = await api.get('/bookings', { params });
   return response.data as BookingSummary[];
+}
+
+// ── Two-tap pickup / return confirmation chain ─────────────────────
+export async function confirmBookingPickup(bookingId: string, code: string) {
+  const response = await api.post(`/bookings/${bookingId}/pickup/confirm`, {
+    code,
+  });
+  return response.data as { message: string; booking: unknown };
+}
+
+export async function markBookingReturned(bookingId: string) {
+  const response = await api.post(
+    `/bookings/${bookingId}/return/mark-returned`,
+  );
+  return response.data as { message: string; booking: unknown };
 }
