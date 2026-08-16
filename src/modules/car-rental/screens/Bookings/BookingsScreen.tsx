@@ -197,48 +197,64 @@ const BookingsScreen = () => {
         </View>
       )}
 
-      {/* TABS */}
-      <View style={[s.tabRow, { borderBottomColor: colors.border }]}>
+      {/* ── SEGMENTED FILTER (icon + label + count) ────────────
+          Rounded segmented control replaces the old underlined-tab
+          bar. The active segment gets a solid brand fill; inactive
+          segments show a soft muted count chip for at-a-glance
+          workload. Icons anchor the labels so users can find the
+          right filter without reading. */}
+      <View style={[s.segWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {TABS.map(t => {
           const active = tab === t.key;
+          const iconName =
+            t.key === 'upcoming' ? 'calendar-outline'
+              : t.key === 'active' ? 'ellipse'
+                : 'checkmark-done-outline';
+          const c = counts[t.key];
           return (
             <TouchableOpacity
               key={t.key}
-              style={s.tabItem}
+              style={[
+                s.segItem,
+                active && { backgroundColor: '#0A6A4B' },
+              ]}
               onPress={() => setTab(t.key)}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
             >
+              <Icon
+                name={iconName as any}
+                size={t.key === 'active' ? 8 : 14}
+                color={active ? '#fff' : colors.textSecondary}
+                style={t.key === 'active' ? { marginRight: 2 } : undefined}
+              />
               <Typo
                 style={[
-                  s.tabLabel,
-                  {
-                    color: active ? colors.textPrimary : colors.textSecondary,
-                  },
-                  active && s.tabLabelActive,
+                  s.segLabel,
+                  { color: active ? '#fff' : colors.textPrimary },
                 ]}
               >
                 {t.label}
               </Typo>
-              <View
-                style={[
-                  s.tabCountPill,
-                  {
-                    backgroundColor: active ? '#0A6A4B' : colors.background,
-                    borderColor: active ? '#0A6A4B' : colors.border,
-                  },
-                ]}
-              >
-                <Typo
+              {c > 0 && (
+                <View
                   style={[
-                    s.tabCount,
-                    { color: active ? '#fff' : colors.textSecondary },
+                    s.segCount,
+                    {
+                      backgroundColor: active
+                        ? 'rgba(255,255,255,0.22)'
+                        : colors.background,
+                    },
                   ]}
                 >
-                  {counts[t.key]}
-                </Typo>
-              </View>
-              {active && (
-                <View style={[s.tabUnderline, { backgroundColor: '#0A6A4B' }]} />
+                  <Typo
+                    style={[
+                      s.segCountText,
+                      { color: active ? '#fff' : colors.textSecondary },
+                    ]}
+                  >
+                    {c}
+                  </Typo>
+                </View>
               )}
             </TouchableOpacity>
           );
@@ -429,39 +445,34 @@ const s = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
 
-  tabRow: {
+  segWrap: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    marginBottom: 12,
+    marginHorizontal: 20,
+    marginBottom: 14,
+    padding: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 4,
   },
-  tabItem: {
+  segItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    marginRight: 24,
+    paddingVertical: 10,
+    borderRadius: 11,
   },
-  tabLabel: { fontSize: 14, fontWeight: '500' },
-  tabLabelActive: { fontWeight: '700' },
-  tabCountPill: {
-    minWidth: 22,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+  segLabel: { fontSize: 13, fontWeight: '700' },
+  segCount: {
+    minWidth: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
     borderRadius: 999,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabCount: { fontSize: 11, fontWeight: '700' },
-  tabUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    borderRadius: 2,
-  },
+  segCountText: { fontSize: 11, fontWeight: '800' },
 
   list: { paddingHorizontal: 20, paddingBottom: 40 },
 

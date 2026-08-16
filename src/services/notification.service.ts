@@ -202,60 +202,73 @@ function routeFromNotificationData(data: Record<string, unknown> | undefined) {
 }
 
 function bindNotificationHandlers() {
-  // Tear down any previous bindings (e.g. after a re-login)
-  unsubscribeForeground?.();
-  unsubscribeOpenedApp?.();
+  // Tear down any previous bindings (e.g. after a re-login). Each step is
+  // guarded because a synchronous throw in any handler binding would crash
+  // the app on login → the user then can't get back in to fix it.
+  try {
+    unsubscribeForeground?.();
+    unsubscribeOpenedApp?.();
+  } catch (err) {
+    console.warn('[notifications] teardown failed', err);
+  }
 
-  // Foreground: FCM does NOT auto-show a banner when the app is open. Use
-  // Notifee to display a heads-up local notification so the user sees the
-  // SAME banner experience in foreground as in background.
-  unsubscribeForeground = messaging().onMessage(async msg => {
-    const title = msg.notification?.title ?? 'Notification';
-    const body = msg.notification?.body ?? '';
-    // FCM puts the image URL on either notification.imageUrl (v1
-    // canonical) or notification.android.imageUrl depending on payload
-    // shape. data.imageUrl is our own fallback.
-    const imageUrl =
-      (msg.notification as any)?.imageUrl ||
-      (msg.notification as any)?.android?.imageUrl ||
-      (msg.data?.imageUrl as string | undefined);
-    void displayLocalBanner(
-      title,
-      body,
-      msg.data as Record<string, unknown>,
-      imageUrl,
-    );
-  });
-
-  // When the user taps a Notifee-displayed banner from inside the app, route
-  // them the same way as a system-tray tap would.
-  notifee.onForegroundEvent(({ type, detail }) => {
-    // type 1 = PRESS (notifee's EventType enum — kept as a literal so we don't
-    // need to import the enum just for this one comparison).
-    if (type === 1) {
-      routeFromNotificationData(
-        detail.notification?.data as Record<string, unknown> | undefined,
-      );
-    }
-  });
-
-  // Tapped from system tray while app was backgrounded
-  unsubscribeOpenedApp = messaging().onNotificationOpenedApp(msg => {
-    routeFromNotificationData(msg.data as Record<string, unknown>);
-  });
-
-  // App was launched from a cold start by tapping a notification
-  messaging()
-    .getInitialNotification()
-    .then(msg => {
-      if (msg) {
-        // Delay slightly so the nav tree mounts before we navigate
-        setTimeout(() => {
-          routeFromNotificationData(msg.data as Record<string, unknown>);
-        }, 600);
+  try {
+    unsubscribeForeground = messaging().onMessage(async msg => {
+      try {
+        const title = msg.notification?.title ?? 'Notification';
+        const body = msg.notification?.body ?? '';
+        const imageUrl =
+          (msg.notification as any)?.imageUrl ||
+          (msg.notification as any)?.android?.imageUrl ||
+          (msg.data?.imageUrl as string | undefined);
+        void displayLocalBanner(
+          title,
+          body,
+          msg.data as Record<string, unknown>,
+          imageUrl,
+        );
+      } catch (err) {
+        console.warn('[notifications] onMessage handler failed', err);
       }
-    })
-    .catch(() => {});
+    });
+  } catch (err) {
+    console.warn('[notifications] onMessage bind failed', err);
+  }
+
+  try {
+    notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === 1) {
+        routeFromNotificationData(
+          detail.notification?.data as Record<string, unknown> | undefined,
+        );
+      }
+    });
+  } catch (err) {
+    console.warn('[notifications] notifee.onForegroundEvent failed', err);
+  }
+
+  try {
+    unsubscribeOpenedApp = messaging().onNotificationOpenedApp(msg => {
+      routeFromNotificationData(msg.data as Record<string, unknown>);
+    });
+  } catch (err) {
+    console.warn('[notifications] onNotificationOpenedApp bind failed', err);
+  }
+
+  try {
+    messaging()
+      .getInitialNotification()
+      .then(msg => {
+        if (msg) {
+          setTimeout(() => {
+            routeFromNotificationData(msg.data as Record<string, unknown>);
+          }, 600);
+        }
+      })
+      .catch(() => {});
+  } catch (err) {
+    console.warn('[notifications] getInitialNotification failed', err);
+  }
 }
 
 export function teardownNotificationHandlers() {
@@ -266,21 +279,40 @@ export function teardownNotificationHandlers() {
 }
 
 export async function initNotifications(): Promise<void> {
-  const granted = await requestNotificationPermission();
-  if (!granted) return;
-
-  const token = await getFCMToken();
-  if (token) {
-    await registerTokenWithBackend(token);
+  // Each side-effect is isolated so any single failure logs a warning
+  // instead of taking down the app right after login.
+  try {
+    const granted = await requestNotificationPermission();
+    if (!granted) return;
+  } catch (err) {
+    console.warn('[notifications] permission request failed', err);
+    return;
   }
 
-  // Refresh token when it rotates
-  messaging().onTokenRefresh(async newToken => {
-    await registerTokenWithBackend(newToken);
-  });
+  try {
+    const token = await getFCMToken();
+    if (token) await registerTokenWithBackend(token);
+  } catch (err) {
+    console.warn('[notifications] token fetch/register failed', err);
+  }
 
-  // Wire foreground + cold-start handlers
-  bindNotificationHandlers();
+  try {
+    messaging().onTokenRefresh(async newToken => {
+      try {
+        await registerTokenWithBackend(newToken);
+      } catch (err) {
+        console.warn('[notifications] refresh-token register failed', err);
+      }
+    });
+  } catch (err) {
+    console.warn('[notifications] onTokenRefresh bind failed', err);
+  }
+
+  try {
+    bindNotificationHandlers();
+  } catch (err) {
+    console.warn('[notifications] bindNotificationHandlers failed', err);
+  }
 }
 
 export function onForegroundMessage(

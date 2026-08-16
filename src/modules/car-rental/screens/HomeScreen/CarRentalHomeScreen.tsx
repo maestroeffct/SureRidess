@@ -132,16 +132,40 @@ const CarRentalHomeScreen = () => {
     [activeCategory, cars],
   );
 
-  const featuredCars = useMemo(() => filteredCars.slice(0, 8), [filteredCars]);
-
-  const newestCars = useMemo(() => {
-    const sorted = [...filteredCars].sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
+  // Featured = editorially-ranked slice: verified providers first,
+  // then by rating, then by review count. Falls back to server order
+  // for cars with no reviews yet so the rail is never empty.
+  const featuredCars = useMemo(() => {
+    const ranked = [...filteredCars].sort((a: any, b: any) => {
+      const av = a.provider?.isVerified ? 1 : 0;
+      const bv = b.provider?.isVerified ? 1 : 0;
+      if (av !== bv) return bv - av;
+      const ar = typeof a.rating === 'number' ? a.rating : 0;
+      const br = typeof b.rating === 'number' ? b.rating : 0;
+      if (br !== ar) return br - ar;
+      const ac = typeof a.reviewCount === 'number' ? a.reviewCount : 0;
+      const bc = typeof b.reviewCount === 'number' ? b.reviewCount : 0;
+      return bc - ac;
     });
-    return sorted.slice(0, 8);
+    return ranked.slice(0, 8);
   }, [filteredCars]);
+
+  // Newest = createdAt DESC minus anything already surfaced in Featured
+  // (dedup keeps the two rails visually distinct — otherwise both
+  // rails on a small catalog show the same cars in the same order).
+  const newestCars = useMemo(() => {
+    const featuredIds = new Set(featuredCars.map(c => c.id));
+    const sorted = [...filteredCars]
+      .sort((a, b) => {
+        const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bt - at;
+      })
+      .filter(c => !featuredIds.has(c.id));
+    // Fallback: if dedup empties the rail (tiny catalog), fall back
+    // to the newest 4 unfiltered so the section doesn't disappear.
+    return sorted.length > 0 ? sorted.slice(0, 8) : filteredCars.slice(0, 4);
+  }, [filteredCars, featuredCars]);
 
   return (
     <ScreenWrapper padded={false}>

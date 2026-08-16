@@ -553,8 +553,21 @@ const BookingDetailScreen = () => {
           </>
         )}
 
-        {/* ── DANGER ZONE ─────────────────────────────────────── */}
-        {state !== 'COMPLETED' && state !== 'CANCELLED' && state !== 'IN_TRIP' && state !== 'RETURN_REQUESTED' && (
+        {/* ── DANGER ZONE ────────────────────────────────────────
+            Cancel is only visible on states where a customer can walk
+            away themselves:
+              • PAY_PENDING / PAY_PROCESSING — no money captured yet,
+                cancellation is a free release.
+              • CONFIRMED_COLLECTION — pay-on-collection, still no money
+                moved, provider hasn't handed over.
+            Once payment is captured (CONFIRMED_WAITING_PROVIDER online
+            path) or later, cancellation triggers a refund flow that
+            has to go through support — the tap is replaced with a
+            "Request cancellation & refund" outline button that opens
+            the support thread instead of hitting cancelBooking(). */}
+        {(state === 'PAY_PENDING' ||
+          state === 'PAY_PROCESSING' ||
+          state === 'CONFIRMED_COLLECTION') && (
           <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
             <TouchableOpacity
               activeOpacity={0.85}
@@ -567,6 +580,31 @@ const BookingDetailScreen = () => {
                 {cancelling ? 'Cancelling…' : 'Cancel booking'}
               </Typo>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {state === 'CONFIRMED_WAITING_PROVIDER' && (
+          <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={s.refundBtn}
+              onPress={() =>
+                navigation.navigate('SupportChat' as any, {
+                  bookingId: booking.id,
+                  topic: 'REFUND_REQUEST',
+                })
+              }
+            >
+              <Icon name="return-up-back-outline" size={18} color={colors.textPrimary} />
+              <Typo style={[s.refundText, { color: colors.textPrimary }]}>
+                Request cancellation & refund
+              </Typo>
+            </TouchableOpacity>
+            <Typo style={[s.refundHint, { color: colors.textSecondary }]}>
+              Payment is captured. Any refund is calculated against the
+              cancellation policy — our team confirms in chat before
+              releasing the car.
+            </Typo>
           </View>
         )}
 
@@ -648,7 +686,9 @@ const BookingDetailScreen = () => {
               }}
               colors={colors}
             />
-            {state !== 'COMPLETED' && state !== 'CANCELLED' && (
+            {(state === 'PAY_PENDING' ||
+              state === 'PAY_PROCESSING' ||
+              state === 'CONFIRMED_COLLECTION') && (
               <MenuItem
                 icon="close-circle-outline"
                 label="Cancel booking"
@@ -1208,6 +1248,16 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(239,68,68,0.08)',
   },
   cancelText: { color: RED, fontSize: 14, fontWeight: '800' },
+  refundBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.35)',
+    backgroundColor: 'transparent',
+  },
+  refundText: { fontSize: 14, fontWeight: '700' },
+  refundHint: { fontSize: 11, marginTop: 8, lineHeight: 15, textAlign: 'center' },
 
   /* footer */
   footer: {
