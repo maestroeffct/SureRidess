@@ -25,5 +25,43 @@
     "dropoffTimeLabel": "DROP-OFF TIME",
     "cancel": "Cancel",
     "confirm": "Confirm"
+  },
+  "drawerContent": {
+    "apps": {
+      "carRental": "Car Rental",
+      "rideshare": "Rideshare",
+      "mobileMechanic": "Mobile Mechanic",
+      "insurance": "Insurance",
+      "autoDealMarketplace": "Auto Deal Marketplace",
+      "spareParts": "Spare Parts",
+      "remoteDiagnostics": "Remote Diagnostics"
+    },
+    "appsSectionTitle": "Apps",
+    "accountSettingsSectionTitle": "Account Settings",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logOut": "Log Out"
+  },
+  "filterModal": {
+    "title": "Filter & Sort",
+    "resetAll": "Reset all",
+    "sortByPrice": "Sort by Price",
+    "lowToHigh": "Low to High",
+    "highToLow": "High to Low",
+    "transmission": "Transmission",
+    "automatic": "Automatic",
+    "manual": "Manual",
+    "airConditioning": "Air Conditioning",
+    "withAc": "With AC",
+    "withoutAc": "Without AC",
+    "minSeats": "Min. Seats",
+    "applyButton": "Apply",
+    "applyButtonWithCount": "Apply ({{count}})"
+  },
+  "moduleCard": {
+    "comingSoon": "Coming soon"
+  },
+  "userProfilePopup": {
+    "emailLabel": "Email:"
   }
 }

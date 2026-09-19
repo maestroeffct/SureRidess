@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import styles from './styles';
@@ -20,6 +21,8 @@ export function ModuleCard({
   onPress,
   disabled = false,
 }: ModuleCardProps) {
+  const { t } = useTranslation('common');
+
   return (
     <TouchableOpacity
       style={[
@@ -41,7 +44,7 @@ export function ModuleCard({
 
       {disabled && (
         <Typo variant="caption" style={styles.comingSoon}>
-          Coming soon
+          {t('moduleCard.comingSoon')}
         </Typo>
       )}
     </TouchableOpacity>

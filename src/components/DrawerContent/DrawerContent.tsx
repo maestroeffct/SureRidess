@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Image } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useAuth } from '@/providers/AuthProvider';
@@ -10,15 +11,16 @@ import styles from './styles';
 
 export function DrawerContent({ navigation }: DrawerContentComponentProps) {
   const { user, logout } = useAuth();
+  const { t } = useTranslation('common');
 
   const apps = [
-    { key: 'car_rental', label: 'Car Rental', enabled: true },
-    { key: 'rideshare', label: 'Rideshare', enabled: false },
-    { key: 'mobile_mechanic', label: 'Mobile Mechanic', enabled: false },
-    { key: 'insurance', label: 'Insurance', enabled: false },
-    { key: 'auto_deal', label: 'Auto Deal Marketplace', enabled: false },
-    { key: 'spare_parts', label: 'Spare Parts', enabled: false },
-    { key: 'remote_diag', label: 'Remote Diagnostics', enabled: false },
+    { key: 'car_rental', label: t('drawerContent.apps.carRental'), enabled: true },
+    { key: 'rideshare', label: t('drawerContent.apps.rideshare'), enabled: false },
+    { key: 'mobile_mechanic', label: t('drawerContent.apps.mobileMechanic'), enabled: false },
+    { key: 'insurance', label: t('drawerContent.apps.insurance'), enabled: false },
+    { key: 'auto_deal', label: t('drawerContent.apps.autoDealMarketplace'), enabled: false },
+    { key: 'spare_parts', label: t('drawerContent.apps.spareParts'), enabled: false },
+    { key: 'remote_diag', label: t('drawerContent.apps.remoteDiagnostics'), enabled: false },
   ];
 
   const handleAppPress = async (key: string, enabled: boolean) => {
@@ -58,7 +60,7 @@ export function DrawerContent({ navigation }: DrawerContentComponentProps) {
       </View>
 
       {/* APPS */}
-      <Typo style={styles.sectionTitle}>Apps</Typo>
+      <Typo style={styles.sectionTitle}>{t('drawerContent.appsSectionTitle')}</Typo>
 
       {apps.map(app => (
         <TouchableOpacity
@@ -77,17 +79,17 @@ export function DrawerContent({ navigation }: DrawerContentComponentProps) {
       <View style={styles.divider} />
 
       {/* ACCOUNT SETTINGS */}
-      <Typo style={styles.sectionTitle}>Account Settings</Typo>
+      <Typo style={styles.sectionTitle}>{t('drawerContent.accountSettingsSectionTitle')}</Typo>
 
       <TouchableOpacity
         style={styles.appItem}
         onPress={() => navigation.navigate('MainStack', { screen: 'Profile' })}
       >
-        <Typo style={styles.appText}>Profile</Typo>
+        <Typo style={styles.appText}>{t('drawerContent.profile')}</Typo>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.appItem}>
-        <Typo style={styles.appText}>Settings</Typo>
+        <Typo style={styles.appText}>{t('drawerContent.settings')}</Typo>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -97,7 +99,7 @@ export function DrawerContent({ navigation }: DrawerContentComponentProps) {
           logout();
         }}
       >
-        <Typo style={styles.logoutText}>Log Out</Typo>
+        <Typo style={styles.logoutText}>{t('drawerContent.logOut')}</Typo>
       </TouchableOpacity>
 
       {/* FOOTER */}

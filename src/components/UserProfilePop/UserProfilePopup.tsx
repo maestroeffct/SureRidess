@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, View, TouchableOpacity } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useAuth } from '@/providers/AuthProvider';
@@ -15,6 +16,7 @@ type Props = {
 export function UserProfilePopup({ visible, onClose }: Props) {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('common');
 
   return (
     <Modal transparent animationType="fade" visible={visible}>
@@ -28,7 +30,7 @@ export function UserProfilePopup({ visible, onClose }: Props) {
 
           <View style={styles.dobRow}>
             <Typo variant="body" style={styles.dobLabel}>
-              Email:
+              {t('userProfilePopup.emailLabel')}
             </Typo>
 
             <Typo variant="body" style={styles.dobValue}>

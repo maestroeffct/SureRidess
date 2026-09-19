@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Typo } from '@/components/AppText/Typo';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 const GREEN = '#0A6A4B';
 const GREEN_LIGHT = '#E6F4EF';
@@ -63,6 +64,7 @@ export const FilterModal: React.FC<Props> = ({
   onApply,
   onClose,
 }) => {
+  const { t } = useTranslation('common');
   const [filters, setFilters] = useState<FilterState>(initial);
 
   const update = <K extends keyof FilterState>(
@@ -96,10 +98,10 @@ export const FilterModal: React.FC<Props> = ({
         <View style={c.sheet}>
           {/* Header */}
           <View style={c.header}>
-            <Typo style={c.title}>Filter & Sort</Typo>
+            <Typo style={c.title}>{t('filterModal.title')}</Typo>
             {activeCount > 0 && (
               <TouchableOpacity onPress={handleReset}>
-                <Typo style={c.resetText}>Reset all</Typo>
+                <Typo style={c.resetText}>{t('filterModal.resetAll')}</Typo>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={c.closeBtn} onPress={onClose}>
@@ -112,15 +114,15 @@ export const FilterModal: React.FC<Props> = ({
             contentContainerStyle={c.content}
           >
             {/* Sort */}
-            <SectionHeader title="Sort by Price" />
+            <SectionHeader title={t('filterModal.sortByPrice')} />
             <View style={c.chipRow}>
               <OptionChip
-                label="Low to High"
+                label={t('filterModal.lowToHigh')}
                 active={filters.sort === 'price_asc'}
                 onPress={() => update('sort', 'price_asc')}
               />
               <OptionChip
-                label="High to Low"
+                label={t('filterModal.highToLow')}
                 active={filters.sort === 'price_desc'}
                 onPress={() => update('sort', 'price_desc')}
               />
@@ -129,15 +131,15 @@ export const FilterModal: React.FC<Props> = ({
             <View style={c.divider} />
 
             {/* Transmission */}
-            <SectionHeader title="Transmission" />
+            <SectionHeader title={t('filterModal.transmission')} />
             <View style={c.chipRow}>
               <OptionChip
-                label="Automatic"
+                label={t('filterModal.automatic')}
                 active={filters.transmission === 'AUTOMATIC'}
                 onPress={() => update('transmission', 'AUTOMATIC')}
               />
               <OptionChip
-                label="Manual"
+                label={t('filterModal.manual')}
                 active={filters.transmission === 'MANUAL'}
                 onPress={() => update('transmission', 'MANUAL')}
               />
@@ -146,15 +148,15 @@ export const FilterModal: React.FC<Props> = ({
             <View style={c.divider} />
 
             {/* Air Conditioning */}
-            <SectionHeader title="Air Conditioning" />
+            <SectionHeader title={t('filterModal.airConditioning')} />
             <View style={c.chipRow}>
               <OptionChip
-                label="With AC"
+                label={t('filterModal.withAc')}
                 active={filters.ac === true}
                 onPress={() => update('ac', true)}
               />
               <OptionChip
-                label="Without AC"
+                label={t('filterModal.withoutAc')}
                 active={filters.ac === false}
                 onPress={() => update('ac', false)}
               />
@@ -163,7 +165,7 @@ export const FilterModal: React.FC<Props> = ({
             <View style={c.divider} />
 
             {/* Seats */}
-            <SectionHeader title="Min. Seats" />
+            <SectionHeader title={t('filterModal.minSeats')} />
             <View style={c.chipRow}>
               {SEAT_OPTIONS.map(n => (
                 <OptionChip
@@ -180,7 +182,9 @@ export const FilterModal: React.FC<Props> = ({
           <View style={c.footer}>
             <TouchableOpacity style={c.applyBtn} onPress={handleApply}>
               <Typo style={c.applyText}>
-                Apply{activeCount > 0 ? ` (${activeCount})` : ''}
+                {activeCount > 0
+                  ? t('filterModal.applyButtonWithCount', { count: activeCount })
+                  : t('filterModal.applyButton')}
               </Typo>
             </TouchableOpacity>
           </View>

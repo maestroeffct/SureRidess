@@ -25,5 +25,43 @@
     "dropoffTimeLabel": "HEURE DE RETOUR",
     "cancel": "Annuler",
     "confirm": "Confirmer"
+  },
+  "drawerContent": {
+    "apps": {
+      "carRental": "Location de voiture",
+      "rideshare": "Covoiturage",
+      "mobileMechanic": "Mécanicien mobile",
+      "insurance": "Assurance",
+      "autoDealMarketplace": "Marché de vente de voitures",
+      "spareParts": "Pièces détachées",
+      "remoteDiagnostics": "Diagnostic à distance"
+    },
+    "appsSectionTitle": "Applications",
+    "accountSettingsSectionTitle": "Paramètres du compte",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "logOut": "Déconnexion"
+  },
+  "filterModal": {
+    "title": "Filtrer et trier",
+    "resetAll": "Tout réinitialiser",
+    "sortByPrice": "Trier par prix",
+    "lowToHigh": "Croissant",
+    "highToLow": "Décroissant",
+    "transmission": "Transmission",
+    "automatic": "Automatique",
+    "manual": "Manuelle",
+    "airConditioning": "Climatisation",
+    "withAc": "Avec climatisation",
+    "withoutAc": "Sans climatisation",
+    "minSeats": "Places min.",
+    "applyButton": "Appliquer",
+    "applyButtonWithCount": "Appliquer ({{count}})"
+  },
+  "moduleCard": {
+    "comingSoon": "Bientôt disponible"
+  },
+  "userProfilePopup": {
+    "emailLabel": "E-mail :"
   }
 }
