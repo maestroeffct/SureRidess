@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import { useNavigation } from '@react-navigation/native';
@@ -72,6 +73,7 @@ export default function PersonalInfoScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('kyc');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -95,7 +97,7 @@ export default function PersonalInfoScreen() {
   useEffect(() => {
     fetchCountries()
       .then(setCountries)
-      .catch(() => showError('Failed to load country list'));
+      .catch(() => showError(t('personalInfoScreen.errorLoadCountries')));
   }, []);
 
   useEffect(() => {
@@ -155,28 +157,28 @@ export default function PersonalInfoScreen() {
 
   const handleNext = async () => {
     if (!firstName.trim() || !lastName.trim()) {
-      showError('First name and last name are required');
+      showError(t('personalInfoScreen.errorNameRequired'));
       return;
     }
 
     if (!isValidEmail(email.trim())) {
-      showError('Please enter a valid email');
+      showError(t('personalInfoScreen.errorInvalidEmail'));
       return;
     }
 
     if (!dob) {
-      showError('Please select date of birth');
+      showError(t('personalInfoScreen.errorSelectDob'));
       return;
     }
 
     const resolvedNationality = selectedCountry?.name || nationality.trim();
     if (!resolvedNationality) {
-      showError('Please select nationality');
+      showError(t('personalInfoScreen.errorSelectNationality'));
       return;
     }
 
     if (!phone.trim()) {
-      showError('Please enter phone number');
+      showError(t('personalInfoScreen.errorEnterPhone'));
       return;
     }
 
@@ -202,7 +204,7 @@ export default function PersonalInfoScreen() {
 
     const phoneNumber = phoneValue.replace(/\D/g, '');
     if (!phoneNumber) {
-      showError('Please enter a valid phone number');
+      showError(t('personalInfoScreen.errorInvalidPhone'));
       return;
     }
 
@@ -219,14 +221,14 @@ export default function PersonalInfoScreen() {
         phoneNumber,
       });
 
-      showSuccess('Personal info saved');
+      showSuccess(t('personalInfoScreen.saved'));
 
       navigation.navigate('Address', {
         countryName: selectedCountry?.name || resolvedNationality,
         countryCode: selectedCountry?.code || null,
       });
     } catch (error: any) {
-      showError(error?.response?.data?.message || 'Failed to save personal info');
+      showError(error?.response?.data?.message || t('personalInfoScreen.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -236,17 +238,17 @@ export default function PersonalInfoScreen() {
     <ScreenWrapper padded={false}>
       <KYCStepHeader
         step={1}
-        title="Personal Information"
+        title={t('personalInfoScreen.title')}
         onBack={() => navigation.goBack()}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <KYCInfoAlert message="Your personal information must match your government-issued ID" />
+        <KYCInfoAlert message={t('personalInfoScreen.infoAlert')} />
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="First Name"
-            placeholder="Enter first name"
+            label={t('personalInfoScreen.firstNameLabel')}
+            placeholder={t('personalInfoScreen.firstNamePlaceholder')}
             value={firstName}
             onChangeText={setFirstName}
           />
@@ -254,8 +256,8 @@ export default function PersonalInfoScreen() {
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="Last Name"
-            placeholder="Enter last name"
+            label={t('personalInfoScreen.lastNameLabel')}
+            placeholder={t('personalInfoScreen.lastNamePlaceholder')}
             value={lastName}
             onChangeText={setLastName}
           />
@@ -263,8 +265,8 @@ export default function PersonalInfoScreen() {
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="Email Address"
-            placeholder="Enter email"
+            label={t('personalInfoScreen.emailLabel')}
+            placeholder={t('personalInfoScreen.emailPlaceholder')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -279,8 +281,8 @@ export default function PersonalInfoScreen() {
           >
             <View pointerEvents="none">
               <AppInput
-                label="Date of Birth"
-                placeholder="Select date"
+                label={t('personalInfoScreen.dobLabel')}
+                placeholder={t('personalInfoScreen.selectDatePlaceholder')}
                 value={dob ? dob.toDateString() : ''}
                 editable={false}
                 rightIcon={
@@ -314,8 +316,8 @@ export default function PersonalInfoScreen() {
           >
             <View pointerEvents="none">
               <AppInput
-                label="Nationality"
-                placeholder="Select country"
+                label={t('personalInfoScreen.nationalityLabel')}
+                placeholder={t('personalInfoScreen.selectCountryPlaceholder')}
                 value={selectedCountry?.name ?? nationality ?? ''}
                 editable={false}
                 leftIcon={
@@ -339,8 +341,8 @@ export default function PersonalInfoScreen() {
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="Phone Number"
-            placeholder="+234..."
+            label={t('personalInfoScreen.phoneLabel')}
+            placeholder={t('personalInfoScreen.phonePlaceholder')}
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -348,7 +350,7 @@ export default function PersonalInfoScreen() {
         </View>
 
         <AppButton
-          title="Next"
+          title={t('personalInfoScreen.next')}
           style={styles.buttonSpacing}
           loading={saving}
           onPress={handleNext}
@@ -357,8 +359,8 @@ export default function PersonalInfoScreen() {
 
       <AppSelectSheet
         visible={showCountryModal}
-        title="Select Nationality"
-        searchPlaceholder="Search country..."
+        title={t('personalInfoScreen.selectNationalityTitle')}
+        searchPlaceholder={t('personalInfoScreen.searchCountryPlaceholder')}
         options={filteredCountries.map(c => ({
           label: c.name,
           value: c.code,

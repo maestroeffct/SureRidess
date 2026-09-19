@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import type { AppUpdatePolicy } from '@/services/appUpdate.service';
 
@@ -23,6 +24,7 @@ type Props = {
 };
 
 export function UpdateRequiredScreen({ policy, onSkip }: Props) {
+  const { t } = useTranslation('main');
   const open = useCallback(async () => {
     if (!policy.store_url) return;
     try {
@@ -53,11 +55,10 @@ export function UpdateRequiredScreen({ policy, onSkip }: Props) {
 
           <View style={styles.textBlock}>
             <Typo variant="heading" style={styles.title} color="#ffffff">
-              {policy.title || 'Update Required'}
+              {policy.title || t('updateRequiredScreen.title')}
             </Typo>
             <Typo variant="body" style={styles.message} color="rgba(255,255,255,0.75)">
-              {policy.message ||
-                'A newer version of SureRide is available. Please update to continue.'}
+              {policy.message || t('updateRequiredScreen.message')}
             </Typo>
 
             {policy.latest_version_name ? (
@@ -66,7 +67,7 @@ export function UpdateRequiredScreen({ policy, onSkip }: Props) {
                 style={styles.versionInfo}
                 color="rgba(255,255,255,0.5)"
               >
-                Latest version: {policy.latest_version_name}
+                {t('updateRequiredScreen.latestVersion', { version: policy.latest_version_name })}
               </Typo>
             ) : null}
           </View>
@@ -82,7 +83,7 @@ export function UpdateRequiredScreen({ policy, onSkip }: Props) {
               color="#021B18"
             />
             <Typo variant="button" color="#021B18" style={styles.primaryBtnText}>
-              {Platform.OS === 'ios' ? 'Open App Store' : 'Open Play Store'}
+              {Platform.OS === 'ios' ? t('updateRequiredScreen.openAppStore') : t('updateRequiredScreen.openPlayStore')}
             </Typo>
           </TouchableOpacity>
 
@@ -93,7 +94,7 @@ export function UpdateRequiredScreen({ policy, onSkip }: Props) {
               style={styles.skipBtn}
             >
               <Typo variant="button" color="rgba(255,255,255,0.6)">
-                Skip for now
+                {t('updateRequiredScreen.skipForNow')}
               </Typo>
             </TouchableOpacity>
           ) : null}

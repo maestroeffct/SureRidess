@@ -16,6 +16,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -53,6 +54,7 @@ export function HomeScreen() {
   const { user, logout, refreshUser } = useAuth();
   const navigation = useNavigation<NavProp>();
   const { count: unreadCount } = useUnreadNotifications();
+  const { t } = useTranslation('main');
 
   const insets = useSafeAreaInsets();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -69,7 +71,7 @@ export function HomeScreen() {
     }
   };
 
-  const firstName = user?.firstName?.trim() || 'there';
+  const firstName = user?.firstName?.trim() || t('homeScreen.fallbackName');
 
   const handleLogout = async () => {
     setLogoutAlertOpen(false);
@@ -85,8 +87,8 @@ export function HomeScreen() {
   const modules: Module[] = [
     {
       key: 'car_rental',
-      title: 'Car Rental',
-      description: 'Rent verified vehicles near you',
+      title: t('homeScreen.modules.carRental.title'),
+      description: t('homeScreen.modules.carRental.description'),
       icon: 'car-outline',
       accent: '#0A6A4B',
       enabled: true,
@@ -97,32 +99,32 @@ export function HomeScreen() {
     },
     {
       key: 'rideshare',
-      title: 'Ride Share',
-      description: 'Pool rides with trusted drivers',
+      title: t('homeScreen.modules.rideshare.title'),
+      description: t('homeScreen.modules.rideshare.description'),
       icon: 'people-outline',
       accent: '#4F46E5',
       enabled: false,
     },
     {
       key: 'mobile_mechanic',
-      title: 'Mobile Mechanic',
-      description: 'On-demand repairs at your location',
+      title: t('homeScreen.modules.mobileMechanic.title'),
+      description: t('homeScreen.modules.mobileMechanic.description'),
       icon: 'construct-outline',
       accent: '#0369A1',
       enabled: false,
     },
     {
       key: 'emergency',
-      title: 'Emergency Assistance',
-      description: 'Roadside help when you need it most',
+      title: t('homeScreen.modules.emergency.title'),
+      description: t('homeScreen.modules.emergency.description'),
       icon: 'alert-circle-outline',
       accent: '#DC2626',
       enabled: false,
     },
     {
       key: 'insurance',
-      title: 'Insurance',
-      description: 'Protect your vehicle & journeys',
+      title: t('homeScreen.modules.insurance.title'),
+      description: t('homeScreen.modules.insurance.description'),
       icon: 'shield-checkmark-outline',
       accent: '#2F6F62',
       enabled: false,
@@ -182,10 +184,10 @@ export function HomeScreen() {
 
         {/* Greeting */}
         <View style={s.greeting}>
-          <Typo style={s.greetSub}>Good to see you,</Typo>
-          <Typo style={s.greetName}>Hello, {firstName}</Typo>
+          <Typo style={s.greetSub}>{t('homeScreen.goodToSeeYou')}</Typo>
+          <Typo style={s.greetName}>{t('homeScreen.greeting', { name: firstName })}</Typo>
           <Typo style={s.greetCaption}>
-            Choose a service to get started
+            {t('homeScreen.chooseService')}
           </Typo>
         </View>
       </View>
@@ -209,7 +211,7 @@ export function HomeScreen() {
         <PromoBannerCarousel placement="HOME_HERO" topGap={16} bottomGap={4} />
 
         <Typo style={[s.listHeader, { color: colors.textSecondary }]}>
-          Available Services
+          {t('homeScreen.availableServices')}
         </Typo>
 
         {modules.map(mod => (
@@ -217,12 +219,13 @@ export function HomeScreen() {
             key={mod.key}
             mod={mod}
             colors={colors}
+            soonLabel={t('homeScreen.soon')}
           />
         ))}
 
         {/* Coming soon note */}
         <Typo style={[s.footnote, { color: colors.textSecondary }]}>
-          More services launching soon
+          {t('homeScreen.moreServicesSoon')}
         </Typo>
       </ScrollView>
 
@@ -276,7 +279,7 @@ export function HomeScreen() {
               <View style={[s.menuItemIcon, { backgroundColor: '#FEF2F2' }]}>
                 <Icon name="log-out-outline" size={18} color="#EF4444" />
               </View>
-              <Typo style={[s.menuItemLabel, { color: '#EF4444' }]}>Log out</Typo>
+              <Typo style={[s.menuItemLabel, { color: '#EF4444' }]}>{t('homeScreen.logOut')}</Typo>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -285,11 +288,11 @@ export function HomeScreen() {
       {/* ── LOGOUT CONFIRMATION ── */}
       <AppAlert
         visible={logoutAlertOpen}
-        title="Log out"
-        message="Are you sure you want to log out?"
+        title={t('homeScreen.logOut')}
+        message={t('homeScreen.logOutConfirm')}
         buttons={[
-          { text: 'Cancel', style: 'cancel', onPress: () => setLogoutAlertOpen(false) },
-          { text: 'Log out', style: 'destructive', onPress: handleLogout },
+          { text: t('homeScreen.cancel'), style: 'cancel', onPress: () => setLogoutAlertOpen(false) },
+          { text: t('homeScreen.logOut'), style: 'destructive', onPress: handleLogout },
         ]}
         onDismiss={() => setLogoutAlertOpen(false)}
       />
@@ -304,9 +307,11 @@ export function HomeScreen() {
 function ModuleRow({
   mod,
   colors,
+  soonLabel,
 }: {
   mod: Module;
   colors: any;
+  soonLabel: string;
 }) {
   return (
     <TouchableOpacity
@@ -340,7 +345,7 @@ function ModuleRow({
         </View>
       ) : (
         <View style={[s.soonPill, { backgroundColor: colors.background }]}>
-          <Typo style={[s.soonText, { color: colors.textSecondary }]}>Soon</Typo>
+          <Typo style={[s.soonText, { color: colors.textSecondary }]}>{soonLabel}</Typo>
         </View>
       )}
     </TouchableOpacity>

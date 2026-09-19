@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
 import styles from './styles';
@@ -13,6 +14,7 @@ type Props = {
 
 export function KYCStepHeader({ step, title, onBack }: Props) {
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('kyc');
   const stepBg = mode === 'dark' ? '#0F3027' : '#EAF2EF';
   const progressColor = mode === 'dark' ? '#34D399' : '#1B7C63';
 
@@ -24,7 +26,7 @@ export function KYCStepHeader({ step, title, onBack }: Props) {
           <Icon name="chevron-back" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <Typo variant="subheading" style={{ color: colors.textPrimary }}>
-          Document Verification
+          {t('kycStepHeader.topBarTitle')}
         </Typo>
         <View style={{ width: 22 }} />
       </View>
@@ -32,7 +34,7 @@ export function KYCStepHeader({ step, title, onBack }: Props) {
       {/* Step indicator */}
       <View style={[styles.stepContainer, { backgroundColor: stepBg }]}>
         <Typo style={[styles.progressText, { color: progressColor }]}>
-          {step} of 3 steps completed
+          {t('kycStepHeader.stepProgress', { step })}
         </Typo>
 
         <Typo

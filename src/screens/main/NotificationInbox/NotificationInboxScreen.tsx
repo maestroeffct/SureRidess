@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -45,22 +47,29 @@ const EVENT_META: Record<string, { icon: IconName; color: string }> = {
   'user.registered': { icon: 'person-add-outline', color: '#22c55e' },
 };
 
+// Module-level helper (not a component) — can't use the useTranslation hook,
+// so it calls the shared i18next instance's t() directly with an explicit
+// namespace.
 function timeAgo(iso: string): string {
+  const t = (key: string, options?: Record<string, unknown>) =>
+    i18n.t(key, { ns: 'main', ...options });
+
   const ms = Date.now() - new Date(iso).getTime();
   const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s ago`;
+  if (s < 60) return t('notificationInboxScreen.secondsAgo', { count: s });
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return t('notificationInboxScreen.minutesAgo', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return t('notificationInboxScreen.hoursAgo', { count: h });
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
+  if (d < 7) return t('notificationInboxScreen.daysAgo', { count: d });
   return new Date(iso).toLocaleDateString();
 }
 
 export function NotificationInboxScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
+  const { t } = useTranslation('main');
   const [items, setItems] = useState<InboxNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -73,9 +82,9 @@ export function NotificationInboxScreen() {
       setItems(res.items);
       setUnreadCount(res.unreadCount);
     } catch (e: any) {
-      showError(e?.response?.data?.message || 'Failed to load notifications');
+      showError(e?.response?.data?.message || t('notificationInboxScreen.loadFailed'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     (async () => {
@@ -123,10 +132,10 @@ export function NotificationInboxScreen() {
     const event = previewItem.event;
 
     if (hasBooking && event.startsWith('booking.')) {
-      return { label: 'View Booking', target: 'booking' as const };
+      return { label: t('notificationInboxScreen.viewBooking'), target: 'booking' as const };
     }
     if (hasBooking && event.startsWith('payment.')) {
-      return { label: 'View Booking', target: 'booking' as const };
+      return { label: t('notificationInboxScreen.viewBooking'), target: 'booking' as const };
     }
 
     // KYC: action depends on which side of the funnel the user is on.
@@ -138,18 +147,18 @@ export function NotificationInboxScreen() {
       return null; // No CTA — single "Got it" button takes over
     }
     if (event === 'kyc.approved' || event === 'kyc.verified') {
-      return { label: 'Browse Cars', target: 'browse' as const };
+      return { label: t('notificationInboxScreen.browseCars'), target: 'browse' as const };
     }
     if (event === 'kyc.rejected') {
-      return { label: 'Resubmit Documents', target: 'kyc' as const };
+      return { label: t('notificationInboxScreen.resubmitDocuments'), target: 'kyc' as const };
     }
     if (event.startsWith('kyc.')) {
       // Generic fallback for unknown kyc.* events — only show CTA if we don't
       // know the user has already submitted.
-      return { label: 'Verify Identity', target: 'kyc' as const };
+      return { label: t('notificationInboxScreen.verifyIdentity'), target: 'kyc' as const };
     }
     return null;
-  }, [previewItem]);
+  }, [previewItem, t]);
 
   // Action button on the preview modal — navigates to the deep-linked target
   // if the notification has one (booking, kyc, etc.). Closes the modal first.
@@ -195,17 +204,17 @@ export function NotificationInboxScreen() {
         ),
       );
       setUnreadCount(0);
-      showSuccess('All notifications marked read');
+      showSuccess(t('notificationInboxScreen.allMarkedRead'));
     } catch (e: any) {
-      showError(e?.response?.data?.message || 'Failed');
+      showError(e?.response?.data?.message || t('notificationInboxScreen.genericFailed'));
     }
-  }, [unreadCount]);
+  }, [unreadCount, t]);
 
   const handleDelete = useCallback((item: InboxNotification) => {
-    Alert.alert('Delete notification?', item.title, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('notificationInboxScreen.deleteConfirmTitle'), item.title, [
+      { text: t('notificationInboxScreen.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('notificationInboxScreen.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -213,12 +222,12 @@ export function NotificationInboxScreen() {
             setItems(prev => prev.filter(n => n.id !== item.id));
             if (!item.readAt) setUnreadCount(c => Math.max(0, c - 1));
           } catch (e: any) {
-            showError(e?.response?.data?.message || 'Failed to delete');
+            showError(e?.response?.data?.message || t('notificationInboxScreen.deleteFailed'));
           }
         },
       },
     ]);
-  }, []);
+  }, [t]);
 
   return (
     <SafeAreaView
@@ -235,18 +244,18 @@ export function NotificationInboxScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Typo variant="subheading" color={colors.textPrimary}>
-            Notifications
+            {t('notificationInboxScreen.title')}
           </Typo>
           {unreadCount > 0 ? (
             <Typo variant="caption" color={colors.textSecondary}>
-              {unreadCount} unread
+              {t('notificationInboxScreen.unreadCount', { count: unreadCount })}
             </Typo>
           ) : null}
         </View>
         {unreadCount > 0 ? (
           <TouchableOpacity onPress={handleMarkAll}>
             <Typo variant="caption" color={colors.primary}>
-              Mark all read
+              {t('notificationInboxScreen.markAllRead')}
             </Typo>
           </TouchableOpacity>
         ) : null}
@@ -265,14 +274,14 @@ export function NotificationInboxScreen() {
             color={colors.textSecondary}
           />
           <Typo variant="body" color={colors.textSecondary} style={{ marginTop: 12 }}>
-            You&apos;re all caught up
+            {t('notificationInboxScreen.allCaughtUp')}
           </Typo>
           <Typo
             variant="caption"
             color={colors.textSecondary}
             style={{ marginTop: 4, textAlign: 'center', maxWidth: 280 }}
           >
-            Notifications about your bookings, KYC, and payments will appear here.
+            {t('notificationInboxScreen.emptyHint')}
           </Typo>
         </View>
       ) : (
@@ -435,7 +444,7 @@ export function NotificationInboxScreen() {
                         onPress={() => setPreviewItem(null)}
                       >
                         <Typo style={[styles.modalBtnText, { color: colors.textSecondary }]}>
-                          Close
+                          {t('notificationInboxScreen.close')}
                         </Typo>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -453,7 +462,7 @@ export function NotificationInboxScreen() {
                       onPress={() => setPreviewItem(null)}
                     >
                       <Typo style={[styles.modalBtnText, { color: '#fff', fontWeight: '700' }]}>
-                        Got it
+                        {t('notificationInboxScreen.gotIt')}
                       </Typo>
                     </TouchableOpacity>
                   )}

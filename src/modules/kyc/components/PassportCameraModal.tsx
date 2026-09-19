@@ -16,6 +16,7 @@ import {
   type PhotoFile,
 } from 'react-native-vision-camera';
 import type { Asset } from 'react-native-image-picker';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import { showError } from '@/helpers/toast';
@@ -52,6 +53,7 @@ function photoToAsset(photo: PhotoFile): Asset {
 
 export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation('kyc');
   const cameraRef = useRef<Camera>(null);
   const device = useCameraDevice('front');
   const { hasPermission, requestPermission } = useCameraPermission();
@@ -73,7 +75,7 @@ export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
       if (!hasPermission) {
         const granted = await requestPermission();
         if (!granted) {
-          showError('Camera permission denied');
+          showError(t('passportCameraModal.errorPermissionDenied'));
           onClose();
           return;
         }
@@ -92,7 +94,7 @@ export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
       setPreview(photo);
     } catch (err: any) {
       if (__DEV__) console.log('[Passport camera] capture failed', err);
-      showError(err?.message || 'Failed to capture photo');
+      showError(err?.message || t('passportCameraModal.errorCapture'));
     } finally {
       setCapturing(false);
     }
@@ -131,7 +133,7 @@ export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
             <Icon name="close" size={26} color="#fff" />
           </TouchableOpacity>
           <Typo variant="subheading" color="#fff">
-            Passport photo
+            {t('passportCameraModal.headerTitle')}
           </Typo>
           <View style={{ width: 26 }} />
         </View>
@@ -161,7 +163,7 @@ export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
             />
             <View style={styles.overlayHint} pointerEvents="none">
               <Typo variant="caption" color="#fff">
-                Face the camera in good light. Keep your whole face in frame.
+                {t('passportCameraModal.overlayHint')}
               </Typo>
             </View>
           </View>
@@ -169,7 +171,9 @@ export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
           <View style={styles.stage}>
             <ActivityIndicator color="#fff" />
             <Typo variant="caption" color="#fff" style={{ marginTop: 12 }}>
-              {device ? 'Preparing camera...' : 'No front-facing camera found'}
+              {device
+                ? t('passportCameraModal.preparingCamera')
+                : t('passportCameraModal.noCamera')}
             </Typo>
           </View>
         )}
@@ -179,13 +183,13 @@ export function PassportCameraModal({ visible, onClose, onCapture }: Props) {
           {preview ? (
             <View style={styles.previewActions}>
               <AppButton
-                title="Retake"
+                title={t('passportCameraModal.retake')}
                 variant="outline"
                 onPress={handleRetake}
                 style={{ flex: 1, marginRight: 8 }}
               />
               <AppButton
-                title="Use photo"
+                title={t('passportCameraModal.usePhoto')}
                 onPress={handleUse}
                 style={{ flex: 1, marginLeft: 8 }}
               />

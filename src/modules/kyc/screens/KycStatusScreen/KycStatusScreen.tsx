@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -24,6 +25,7 @@ export default function KycStatusScreen() {
   const navigation = useNavigation<any>();
   const { user, refreshUser } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('kyc');
   const [refreshing, setRefreshing] = useState(false);
 
   const rawStatus = (
@@ -45,9 +47,9 @@ export default function KycStatusScreen() {
     try {
       setRefreshing(true);
       await refreshUser();
-      showSuccess('Status updated');
+      showSuccess(t('kycStatusScreen.statusUpdated'));
     } catch {
-      showError('Could not refresh — check your connection');
+      showError(t('kycStatusScreen.errorRefresh'));
     } finally {
       setRefreshing(false);
     }
@@ -58,21 +60,19 @@ export default function KycStatusScreen() {
       icon: 'shield-outline' as const,
       color: '#0A6A4B',
       bg: '#E7F5F0',
-      title: 'Verify your identity',
-      subtitle:
-        "Upload your ID, address and a driver's license to unlock booking. It takes about 2 minutes.",
-      primary: { label: 'Start verification', onPress: goStart },
+      title: t('kycStatusScreen.startTitle'),
+      subtitle: t('kycStatusScreen.startSubtitle'),
+      primary: { label: t('kycStatusScreen.startCta'), onPress: goStart },
       secondary: null,
     },
     pending: {
       icon: 'time-outline' as const,
       color: '#0369A1',
       bg: '#DBEAFE',
-      title: 'Verification in review',
-      subtitle:
-        "Your documents have been submitted and are being reviewed. This usually takes under 24 hours — we'll notify you the moment it's approved.",
+      title: t('kycStatusScreen.pendingTitle'),
+      subtitle: t('kycStatusScreen.pendingSubtitle'),
       primary: {
-        label: refreshing ? 'Checking…' : 'Check status again',
+        label: refreshing ? t('kycStatusScreen.checking') : t('kycStatusScreen.checkStatusAgain'),
         onPress: handleRefresh,
       },
       secondary: null,
@@ -81,20 +81,20 @@ export default function KycStatusScreen() {
       icon: 'close-circle-outline' as const,
       color: '#B91C1C',
       bg: '#FEE2E2',
-      title: 'Verification rejected',
+      title: t('kycStatusScreen.rejectedTitle'),
       subtitle:
         (user as any)?.kyc?.rejectionReason ||
-        'Some of your documents could not be verified. Please re-upload with clear, unedited photos.',
-      primary: { label: 'Re-upload documents', onPress: goStart },
+        t('kycStatusScreen.rejectedSubtitleFallback'),
+      primary: { label: t('kycStatusScreen.reuploadDocuments'), onPress: goStart },
       secondary: null,
     },
     verified: {
       icon: 'checkmark-circle' as const,
       color: '#0A6A4B',
       bg: '#DCFCE7',
-      title: 'You are verified',
-      subtitle: 'Your identity has been approved. You can book any car on SureRide.',
-      primary: { label: 'Continue', onPress: () => navigation.goBack() },
+      title: t('kycStatusScreen.verifiedTitle'),
+      subtitle: t('kycStatusScreen.verifiedSubtitle'),
+      primary: { label: t('kycStatusScreen.continueCta'), onPress: () => navigation.goBack() },
       secondary: null,
     },
   }[state];
@@ -105,7 +105,7 @@ export default function KycStatusScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Icon name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Typo variant="subheading">Verification</Typo>
+        <Typo variant="subheading">{t('kycStatusScreen.headerTitle')}</Typo>
         <View style={{ width: 24 }} />
       </View>
 
@@ -134,8 +134,7 @@ export default function KycStatusScreen() {
           <View style={s.metaBox}>
             <Icon name="information-circle-outline" size={16} color={colors.textSecondary} />
             <Typo style={[s.metaText, { color: colors.textSecondary }]}>
-              You will get a push notification and an email when a decision is made.
-              Pull down to check again.
+              {t('kycStatusScreen.pendingMeta')}
             </Typo>
           </View>
         )}

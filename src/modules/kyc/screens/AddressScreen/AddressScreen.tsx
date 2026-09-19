@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import { AppInput } from '@/components/AppInput/Input';
 import { Typo } from '@/components/AppText/Typo';
@@ -25,6 +26,7 @@ export default function AddressScreen() {
   const route = useRoute<any>();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('kyc');
 
   const countryFromStep1 = route.params?.countryName as string | undefined;
   const countryName = countryFromStep1 || user?.nationality || user?.country || '';
@@ -147,12 +149,12 @@ export default function AddressScreen() {
 
   const handleNext = async () => {
     if (!stateValue) {
-      showError('Please select your state.');
+      showError(t('addressScreen.errorSelectState'));
       return;
     }
 
     if (!homeAddress.trim()) {
-      showError('Please enter your home address.');
+      showError(t('addressScreen.errorEnterHomeAddress'));
       return;
     }
 
@@ -165,7 +167,7 @@ export default function AddressScreen() {
         homeAddress: homeAddress.trim(),
       });
 
-      showSuccess('Address saved');
+      showSuccess(t('addressScreen.addressSaved'));
 
       // Route through the face-liveness step first — Documents is now
       // the last screen in the flow so the selfie check runs before
@@ -177,7 +179,7 @@ export default function AddressScreen() {
         homeAddress: homeAddress.trim(),
       });
     } catch (error: any) {
-      showError(error?.response?.data?.message || 'Failed to save address');
+      showError(error?.response?.data?.message || t('addressScreen.errorSaveAddress'));
     } finally {
       setSaving(false);
     }
@@ -187,19 +189,19 @@ export default function AddressScreen() {
     <ScreenWrapper padded={false}>
       <KYCStepHeader
         step={2}
-        title="Resident Address"
+        title={t('addressScreen.title')}
         onBack={() => navigation.goBack()}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <KYCInfoAlert message="Provide your current residential address for verification" />
+        <KYCInfoAlert message={t('addressScreen.infoAlert')} />
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="Country"
+            label={t('addressScreen.countryLabel')}
             value={countryName}
             editable={false}
-            placeholder="Select nationality in step 1"
+            placeholder={t('addressScreen.countryPlaceholder')}
           />
         </View>
 
@@ -207,8 +209,8 @@ export default function AddressScreen() {
           {statesFailed && !loadingStates ? (
             <>
               <AppInput
-                label="State"
-                placeholder="Type your state"
+                label={t('addressScreen.stateLabel')}
+                placeholder={t('addressScreen.stateTypePlaceholder')}
                 value={stateValue}
                 onChangeText={setStateValue}
               />
@@ -222,7 +224,7 @@ export default function AddressScreen() {
                   variant="caption"
                   style={{ color: colors.primary, fontWeight: '600' }}
                 >
-                  We couldn’t load states. Tap to retry or type yours above.
+                  {t('addressScreen.statesRetry')}
                 </Typo>
               </TouchableOpacity>
             </>
@@ -238,8 +240,12 @@ export default function AddressScreen() {
             >
               <View pointerEvents="none">
                 <AppInput
-                  label="State"
-                  placeholder={loadingStates ? 'Loading states...' : 'Select state'}
+                  label={t('addressScreen.stateLabel')}
+                  placeholder={
+                    loadingStates
+                      ? t('addressScreen.stateLoadingPlaceholder')
+                      : t('addressScreen.stateSelectPlaceholder')
+                  }
                   value={stateValue}
                   editable={false}
                   rightIcon={
@@ -259,8 +265,8 @@ export default function AddressScreen() {
           {regionsFailed && !loadingRegions ? (
             <>
               <AppInput
-                label="Region (optional)"
-                placeholder="Type your region (optional)"
+                label={t('addressScreen.regionLabel')}
+                placeholder={t('addressScreen.regionTypePlaceholder')}
                 value={regionValue}
                 onChangeText={setRegionValue}
               />
@@ -274,7 +280,7 @@ export default function AddressScreen() {
                   variant="caption"
                   style={{ color: colors.primary, fontWeight: '600' }}
                 >
-                  We couldn’t load regions. Tap to retry or skip.
+                  {t('addressScreen.regionsRetry')}
                 </Typo>
               </TouchableOpacity>
             </>
@@ -290,11 +296,11 @@ export default function AddressScreen() {
             >
               <View pointerEvents="none">
                 <AppInput
-                  label="Region (optional)"
+                  label={t('addressScreen.regionLabel')}
                   placeholder={
                     loadingRegions
-                      ? 'Loading regions...'
-                      : 'Select region (optional)'
+                      ? t('addressScreen.regionLoadingPlaceholder')
+                      : t('addressScreen.regionSelectPlaceholder')
                   }
                   value={regionValue}
                   editable={false}
@@ -313,15 +319,15 @@ export default function AddressScreen() {
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="Home Address"
-            placeholder="Enter address"
+            label={t('addressScreen.homeAddressLabel')}
+            placeholder={t('addressScreen.homeAddressPlaceholder')}
             value={homeAddress}
             onChangeText={setHomeAddress}
           />
         </View>
 
         <AppButton
-          title="Next"
+          title={t('addressScreen.next')}
           style={styles.buttonSpacing}
           onPress={handleNext}
           loading={saving}
@@ -330,8 +336,8 @@ export default function AddressScreen() {
 
       <AppSelectSheet
         visible={showStateModal}
-        title="Select State"
-        searchPlaceholder="Search state..."
+        title={t('addressScreen.selectStateTitle')}
+        searchPlaceholder={t('addressScreen.searchStatePlaceholder')}
         options={filteredStates.map(s => ({ label: s, value: s }))}
         selected={stateValue}
         onClose={() => setShowStateModal(false)}
@@ -345,8 +351,8 @@ export default function AddressScreen() {
 
       <AppSelectSheet
         visible={showRegionModal}
-        title="Select Region"
-        searchPlaceholder="Search region..."
+        title={t('addressScreen.selectRegionTitle')}
+        searchPlaceholder={t('addressScreen.searchRegionPlaceholder')}
         options={filteredRegions.map(r => ({ label: r, value: r }))}
         selected={regionValue}
         onClose={() => setShowRegionModal(false)}

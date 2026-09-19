@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { AppAlert } from '@/components/AppAlert/AppAlert';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
@@ -197,6 +198,7 @@ export const ProfileScreen = () => {
   const navigation = useNavigation<any>();
   const { preference, setPreference, colors } = useTheme();
   const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation('main');
 
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
   const {
@@ -272,7 +274,7 @@ export const ProfileScreen = () => {
 
   const handleSaveName = async () => {
     if (!firstName.trim() || !lastName.trim()) {
-      showError('First name and last name are required.');
+      showError(t('profileScreen.errorNameRequired'));
       return;
     }
     setSavingName(true);
@@ -280,9 +282,9 @@ export const ProfileScreen = () => {
       await updateProfile({ firstName: firstName.trim(), lastName: lastName.trim() });
       await refreshUser();
       setEditNameOpen(false);
-      showSuccess('Name updated successfully');
+      showSuccess(t('profileScreen.nameUpdated'));
     } catch (e: any) {
-      showError(e?.response?.data?.message ?? 'Failed to update name');
+      showError(e?.response?.data?.message ?? t('profileScreen.errorUpdateName'));
     } finally {
       setSavingName(false);
     }
@@ -297,38 +299,38 @@ export const ProfileScreen = () => {
 
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      showError('All fields are required.');
+      showError(t('profileScreen.errorAllFieldsRequired'));
       return;
     }
     if (newPassword.length < 6) {
-      showError('New password must be at least 6 characters.');
+      showError(t('profileScreen.errorPasswordTooShort'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      showError('New passwords do not match.');
+      showError(t('profileScreen.errorPasswordsMismatch'));
       return;
     }
     setSavingPass(true);
     try {
       await updatePassword({ oldPassword, newPassword });
       setChangePassOpen(false);
-      showSuccess('Password changed successfully');
+      showSuccess(t('profileScreen.passwordChanged'));
     } catch (e: any) {
-      showError(e?.response?.data?.message ?? 'Failed to change password');
+      showError(e?.response?.data?.message ?? t('profileScreen.errorChangePassword'));
     } finally {
       setSavingPass(false);
     }
   };
 
   const fullName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User';
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ') || t('profileScreen.userFallback');
   const kycLabel: Record<string, string> = {
-    VERIFIED: 'Verified',
-    APPROVED: 'Verified',
-    PENDING_VERIFICATION: 'Pending review',
-    PENDING: 'Pending review',
-    REJECTED: 'Rejected',
-    INCOMPLETE: 'Incomplete',
+    VERIFIED: t('profileScreen.kycVerified'),
+    APPROVED: t('profileScreen.kycVerified'),
+    PENDING_VERIFICATION: t('profileScreen.kycPendingReview'),
+    PENDING: t('profileScreen.kycPendingReview'),
+    REJECTED: t('profileScreen.kycRejected'),
+    INCOMPLETE: t('profileScreen.kycIncomplete'),
   };
   const kycStatus = user?.profileStatus?.toUpperCase() ?? '';
   const kycColor: Record<string, string> = {
@@ -383,7 +385,7 @@ export const ProfileScreen = () => {
                   { color: kycColor[kycStatus] ?? '#9CA3AF' },
                 ]}
               >
-                KYC {kycLabel[kycStatus] ?? kycStatus}
+                {t('profileScreen.kycPrefix', { status: kycLabel[kycStatus] ?? kycStatus })}
               </Typo>
             </View>
           ) : null;
@@ -448,7 +450,7 @@ export const ProfileScreen = () => {
         })()}
 
         {/* ── PERSONAL ── */}
-        <SectionLabel title="Personal" colors={colors} />
+        <SectionLabel title={t('profileScreen.personal')} colors={colors} />
         <View
           style={[
             s.card,
@@ -456,36 +458,36 @@ export const ProfileScreen = () => {
           ]}
         >
           <FieldRow
-            label="Full name"
+            label={t('profileScreen.fullName')}
             value={fullName}
             trailing="pencil"
             onPress={openEditName}
             isFirst
           />
           <FieldRow
-            label="Email"
+            label={t('profileScreen.email')}
             value={user?.email}
             trailing={user?.isVerified ? 'check' : undefined}
             verifiedColor="#22C55E"
           />
           <FieldRow
-            label="Phone"
+            label={t('profileScreen.phone')}
             value={phone}
             trailing={phone ? 'check' : undefined}
             verifiedColor="#22C55E"
           />
           <FieldRow
-            label="Nationality"
+            label={t('profileScreen.nationality')}
             value={user?.nationality}
             trailing="pencil"
             onPress={handleComingSoon}
           />
           <FieldRow
-            label="Date of birth"
+            label={t('profileScreen.dateOfBirth')}
             value={formatDate(user?.dateOfBirth ?? user?.dob)}
           />
           <FieldRow
-            label="Password"
+            label={t('profileScreen.password')}
             value="••••••••"
             trailing="pencil"
             onPress={openChangePass}
@@ -493,7 +495,7 @@ export const ProfileScreen = () => {
         </View>
 
         {/* ── FINANCES ── */}
-        <SectionLabel title="Finances" colors={colors} />
+        <SectionLabel title={t('profileScreen.finances')} colors={colors} />
         <View
           style={[
             s.card,
@@ -501,8 +503,8 @@ export const ProfileScreen = () => {
           ]}
         >
           <FieldRow
-            label="My finances"
-            value="Fines, damage claims, deposits"
+            label={t('profileScreen.myFinances')}
+            value={t('profileScreen.myFinancesValue')}
             trailing="chevron"
             onPress={() => navigation.navigate('Finance')}
             isFirst
@@ -510,7 +512,7 @@ export const ProfileScreen = () => {
         </View>
 
         {/* ── PREFERENCES ── */}
-        <SectionLabel title="Preferences" colors={colors} />
+        <SectionLabel title={t('profileScreen.preferences')} colors={colors} />
         <View
           style={[
             s.card,
@@ -518,7 +520,7 @@ export const ProfileScreen = () => {
           ]}
         >
           <FieldRow
-            label="Country"
+            label={t('profileScreen.country')}
             value={`${browseCountryFlag}  ${browseCountryMeta?.name ?? browseCountry}`}
             trailing="chevron"
             onPress={() => {
@@ -528,39 +530,39 @@ export const ProfileScreen = () => {
             isFirst
           />
           <FieldRow
-            label="Currency"
+            label={t('profileScreen.currency')}
             value={`${currencySymbol || ''}  ${displayCurrency}`.trim()}
             trailing="chevron"
             onPress={() => setCurrencyPickerOpen(true)}
           />
           <FieldRow
-            label="Appearance"
+            label={t('profileScreen.appearance')}
             value={
               preference === 'light'
-                ? 'Light'
+                ? t('profileScreen.appearanceLight')
                 : preference === 'dark'
-                ? 'Dark'
-                : 'System'
+                ? t('profileScreen.appearanceDark')
+                : t('profileScreen.appearanceSystem')
             }
             trailing="chevron"
             onPress={() => setAppearancePickerOpen(true)}
           />
           <FieldRow
-            label="Language"
+            label={t('profileScreen.language')}
             value={language === 'fr' ? 'Français' : 'English'}
             trailing="chevron"
             onPress={() => setLanguagePickerOpen(true)}
           />
           <FieldRow
-            label="Notifications"
-            value="On"
+            label={t('profileScreen.notifications')}
+            value={t('profileScreen.notificationsOn')}
             trailing="chevron"
             onPress={handleComingSoon}
           />
         </View>
 
         {/* ── SUPPORT ── */}
-        <SectionLabel title="Support" colors={colors} />
+        <SectionLabel title={t('profileScreen.support')} colors={colors} />
         <View
           style={[
             s.card,
@@ -568,25 +570,25 @@ export const ProfileScreen = () => {
           ]}
         >
           <FieldRow
-            label="Help & FAQ"
+            label={t('profileScreen.helpFaq')}
             trailing="chevron"
             onPress={handleComingSoon}
             isFirst
           />
           <FieldRow
-            label="Contact us"
+            label={t('profileScreen.contactUs')}
             trailing="chevron"
             onPress={handleContact}
           />
           <FieldRow
-            label="Switch module"
+            label={t('profileScreen.switchModule')}
             trailing="chevron"
             onPress={handleSwitchModule}
           />
         </View>
 
         {/* ── LEGAL ── */}
-        <SectionLabel title="Legal" colors={colors} />
+        <SectionLabel title={t('profileScreen.legal')} colors={colors} />
         <View
           style={[
             s.card,
@@ -594,13 +596,13 @@ export const ProfileScreen = () => {
           ]}
         >
           <FieldRow
-            label="Terms of Service"
+            label={t('profileScreen.termsOfService')}
             trailing="chevron"
             onPress={handleComingSoon}
             isFirst
           />
           <FieldRow
-            label="Privacy Policy"
+            label={t('profileScreen.privacyPolicy')}
             trailing="chevron"
             onPress={handleComingSoon}
           />
@@ -609,7 +611,7 @@ export const ProfileScreen = () => {
         {/* ── FOOTER ── */}
         <View style={s.footer}>
           <Typo style={[s.footerVersion, { color: colors.textSecondary }]}>
-            SureRide {CURRENT_VERSION_NAME} ({CURRENT_BUILD_CODE})
+            {t('profileScreen.versionLine', { version: CURRENT_VERSION_NAME, build: CURRENT_BUILD_CODE })}
           </Typo>
           <TouchableOpacity
             style={[s.logoutBtn, { borderColor: colors.border }]}
@@ -617,7 +619,7 @@ export const ProfileScreen = () => {
             activeOpacity={0.8}
           >
             <Icon name="log-out-outline" size={18} color="#EF4444" />
-            <Typo style={s.logoutText}>Log out</Typo>
+            <Typo style={s.logoutText}>{t('profileScreen.logOut')}</Typo>
           </TouchableOpacity>
         </View>
 
@@ -632,34 +634,34 @@ export const ProfileScreen = () => {
       >
         <View style={[s.sheetInner, { backgroundColor: colors.surface }]}>
           <View style={s.sheetTitleRow}>
-            <Typo style={[s.sheetTitle, { color: colors.textPrimary }]}>Edit Name</Typo>
+            <Typo style={[s.sheetTitle, { color: colors.textPrimary }]}>{t('profileScreen.editName')}</Typo>
             <TouchableOpacity onPress={() => setEditNameOpen(false)}>
               <Icon name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>First Name</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>{t('profileScreen.firstName')}</Typo>
           <TextInput
             value={firstName}
             onChangeText={setFirstName}
             style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="Enter first name"
+            placeholder={t('profileScreen.enterFirstName')}
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="words"
           />
 
-          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>Last Name</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>{t('profileScreen.lastName')}</Typo>
           <TextInput
             value={lastName}
             onChangeText={setLastName}
             style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="Enter last name"
+            placeholder={t('profileScreen.enterLastName')}
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="words"
           />
 
           <AppButton
-            title={savingName ? 'Saving…' : 'Save Changes'}
+            title={savingName ? t('profileScreen.saving') : t('profileScreen.saveChanges')}
             loading={savingName}
             onPress={handleSaveName}
           />
@@ -674,19 +676,19 @@ export const ProfileScreen = () => {
       >
         <View style={[s.sheetInner, { backgroundColor: colors.surface }]}>
           <View style={s.sheetTitleRow}>
-            <Typo style={[s.sheetTitle, { color: colors.textPrimary }]}>Change Password</Typo>
+            <Typo style={[s.sheetTitle, { color: colors.textPrimary }]}>{t('profileScreen.changePassword')}</Typo>
             <TouchableOpacity onPress={() => setChangePassOpen(false)}>
               <Icon name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>Current Password</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>{t('profileScreen.currentPassword')}</Typo>
           <View style={s.passwordRow}>
             <TextInput
               value={oldPassword}
               onChangeText={setOldPassword}
               style={[s.input, { flex: 1, marginBottom: 0, backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Enter current password"
+              placeholder={t('profileScreen.enterCurrentPassword')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showOld}
             />
@@ -695,13 +697,13 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>New Password</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>{t('profileScreen.newPassword')}</Typo>
           <View style={s.passwordRow}>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
               style={[s.input, { flex: 1, marginBottom: 0, backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Min 6 characters"
+              placeholder={t('profileScreen.minSixChars')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showNew}
             />
@@ -710,13 +712,13 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>Confirm New Password</Typo>
+          <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>{t('profileScreen.confirmNewPassword')}</Typo>
           <View style={s.passwordRow}>
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               style={[s.input, { flex: 1, marginBottom: 0, backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Repeat new password"
+              placeholder={t('profileScreen.repeatNewPassword')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showConfirm}
             />
@@ -727,7 +729,7 @@ export const ProfileScreen = () => {
 
           <View style={{ marginTop: 8 }}>
             <AppButton
-              title={savingPass ? 'Updating…' : 'Update Password'}
+              title={savingPass ? t('profileScreen.updating') : t('profileScreen.updatePassword')}
               loading={savingPass}
               onPress={handleChangePassword}
             />
@@ -737,8 +739,8 @@ export const ProfileScreen = () => {
 
       <AppSelectSheet
         visible={currencyPickerOpen}
-        title="Display Currency"
-        searchPlaceholder="Search currency"
+        title={t('profileScreen.displayCurrency')}
+        searchPlaceholder={t('profileScreen.searchCurrency')}
         options={SUPPORTED_CURRENCIES.map(c => {
           const sym = symbolFor(c.code);
           return {
@@ -756,8 +758,8 @@ export const ProfileScreen = () => {
 
       <AppSelectSheet
         visible={countryPickerOpen}
-        title="Browse cars in"
-        searchPlaceholder="Search country"
+        title={t('profileScreen.browseCarsIn')}
+        searchPlaceholder={t('profileScreen.searchCountry')}
         options={markets.map(c => {
           const flag = flagForCountry(c.code);
           return {
@@ -778,11 +780,11 @@ export const ProfileScreen = () => {
 
       <AppSelectSheet
         visible={appearancePickerOpen}
-        title="Appearance"
+        title={t('profileScreen.appearance')}
         options={[
-          { label: 'Light', value: 'light' },
-          { label: 'Dark', value: 'dark' },
-          { label: 'Match system', value: 'system' },
+          { label: t('profileScreen.appearanceLight'), value: 'light' },
+          { label: t('profileScreen.appearanceDark'), value: 'dark' },
+          { label: t('profileScreen.matchSystem'), value: 'system' },
         ]}
         selected={preference}
         onClose={() => setAppearancePickerOpen(false)}
@@ -794,7 +796,7 @@ export const ProfileScreen = () => {
 
       <AppSelectSheet
         visible={languagePickerOpen}
-        title="Language"
+        title={t('profileScreen.language')}
         options={[
           { label: 'English', value: 'en' },
           { label: 'Français', value: 'fr' },
@@ -809,23 +811,23 @@ export const ProfileScreen = () => {
 
       <AppAlert
         visible={logoutAlert}
-        title="Log out"
-        message="Are you sure you want to log out?"
+        title={t('profileScreen.logOut')}
+        message={t('profileScreen.logOutConfirm')}
         buttons={[
-          { text: 'Cancel', style: 'cancel', onPress: () => setLogoutAlert(false) },
-          { text: 'Log out', style: 'destructive', onPress: confirmLogout },
+          { text: t('profileScreen.cancel'), style: 'cancel', onPress: () => setLogoutAlert(false) },
+          { text: t('profileScreen.logOut'), style: 'destructive', onPress: confirmLogout },
         ]}
         onDismiss={() => setLogoutAlert(false)}
       />
 
       <AppAlert
         visible={switchAlert}
-        title="Switch Module"
-        message="Go back to the SureRide home screen to choose a different service?"
+        title={t('profileScreen.switchModule')}
+        message={t('profileScreen.switchModuleConfirm')}
         buttons={[
-          { text: 'Cancel', style: 'cancel', onPress: () => setSwitchAlert(false) },
+          { text: t('profileScreen.cancel'), style: 'cancel', onPress: () => setSwitchAlert(false) },
           {
-            text: 'Switch',
+            text: t('profileScreen.switch'),
             style: 'default',
             onPress: async () => {
               setSwitchAlert(false);
@@ -839,10 +841,10 @@ export const ProfileScreen = () => {
 
       <AppAlert
         visible={comingSoonAlert}
-        title="Coming Soon"
-        message="This feature will be available in a future update."
+        title={t('profileScreen.comingSoon')}
+        message={t('profileScreen.comingSoonMessage')}
         buttons={[
-          { text: 'OK', style: 'default', onPress: () => setComingSoonAlert(false) },
+          { text: t('profileScreen.ok'), style: 'default', onPress: () => setComingSoonAlert(false) },
         ]}
         onDismiss={() => setComingSoonAlert(false)}
       />

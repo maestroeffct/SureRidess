@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
 import styles from './styles';
@@ -13,6 +14,7 @@ type Props = {
 
 export function UploadField({ label, onPress, selectedFileName }: Props) {
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('kyc');
   const boxBg = mode === 'dark' ? colors.surface : '#F8F8F8';
 
   return (
@@ -33,7 +35,7 @@ export function UploadField({ label, onPress, selectedFileName }: Props) {
           ]}
           numberOfLines={1}
         >
-          {selectedFileName || 'Upload document'}
+          {selectedFileName || t('uploadField.placeholder')}
         </Typo>
 
         <View style={[styles.plusButton, { backgroundColor: colors.primary }]}>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import { useAuth } from '@/providers/AuthProvider';
 import { getItem, setItem } from '@/helpers/storage';
@@ -43,6 +44,7 @@ function statusFromUser(user: { kycStatus?: string; profileStatus?: string } | n
 export const KycBanner = () => {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  const { t } = useTranslation('kyc');
   const [snoozed, setSnoozed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -77,9 +79,9 @@ export const KycBanner = () => {
       title: '#7C2D12',
       body: '#92400E',
       icon: 'alert-circle' as const,
-      title_: 'Verify your identity to book',
-      body_: 'Add your documents so you can complete a booking. Takes about 2 minutes.',
-      cta: 'Verify now',
+      title_: t('kycBanner.unverifiedTitle'),
+      body_: t('kycBanner.unverifiedBody'),
+      cta: t('kycBanner.unverifiedCta'),
     },
     pending: {
       bg: '#DBEAFE',
@@ -88,9 +90,9 @@ export const KycBanner = () => {
       title: '#1E3A8A',
       body: '#1E40AF',
       icon: 'time-outline' as const,
-      title_: 'Verification in review',
-      body_: 'Your KYC is being checked. You can browse — booking unlocks once approved.',
-      cta: 'View status',
+      title_: t('kycBanner.pendingTitle'),
+      body_: t('kycBanner.pendingBody'),
+      cta: t('kycBanner.pendingCta'),
     },
     rejected: {
       bg: '#FEE2E2',
@@ -99,9 +101,9 @@ export const KycBanner = () => {
       title: '#7F1D1D',
       body: '#991B1B',
       icon: 'close-circle' as const,
-      title_: 'KYC was rejected',
-      body_: 'Re-upload your documents to unlock booking.',
-      cta: 'Re-upload',
+      title_: t('kycBanner.rejectedTitle'),
+      body_: t('kycBanner.rejectedBody'),
+      cta: t('kycBanner.rejectedCta'),
     },
   }[state.kind];
 

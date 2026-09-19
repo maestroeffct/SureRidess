@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SNSMobileSDK from '@sumsub/react-native-mobilesdk-module';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { KYCStepHeader } from '@/components/kyc/KYCStepHeader/KYCStepHeader';
@@ -24,6 +25,7 @@ export default function FaceLivenessScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { colors } = useTheme();
+  const { t } = useTranslation('kyc');
 
   const [stage, setStage] = useState<Stage>('intro');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -57,17 +59,15 @@ export default function FaceLivenessScreen() {
         ) {
           showSuccess(
             status.sumsubVerdict === 'APPROVED'
-              ? 'Face verified'
-              : 'Verification received — moving on',
+              ? t('faceLivenessScreen.faceVerified')
+              : t('faceLivenessScreen.verificationReceived'),
           );
           setStage('done');
           continueToDocuments();
           return;
         }
         if (status.sumsubVerdict === 'REJECTED') {
-          setErrorMessage(
-            'Face verification failed. Please try again in a well-lit area.',
-          );
+          setErrorMessage(t('faceLivenessScreen.errorFailedTryAgain'));
           setStage('error');
           return;
         }
@@ -79,9 +79,7 @@ export default function FaceLivenessScreen() {
     if (!mountedRef.current) return;
     // Timed out — soft-warn and let the user proceed. The webhook will
     // still land eventually and the dashboard can pick up the verdict.
-    showSuccess(
-      'Still processing your face check. You can continue and we\'ll finalise it in the background.',
-    );
+    showSuccess(t('faceLivenessScreen.stillProcessing'));
     setStage('done');
     continueToDocuments();
   }, [continueToDocuments]);
@@ -118,7 +116,7 @@ export default function FaceLivenessScreen() {
 
       if (result?.success === false) {
         const message =
-          result?.errorMsg || 'Face verification was cancelled or failed';
+          result?.errorMsg || t('faceLivenessScreen.errorCancelledOrFailed');
         setErrorMessage(String(message));
         setStage('error');
         return;
@@ -130,7 +128,7 @@ export default function FaceLivenessScreen() {
       const message =
         err?.response?.data?.message ||
         err?.message ||
-        'Failed to start face verification';
+        t('faceLivenessScreen.errorFailedToStart');
       setErrorMessage(message);
       setStage('error');
       showError(message);
@@ -141,29 +139,29 @@ export default function FaceLivenessScreen() {
     <ScreenWrapper padded={false}>
       <KYCStepHeader
         step={3}
-        title="Face Verification"
+        title={t('faceLivenessScreen.title')}
         onBack={() => navigation.goBack()}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <KYCInfoAlert message="We use Sumsub to confirm you're a real person and guard against deepfakes. Your selfie stays encrypted and is only used for verification." />
+        <KYCInfoAlert message={t('faceLivenessScreen.infoAlert')} />
 
         <View style={styles.copyBlock}>
           <Typo variant="subheading" style={{ marginBottom: Spacing.sm }}>
-            Before you start
+            {t('faceLivenessScreen.beforeYouStart')}
           </Typo>
           <Typo variant="body" color={colors.textSecondary}>
-            {'•'} Find a well-lit spot{'\n'}
-            {'•'} Remove hats, sunglasses or masks{'\n'}
-            {'•'} Hold your phone at eye level{'\n'}
-            {'•'} Follow the on-screen prompts
+            {'•'} {t('faceLivenessScreen.tipWellLit')}{'\n'}
+            {'•'} {t('faceLivenessScreen.tipRemoveAccessories')}{'\n'}
+            {'•'} {t('faceLivenessScreen.tipEyeLevel')}{'\n'}
+            {'•'} {t('faceLivenessScreen.tipFollowPrompts')}
           </Typo>
         </View>
 
         {stage === 'polling' && (
           <View style={styles.copyBlock}>
             <Typo variant="body" color={colors.textSecondary}>
-              Waiting for Sumsub to finalise the check...
+              {t('faceLivenessScreen.waitingForCheck')}
             </Typo>
           </View>
         )}
@@ -171,14 +169,14 @@ export default function FaceLivenessScreen() {
         {stage === 'error' && (
           <View style={styles.copyBlock}>
             <Typo variant="body" color="#c0392b">
-              {errorMessage ?? 'Something went wrong.'}
+              {errorMessage ?? t('faceLivenessScreen.somethingWentWrong')}
             </Typo>
           </View>
         )}
 
         {stage === 'intro' || stage === 'launching' ? (
           <AppButton
-            title="Start verification"
+            title={t('faceLivenessScreen.startVerification')}
             loading={stage === 'launching'}
             onPress={startVerification}
             style={styles.button}
@@ -187,7 +185,7 @@ export default function FaceLivenessScreen() {
 
         {stage === 'polling' && (
           <AppButton
-            title="Continue anyway"
+            title={t('faceLivenessScreen.continueAnyway')}
             variant="outline"
             onPress={continueToDocuments}
             style={styles.button}
@@ -197,12 +195,12 @@ export default function FaceLivenessScreen() {
         {stage === 'error' && (
           <>
             <AppButton
-              title="Retry"
+              title={t('faceLivenessScreen.retry')}
               onPress={startVerification}
               style={styles.button}
             />
             <AppButton
-              title="Skip for now"
+              title={t('faceLivenessScreen.skipForNow')}
               variant="outline"
               onPress={continueToDocuments}
               style={styles.buttonSecondary}

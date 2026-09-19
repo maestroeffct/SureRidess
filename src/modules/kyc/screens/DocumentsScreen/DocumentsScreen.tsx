@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { KYCStepHeader } from '@/components/kyc/KYCStepHeader/KYCStepHeader';
@@ -26,20 +27,26 @@ import { PassportCameraModal } from '@/modules/kyc/components/PassportCameraModa
 const GOVERNMENT_ID_TYPES = ['International Passport', 'National Id Card'] as const;
 type GovernmentIdType = (typeof GOVERNMENT_ID_TYPES)[number];
 
-function getAssetLabel(asset: Asset | null) {
-  if (!asset) return undefined;
-  if (asset.fileName) return asset.fileName;
-  if (asset.uri) {
-    const fallback = asset.uri.split('/').pop();
-    if (fallback) return fallback;
-  }
-  return 'Selected image';
-}
-
 export default function DocumentsScreen() {
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
   const { refreshUser } = useAuth();
+  const { t } = useTranslation('kyc');
+
+  function getAssetLabel(asset: Asset | null) {
+    if (!asset) return undefined;
+    if (asset.fileName) return asset.fileName;
+    if (asset.uri) {
+      const fallback = asset.uri.split('/').pop();
+      if (fallback) return fallback;
+    }
+    return t('documentsScreen.selectedImage');
+  }
+
+  const govIdTypeLabel = (idType: GovernmentIdType) =>
+    idType === 'International Passport'
+      ? t('documentsScreen.passportOption')
+      : t('documentsScreen.nationalIdOption');
 
   const [governmentIdType, setGovernmentIdType] =
     useState<GovernmentIdType | null>(null);
@@ -65,18 +72,18 @@ export default function DocumentsScreen() {
 
   const governmentIdNumberLabel =
     governmentIdType === 'International Passport'
-      ? 'International Passport Number'
-      : 'National ID Number';
+      ? t('documentsScreen.passportNumberLabel')
+      : t('documentsScreen.nationalIdNumberLabel');
 
   const governmentIdFrontUploadLabel =
     governmentIdType === 'International Passport'
-      ? 'International Passport Upload (Front)'
-      : 'National ID Card Upload (Front)';
+      ? t('documentsScreen.passportUploadFront')
+      : t('documentsScreen.nationalIdUploadFront');
 
   const governmentIdBackUploadLabel =
     governmentIdType === 'International Passport'
-      ? 'International Passport Upload (Back)'
-      : 'National ID Card Upload (Back)';
+      ? t('documentsScreen.passportUploadBack')
+      : t('documentsScreen.nationalIdUploadBack');
 
   const pickImage = async (
     setAsset: React.Dispatch<React.SetStateAction<Asset | null>>,
@@ -92,59 +99,59 @@ export default function DocumentsScreen() {
       if (result.didCancel) return;
 
       if (result.errorCode) {
-        showError(result.errorMessage || 'Unable to open gallery');
+        showError(result.errorMessage || t('documentsScreen.errorGallery'));
         return;
       }
 
       const pickedAsset = result.assets?.[0];
       if (!pickedAsset?.uri) {
-        showError('No image selected');
+        showError(t('documentsScreen.errorNoImageSelected'));
         return;
       }
 
       setAsset(pickedAsset);
-      showSuccess(`${label} selected`);
+      showSuccess(t('documentsScreen.imageSelected', { label }));
     } catch (error) {
       if (__DEV__) {
         console.log('[KYC][Documents] Failed to pick image', error);
       }
-      showError('Failed to open image picker');
+      showError(t('documentsScreen.errorImagePicker'));
     }
   };
 
   const handleCompleteVerification = async () => {
     if (!governmentIdType) {
-      showError('Please select government ID type');
+      showError(t('documentsScreen.errorSelectGovIdType'));
       return;
     }
 
     if (!governmentIdNumber.trim()) {
-      showError('Please enter government ID number');
+      showError(t('documentsScreen.errorEnterGovIdNumber'));
       return;
     }
 
     if (!driverLicenseNumber.trim()) {
-      showError('Please enter driver license number');
+      showError(t('documentsScreen.errorEnterLicenseNumber'));
       return;
     }
 
     if (!driverLicenseExpiryDate) {
-      showError('Please select driver license expiry date');
+      showError(t('documentsScreen.errorSelectLicenseExpiry'));
       return;
     }
 
     if (!passportPhotoAsset) {
-      showError('Please upload passport photograph');
+      showError(t('documentsScreen.errorUploadPassport'));
       return;
     }
 
     if (!governmentIdFrontAsset || !governmentIdBackAsset) {
-      showError('Please upload government ID front and back');
+      showError(t('documentsScreen.errorUploadGovId'));
       return;
     }
 
     if (!driverLicenseFrontAsset || !driverLicenseBackAsset) {
-      showError('Please upload driver license front and back');
+      showError(t('documentsScreen.errorUploadLicense'));
       return;
     }
 
@@ -165,7 +172,7 @@ export default function DocumentsScreen() {
 
       await refreshUser();
 
-      showSuccess('Documents submitted for verification');
+      showSuccess(t('documentsScreen.submitted'));
 
       navigation.popToTop();
       const parent = navigation.getParent();
@@ -173,7 +180,7 @@ export default function DocumentsScreen() {
         parent.goBack();
       }
     } catch (error: any) {
-      showError(error?.response?.data?.message || 'Failed to submit documents');
+      showError(error?.response?.data?.message || t('documentsScreen.errorSubmit'));
     } finally {
       setSubmitting(false);
     }
@@ -183,12 +190,12 @@ export default function DocumentsScreen() {
     <ScreenWrapper padded={false}>
       <KYCStepHeader
         step={3}
-        title="Documents"
+        title={t('documentsScreen.title')}
         onBack={() => navigation.goBack()}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <KYCInfoAlert message="Upload clear photos of your documents. All information will be encrypted and secure." />
+        <KYCInfoAlert message={t('documentsScreen.infoAlert')} />
 
         <View style={styles.inputSpacing}>
           <TouchableOpacity
@@ -197,9 +204,9 @@ export default function DocumentsScreen() {
           >
             <View pointerEvents="none">
               <AppInput
-                label="Government ID Type"
-                placeholder="Select ID type"
-                value={governmentIdType ?? ''}
+                label={t('documentsScreen.govIdTypeLabel')}
+                placeholder={t('documentsScreen.govIdTypePlaceholder')}
+                value={governmentIdType ? govIdTypeLabel(governmentIdType) : ''}
                 editable={false}
                 rightIcon={
                   <Icon
@@ -218,7 +225,7 @@ export default function DocumentsScreen() {
             <View style={styles.inputSpacing}>
               <AppInput
                 label={governmentIdNumberLabel}
-                placeholder="Enter ID number"
+                placeholder={t('documentsScreen.idNumberPlaceholder')}
                 value={governmentIdNumber}
                 onChangeText={setGovernmentIdNumber}
               />
@@ -227,21 +234,21 @@ export default function DocumentsScreen() {
             <UploadField
               label={governmentIdFrontUploadLabel}
               selectedFileName={getAssetLabel(governmentIdFrontAsset)}
-              onPress={() => pickImage(setGovernmentIdFrontAsset, 'Government ID front')}
+              onPress={() => pickImage(setGovernmentIdFrontAsset, t('documentsScreen.govIdFrontLabel'))}
             />
 
             <UploadField
               label={governmentIdBackUploadLabel}
               selectedFileName={getAssetLabel(governmentIdBackAsset)}
-              onPress={() => pickImage(setGovernmentIdBackAsset, 'Government ID back')}
+              onPress={() => pickImage(setGovernmentIdBackAsset, t('documentsScreen.govIdBackLabel'))}
             />
           </>
         )}
 
         <View style={styles.inputSpacing}>
           <AppInput
-            label="Driver License Number"
-            placeholder="Enter license number"
+            label={t('documentsScreen.licenseNumberLabel')}
+            placeholder={t('documentsScreen.licenseNumberPlaceholder')}
             value={driverLicenseNumber}
             onChangeText={setDriverLicenseNumber}
           />
@@ -254,8 +261,8 @@ export default function DocumentsScreen() {
           >
             <View pointerEvents="none">
               <AppInput
-                label="Driver License Expiry Date"
-                placeholder="Select date"
+                label={t('documentsScreen.licenseExpiryLabel')}
+                placeholder={t('documentsScreen.selectDatePlaceholder')}
                 value={driverLicenseExpiryDate ? driverLicenseExpiryDate.toDateString() : ''}
                 editable={false}
                 rightIcon={
@@ -283,25 +290,25 @@ export default function DocumentsScreen() {
         )}
 
         <UploadField
-          label="Passport Photograph (in-app camera)"
+          label={t('documentsScreen.passportUploadLabel')}
           selectedFileName={getAssetLabel(passportPhotoAsset)}
           onPress={() => setShowPassportCamera(true)}
         />
 
         <UploadField
-          label="Driver License Upload (Front)"
+          label={t('documentsScreen.licenseUploadFront')}
           selectedFileName={getAssetLabel(driverLicenseFrontAsset)}
-          onPress={() => pickImage(setDriverLicenseFrontAsset, 'Driver license front')}
+          onPress={() => pickImage(setDriverLicenseFrontAsset, t('documentsScreen.licenseFrontLabel'))}
         />
 
         <UploadField
-          label="Driver License Upload (Back)"
+          label={t('documentsScreen.licenseUploadBack')}
           selectedFileName={getAssetLabel(driverLicenseBackAsset)}
-          onPress={() => pickImage(setDriverLicenseBackAsset, 'Driver license back')}
+          onPress={() => pickImage(setDriverLicenseBackAsset, t('documentsScreen.licenseBackLabel'))}
         />
 
         <AppButton
-          title="Complete Verification"
+          title={t('documentsScreen.completeVerification')}
           style={styles.buttonSpacing}
           loading={submitting}
           onPress={handleCompleteVerification}
@@ -313,15 +320,15 @@ export default function DocumentsScreen() {
         onClose={() => setShowPassportCamera(false)}
         onCapture={asset => {
           setPassportPhotoAsset(asset);
-          showSuccess('Passport photograph captured');
+          showSuccess(t('documentsScreen.passportCaptured'));
         }}
       />
 
       <AppSelectSheet
         visible={showGovernmentIdTypeModal}
-        title="Select ID Type"
+        title={t('documentsScreen.selectIdTypeTitle')}
         searchable={false}
-        options={GOVERNMENT_ID_TYPES.map(t => ({ label: t, value: t }))}
+        options={GOVERNMENT_ID_TYPES.map(idType => ({ label: govIdTypeLabel(idType), value: idType }))}
         selected={governmentIdType ?? undefined}
         onClose={() => setShowGovernmentIdTypeModal(false)}
         onSelect={opt => {
