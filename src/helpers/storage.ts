@@ -13,6 +13,7 @@ export const StorageKeys = {
   BROWSE_COUNTRY: 'BROWSE_COUNTRY',
   SUPPORTED_MARKETS: 'SUPPORTED_MARKETS',
   FX_RATES: 'FX_RATES',
+  APP_LANGUAGE: 'APP_LANGUAGE',
 };
 
 export async function setItem<T>(key: string, value: T): Promise<void> {

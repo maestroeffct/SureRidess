@@ -1,0 +1,22 @@
+{
+  "onboardingScreen": {
+    "title": "Rent a car in seconds.",
+    "subtitle": "Verified vehicles from trusted hosts across Nigeria and West Africa. Book online, pick up, drive.",
+    "getStarted": "Get Started",
+    "signIn": "I already have an account",
+    "legal": "By continuing you agree to our Terms and Privacy Policy."
+  },
+  "languageSelect": {
+    "title": "Choose your language",
+    "subtitle": "You can change this anytime from your profile.",
+    "continue": "Continue",
+    "english": "English",
+    "french": "Français"
+  },
+  "countrySelect": {
+    "skip": "Skip",
+    "title": "Where to?",
+    "subtitle": "Pick the country you want to rent in. You can change this anytime from the home screen.",
+    "continueWith": "Continue with {{name}}"
+  }
+}

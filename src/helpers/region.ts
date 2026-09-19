@@ -35,3 +35,18 @@ export function findCountry(code?: string | null): BrowseCountry | undefined {
   const upper = code.toUpperCase();
   return SUPPORTED_COUNTRIES.find(c => c.code === upper);
 }
+
+// Countries whose picking should auto-switch the app language to French,
+// overriding whatever the user picked on the language-select screen — e.g.
+// Togo is Francophone, so there's no reason to keep showing English once
+// they've told us that's where they're renting. Add more Francophone
+// launch markets here as they're added to SUPPORTED_COUNTRIES; every other
+// country leaves the user's language choice untouched (no forcing back to
+// English for non-French countries).
+const FRANCOPHONE_COUNTRIES = new Set(['TG']);
+
+/** Returns 'fr' only for countries that should force French; otherwise null
+ *  (meaning: don't touch the user's current language choice). */
+export function forcedLanguageForCountry(code: string): 'fr' | null {
+  return FRANCOPHONE_COUNTRIES.has(code.toUpperCase()) ? 'fr' : null;
+}

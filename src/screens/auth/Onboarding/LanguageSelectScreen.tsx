@@ -1,94 +1,65 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Dimensions,
-  StatusBar,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useState } from 'react';
+import { StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
-import { useBrowseCountry } from '@/providers/CountryProvider';
-import { useCurrency } from '@/providers/CurrencyProvider';
 import { useLanguage } from '@/i18n/LanguageProvider';
-import {
-  DEFAULT_COUNTRY,
-  flagForCountry,
-  forcedLanguageForCountry,
-} from '@/helpers/region';
+import type { AppLanguage } from '@/i18n';
 
-const { width: W } = Dimensions.get('window');
 const GREEN = '#0A6A4B';
 const GREEN_DARK = '#064030';
 
-// Same visual language as the marketing OnboardingScreen — solid colour
-// background, big centred type, prominent CTA. Lives between that screen
-// and Auth so it's the LAST thing new users see before signing up.
-export function CountrySelectScreen() {
+/** Same visual language as CountrySelectScreen — sits right after the
+ *  marketing Onboarding screen, before CountrySelect. Manual pick here can
+ *  still be overridden by CountrySelect if the chosen country is
+ *  Francophone (see forcedLanguageForCountry). */
+export function LanguageSelectScreen() {
   const navigation = useNavigation<any>();
   const { t } = useTranslation('onboarding');
-  const { country: currentCountry, setCountry, markets, refreshMarkets } =
-    useBrowseCountry();
-  const { setCurrency } = useCurrency();
-  const { setLanguage } = useLanguage();
-  const [selected, setSelected] = useState<string>(currentCountry || DEFAULT_COUNTRY);
+  const { language, setLanguage } = useLanguage();
+  const [selected, setSelected] = useState<AppLanguage>(language);
 
-  // Pull fresh markets on mount — onboarding is exactly the moment a brand
-  // new install needs the latest list, before the user makes a choice.
-  useEffect(() => {
-    void refreshMarkets();
-  }, [refreshMarkets]);
+  const options: { code: AppLanguage; label: string; flag: string }[] = [
+    { code: 'en', label: t('languageSelect.english'), flag: '🇬🇧' },
+    { code: 'fr', label: t('languageSelect.french'), flag: '🇫🇷' },
+  ];
 
-  const finish = (code: string) => {
-    setCountry(code);
-    const target = markets.find(m => m.code === code);
-    if (target) setCurrency(target.currency);
-    // Togo (and any other Francophone market added later) overrides
-    // whatever the user picked on LanguageSelect — no reason to keep
-    // showing English once they've told us they're renting there.
-    const forcedLang = forcedLanguageForCountry(code);
-    if (forcedLang) setLanguage(forcedLang);
-    navigation.replace('Auth');
+  const finish = () => {
+    setLanguage(selected);
+    navigation.replace('CountrySelect');
   };
-
-  const skip = () => finish(DEFAULT_COUNTRY);
 
   return (
     <View style={[s.root, { backgroundColor: GREEN }]}>
       <StatusBar barStyle="light-content" backgroundColor={GREEN} />
       <SafeAreaView style={s.safe}>
-        <TouchableOpacity style={s.skipBtn} onPress={skip} activeOpacity={0.7}>
-          <Typo style={s.skipText}>{t('countrySelect.skip')}</Typo>
-        </TouchableOpacity>
-
         <View style={s.content}>
           <View style={s.iconWrap}>
-            <Icon name="earth-outline" size={64} color="#fff" />
+            <Icon name="language-outline" size={64} color="#fff" />
           </View>
 
-          <Typo style={s.title}>{t('countrySelect.title')}</Typo>
-          <Typo style={s.subtitle}>{t('countrySelect.subtitle')}</Typo>
+          <Typo style={s.title}>{t('languageSelect.title')}</Typo>
+          <Typo style={s.subtitle}>{t('languageSelect.subtitle')}</Typo>
 
           <View style={s.grid}>
-            {markets.map(c => {
-              const isSelected = selected === c.code;
+            {options.map(opt => {
+              const isSelected = selected === opt.code;
               return (
                 <TouchableOpacity
-                  key={c.code}
+                  key={opt.code}
                   style={[s.tile, isSelected && s.tileSelected]}
-                  onPress={() => setSelected(c.code)}
+                  onPress={() => setSelected(opt.code)}
                   activeOpacity={0.85}
                 >
-                  <Typo style={s.tileFlag}>{flagForCountry(c.code)}</Typo>
+                  <Typo style={s.tileFlag}>{opt.flag}</Typo>
                   <Typo
                     style={[s.tileName, isSelected && s.tileNameSelected]}
                     numberOfLines={1}
                   >
-                    {c.name}
+                    {opt.label}
                   </Typo>
                   {isSelected ? (
                     <View style={s.tileCheck}>
@@ -102,18 +73,8 @@ export function CountrySelectScreen() {
         </View>
 
         <View style={s.bottom}>
-          {/* Custom CTA — AppButton's primary variant forces white text, which
-              would be invisible on this white-on-green pill. */}
-          <TouchableOpacity
-            style={s.cta}
-            onPress={() => finish(selected)}
-            activeOpacity={0.85}
-          >
-            <Typo style={s.ctaText}>
-              {t('countrySelect.continueWith', {
-                name: markets.find(m => m.code === selected)?.name ?? 'Nigeria',
-              })}
-            </Typo>
+          <TouchableOpacity style={s.cta} onPress={finish} activeOpacity={0.85}>
+            <Typo style={s.ctaText}>{t('languageSelect.continue')}</Typo>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -121,27 +82,13 @@ export function CountrySelectScreen() {
   );
 }
 
-const TILE_GAP = 10;
-const TILE_W = (W - 28 * 2 - TILE_GAP) / 2;
-
 const s = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1 },
-  skipBtn: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  skipText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
   content: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 16,
+    paddingTop: 40,
     alignItems: 'center',
   },
   iconWrap: {
@@ -171,11 +118,11 @@ const s = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: TILE_GAP,
+    gap: 10,
     justifyContent: 'center',
   },
   tile: {
-    width: TILE_W,
+    width: 140,
     height: 90,
     borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.12)',

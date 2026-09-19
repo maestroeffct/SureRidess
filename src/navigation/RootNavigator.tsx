@@ -7,6 +7,7 @@ import { AuthNavigator } from './Auth/AuthNavigator';
 import { MainDrawerNavigator } from './MainDrawerNavigator';
 import { KYCFlowNavigator } from '@/modules/kyc/navigation/KYCFlowNavigator';
 import { OnboardingScreen } from '@/screens/auth/Onboarding/OnboardingScreen';
+import { LanguageSelectScreen } from '@/screens/auth/Onboarding/LanguageSelectScreen';
 import { CountrySelectScreen } from '@/screens/auth/Onboarding/CountrySelectScreen';
 import { useAuth } from '@/providers/AuthProvider';
 import { Typo } from '@/components/AppText/Typo';
@@ -114,6 +115,7 @@ export function RootNavigator() {
             {showOnboarding && (
               <>
                 <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} />
                 <Stack.Screen name="CountrySelect" component={CountrySelectScreen} />
               </>
             )}

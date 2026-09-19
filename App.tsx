@@ -7,6 +7,7 @@ import {
   Theme as NavTheme,
 } from '@react-navigation/native';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { LanguageProvider } from '@/i18n/LanguageProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { CountryProvider } from '@/providers/CountryProvider';
 import { CurrencyProvider } from '@/providers/CurrencyProvider';
@@ -48,17 +49,19 @@ function ThemedNavigation() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <CurrencyProvider>
-        <CountryProvider>
-          <FavoritesProvider>
-            <AuthProvider>
-              <ThemedNavigation />
-            </AuthProvider>
-          </FavoritesProvider>
-        </CountryProvider>
-      </CurrencyProvider>
-      <Toast />
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <CurrencyProvider>
+          <CountryProvider>
+            <FavoritesProvider>
+              <AuthProvider>
+                <ThemedNavigation />
+              </AuthProvider>
+            </FavoritesProvider>
+          </CountryProvider>
+        </CurrencyProvider>
+        <Toast />
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }

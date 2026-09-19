@@ -1,0 +1,22 @@
+{
+  "onboardingScreen": {
+    "title": "Louez une voiture en quelques secondes.",
+    "subtitle": "Véhicules vérifiés proposés par des hôtes de confiance au Nigeria et en Afrique de l'Ouest. Réservez en ligne, récupérez le véhicule, roulez.",
+    "getStarted": "Commencer",
+    "signIn": "J'ai déjà un compte",
+    "legal": "En continuant, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité."
+  },
+  "languageSelect": {
+    "title": "Choisissez votre langue",
+    "subtitle": "Vous pouvez modifier ce choix à tout moment depuis votre profil.",
+    "continue": "Continuer",
+    "english": "English",
+    "french": "Français"
+  },
+  "countrySelect": {
+    "skip": "Passer",
+    "title": "Où allez-vous ?",
+    "subtitle": "Choisissez le pays dans lequel vous souhaitez louer. Vous pouvez modifier ce choix à tout moment depuis l'écran d'accueil.",
+    "continueWith": "Continuer avec {{name}}"
+  }
+}

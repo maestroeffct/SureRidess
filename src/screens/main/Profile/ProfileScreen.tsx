@@ -22,6 +22,7 @@ import { updateProfile, updatePassword } from '@/services/user.service';
 import { removeItem, StorageKeys } from '@/helpers/storage';
 import { showError, showSuccess } from '@/helpers/toast';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useLanguage } from '@/i18n/LanguageProvider';
 import { useCurrency } from '@/providers/CurrencyProvider';
 import { useBrowseCountry } from '@/providers/CountryProvider';
 import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
@@ -195,6 +196,7 @@ export const ProfileScreen = () => {
   const { user, logout, refreshUser } = useAuth();
   const navigation = useNavigation<any>();
   const { preference, setPreference, colors } = useTheme();
+  const { language, setLanguage } = useLanguage();
 
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
   const {
@@ -209,6 +211,7 @@ export const ProfileScreen = () => {
   const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [appearancePickerOpen, setAppearancePickerOpen] = useState(false);
+  const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
   const [switchAlert, setSwitchAlert] = useState(false);
   const [comingSoonAlert, setComingSoonAlert] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -543,6 +546,12 @@ export const ProfileScreen = () => {
             onPress={() => setAppearancePickerOpen(true)}
           />
           <FieldRow
+            label="Language"
+            value={language === 'fr' ? 'Français' : 'English'}
+            trailing="chevron"
+            onPress={() => setLanguagePickerOpen(true)}
+          />
+          <FieldRow
             label="Notifications"
             value="On"
             trailing="chevron"
@@ -780,6 +789,21 @@ export const ProfileScreen = () => {
         onSelect={opt => {
           setPreference(opt.value as typeof preference);
           setAppearancePickerOpen(false);
+        }}
+      />
+
+      <AppSelectSheet
+        visible={languagePickerOpen}
+        title="Language"
+        options={[
+          { label: 'English', value: 'en' },
+          { label: 'Français', value: 'fr' },
+        ]}
+        selected={language}
+        onClose={() => setLanguagePickerOpen(false)}
+        onSelect={opt => {
+          setLanguage(opt.value as typeof language);
+          setLanguagePickerOpen(false);
         }}
       />
 

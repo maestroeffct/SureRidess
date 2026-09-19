@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import { setItem, StorageKeys } from '@/helpers/storage';
 
@@ -28,6 +29,7 @@ const LOGO = require('@/assets/images/logo-text.png');
  */
 export function OnboardingScreen() {
   const navigation = useNavigation<any>();
+  const { t } = useTranslation('onboarding');
 
   const markSeen = useCallback(async () => {
     await setItem(StorageKeys.HAS_SEEN_ONBOARDING, true);
@@ -35,7 +37,7 @@ export function OnboardingScreen() {
 
   const getStarted = useCallback(async () => {
     await markSeen();
-    navigation.replace('CountrySelect');
+    navigation.replace('LanguageSelect');
   }, [markSeen, navigation]);
 
   const signIn = useCallback(async () => {
@@ -62,11 +64,8 @@ export function OnboardingScreen() {
 
           {/* Bottom content */}
           <View style={s.copyWrap}>
-            <Typo style={s.title}>Rent a car in seconds.</Typo>
-            <Typo style={s.subtitle}>
-              Verified vehicles from trusted hosts across Nigeria and West
-              Africa. Book online, pick up, drive.
-            </Typo>
+            <Typo style={s.title}>{t('onboardingScreen.title')}</Typo>
+            <Typo style={s.subtitle}>{t('onboardingScreen.subtitle')}</Typo>
 
             <View style={s.ctaGroup}>
               <TouchableOpacity
@@ -74,7 +73,7 @@ export function OnboardingScreen() {
                 onPress={getStarted}
                 style={s.primaryBtn}
               >
-                <Typo style={s.primaryBtnText}>Get Started</Typo>
+                <Typo style={s.primaryBtnText}>{t('onboardingScreen.getStarted')}</Typo>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -82,13 +81,11 @@ export function OnboardingScreen() {
                 onPress={signIn}
                 style={s.ghostBtn}
               >
-                <Typo style={s.ghostBtnText}>I already have an account</Typo>
+                <Typo style={s.ghostBtnText}>{t('onboardingScreen.signIn')}</Typo>
               </TouchableOpacity>
             </View>
 
-            <Typo style={s.legal}>
-              By continuing you agree to our Terms and Privacy Policy.
-            </Typo>
+            <Typo style={s.legal}>{t('onboardingScreen.legal')}</Typo>
           </View>
         </SafeAreaView>
       </ImageBackground>
