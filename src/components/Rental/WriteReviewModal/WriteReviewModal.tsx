@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -37,13 +38,13 @@ type Props = {
   onSubmitted?: () => void;
 };
 
-const RATING_LABELS: Record<number, string> = {
-  0: 'Tap a star to rate',
-  1: 'Poor',
-  2: 'Below average',
-  3: 'Good',
-  4: 'Very good',
-  5: 'Excellent',
+const RATING_LABEL_KEYS: Record<number, string> = {
+  0: 'writeReviewModal.ratingTap',
+  1: 'writeReviewModal.ratingPoor',
+  2: 'writeReviewModal.ratingBelowAverage',
+  3: 'writeReviewModal.ratingGood',
+  4: 'writeReviewModal.ratingVeryGood',
+  5: 'writeReviewModal.ratingExcellent',
 };
 
 const MAX_COMMENT = 1000;
@@ -58,6 +59,7 @@ export function WriteReviewModal({
   onSubmitted,
 }: Props) {
   const { colors, mode } = useTheme();
+  const { t } = useTranslation('carRental');
   const [carRating, setCarRating] = useState(0);
   const [carComment, setCarComment] = useState('');
   const [providerRating, setProviderRating] = useState(0);
@@ -76,7 +78,7 @@ export function WriteReviewModal({
 
   const handleSubmit = async () => {
     if (carRating < 1) {
-      showError('Please rate the car');
+      showError(t('writeReviewModal.pleaseRateCar'));
       return;
     }
     try {
@@ -88,11 +90,11 @@ export function WriteReviewModal({
         providerRating: providerRating >= 1 ? providerRating : undefined,
         providerComment: providerComment.trim() || undefined,
       });
-      showSuccess('Thanks for your review');
+      showSuccess(t('writeReviewModal.thanksForReview'));
       onSubmitted?.();
       onClose();
     } catch (e: any) {
-      showError(e?.response?.data?.message || 'Unable to submit review');
+      showError(e?.response?.data?.message || t('writeReviewModal.submitError'));
     } finally {
       setSubmitting(false);
     }
@@ -115,10 +117,10 @@ export function WriteReviewModal({
               <View style={s.header}>
                 <View style={{ flex: 1 }}>
                   <Typo style={[s.title, { color: colors.textPrimary }]}>
-                    Rate your trip
+                    {t('writeReviewModal.title')}
                   </Typo>
                   <Typo style={[s.subtitle, { color: colors.textSecondary }]}>
-                    Your feedback helps the next renter choose well.
+                    {t('writeReviewModal.subtitle')}
                   </Typo>
                 </View>
                 <TouchableOpacity
@@ -140,7 +142,7 @@ export function WriteReviewModal({
                     <Icon name="car-sport" size={16} color={BRAND} />
                     <View style={{ flex: 1 }}>
                       <Typo style={[s.sectionTitle, { color: colors.textPrimary }]}>
-                        The car
+                        {t('writeReviewModal.theCar')}
                       </Typo>
                       {carTitle && (
                         <Typo style={[s.sectionSub, { color: colors.textSecondary }]}>
@@ -148,12 +150,12 @@ export function WriteReviewModal({
                         </Typo>
                       )}
                     </View>
-                    <Typo style={[s.reqBadge, { color: BRAND }]}>REQUIRED</Typo>
+                    <Typo style={[s.reqBadge, { color: BRAND }]}>{t('writeReviewModal.required')}</Typo>
                   </View>
                   <View style={s.starsBlock}>
                     <StarRating value={carRating} size={30} gap={6} onChange={setCarRating} />
                     <Typo style={[s.ratingLabel, { color: colors.textSecondary }]}>
-                      {RATING_LABELS[carRating]}
+                      {t(RATING_LABEL_KEYS[carRating])}
                     </Typo>
                   </View>
                   <View
@@ -162,8 +164,8 @@ export function WriteReviewModal({
                     <TextInput
                       multiline
                       value={carComment}
-                      onChangeText={t => setCarComment(t.slice(0, MAX_COMMENT))}
-                      placeholder="How was the car? Cleanliness, comfort, condition…"
+                      onChangeText={val => setCarComment(val.slice(0, MAX_COMMENT))}
+                      placeholder={t('writeReviewModal.carCommentPlaceholder')}
                       placeholderTextColor={colors.textSecondary}
                       style={[s.textarea, { color: colors.textPrimary }]}
                     />
@@ -179,7 +181,7 @@ export function WriteReviewModal({
                     <Icon name="business" size={16} color={BRAND} />
                     <View style={{ flex: 1 }}>
                       <Typo style={[s.sectionTitle, { color: colors.textPrimary }]}>
-                        The provider
+                        {t('writeReviewModal.theProvider')}
                       </Typo>
                       {providerName && (
                         <Typo style={[s.sectionSub, { color: colors.textSecondary }]}>
@@ -187,12 +189,12 @@ export function WriteReviewModal({
                         </Typo>
                       )}
                     </View>
-                    <Typo style={[s.optBadge, { color: colors.textSecondary }]}>OPTIONAL</Typo>
+                    <Typo style={[s.optBadge, { color: colors.textSecondary }]}>{t('writeReviewModal.optional')}</Typo>
                   </View>
                   <View style={s.starsBlock}>
                     <StarRating value={providerRating} size={30} gap={6} onChange={setProviderRating} />
                     <Typo style={[s.ratingLabel, { color: colors.textSecondary }]}>
-                      {RATING_LABELS[providerRating]}
+                      {t(RATING_LABEL_KEYS[providerRating])}
                     </Typo>
                   </View>
                   {providerRating > 0 && (
@@ -202,8 +204,8 @@ export function WriteReviewModal({
                       <TextInput
                         multiline
                         value={providerComment}
-                        onChangeText={t => setProviderComment(t.slice(0, MAX_COMMENT))}
-                        placeholder="Pickup punctuality, communication, professionalism…"
+                        onChangeText={val => setProviderComment(val.slice(0, MAX_COMMENT))}
+                        placeholder={t('writeReviewModal.providerCommentPlaceholder')}
                         placeholderTextColor={colors.textSecondary}
                         style={[s.textarea, { color: colors.textPrimary }]}
                       />
@@ -216,7 +218,7 @@ export function WriteReviewModal({
               </ScrollView>
 
               <AppButton
-                title={submitting ? 'Submitting…' : 'Submit review'}
+                title={submitting ? t('writeReviewModal.submitting') : t('writeReviewModal.submitReview')}
                 loading={submitting}
                 onPress={handleSubmit}
               />

@@ -1,1 +1,127 @@
-{}
+{
+  "bookingCard": {
+    "completePayment": "Complete payment",
+    "writeReview": "Write review",
+    "reviewed": "Reviewed",
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days"
+  },
+  "bookingStatusTabs": {
+    "inProgress": "In Progress",
+    "completed": "Completed"
+  },
+  "carCard": {
+    "titleFallback": "Toyota RAV4",
+    "locationFallback": "Ogun State",
+    "categoryFallback": "Van",
+    "verified": "Verified",
+    "transmissionFallback": "Auto",
+    "acLabel": "A/C",
+    "noAcLabel": "No A/C",
+    "mileageFallback": "Unlimited Mileage",
+    "mileageSuffix": "{{label}} Mileage",
+    "bagsLabel": "{{count}} Bags",
+    "instantConfirmation": "Instant confirmation",
+    "freeCancelation": "Free cancelation",
+    "perDayLabel": "Day/",
+    "availableCount": "{{available}} of {{total}} available"
+  },
+  "insuranceCard": {
+    "deductible": "Deductible {{value}}"
+  },
+  "pickupReturnChain": {
+    "stepBooked": "Booked",
+    "stepPaid": "Paid",
+    "stepReady": "Ready",
+    "stepPickedUp": "Picked up",
+    "stepInTrip": "In trip",
+    "stepReturned": "Returned",
+    "stepCompleted": "Completed",
+    "tripStatus": "Trip status",
+    "waitingTitle": "Waiting for the provider",
+    "waitingBody": "The provider will mark the car ready when it's cleaned, fueled, and waiting for you. You'll get a notification the moment it's ready.",
+    "pickupCodeLabel": "YOUR PICKUP CODE",
+    "pickupCodeBody": "The provider has the car ready. Show this code, then confirm when you actually have the keys in hand.",
+    "receivedVehicleButton": "I received the vehicle",
+    "inTripTitle": "Trip in progress",
+    "inTripBody": "Return the car to the provider on time. When you're back, tap the button below so the provider can inspect and close the trip.",
+    "returnedVehicleButton": "I've returned the vehicle",
+    "returnCodeLabel": "RETURN CODE — SHOW TO PROVIDER",
+    "returnCodeBody": "The provider enters this code to confirm they've received the car back in good condition. The trip closes once they do.",
+    "completedTitle": "Trip completed",
+    "completedBody": "Thanks for renting with us. Your security deposit is being released, and a receipt will land in your inbox shortly.",
+    "confirmPickupTitle": "Confirm pickup",
+    "confirmPickupHint": "Enter the 6-digit code shown above to confirm you have the vehicle. Do this only when the car is with you.",
+    "codePlaceholder": "000000",
+    "cancelButton": "Cancel",
+    "confirmPickupButton": "Confirm pickup",
+    "markReturnedTitle": "Mark vehicle as returned?",
+    "markReturnedHint": "Only do this when the car is physically with the provider. You'll get a 6-digit code to give them so they can close out the trip.",
+    "notYetButton": "Not yet",
+    "yesReturnedButton": "Yes, returned",
+    "toastEnterCode": "Enter the 6-digit pickup code",
+    "toastPickupConfirmed": "Pickup confirmed. Trip started.",
+    "toastConfirmPickupError": "Could not confirm pickup",
+    "toastReturnRecorded": "Return recorded",
+    "toastReturnRecordedDetail": "Show the return code to the provider to complete.",
+    "toastRecordReturnError": "Could not record return"
+  },
+  "priceBreakdown": {
+    "calculating": "Calculating price…",
+    "carRentalLabel": "Car rental ({{details}})",
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
+    "daysCountWithRate_one": "{{count}} day × {{rate}}",
+    "daysCountWithRate_other": "{{count}} days × {{rate}}",
+    "insuranceWithLabel": "Insurance · {{label}}",
+    "insuranceFee": "Insurance fee",
+    "chargedAtCheckout": "Charged at checkout",
+    "includesVat": "Includes {{amount}} VAT",
+    "subtotal": "Subtotal",
+    "taxFallback": "Tax",
+    "fxNotePrefix": "Display is approximate. You'll be charged",
+    "fxNoteSuffix": "in {{currency}} at checkout.",
+    "depositLabel": "Security deposit (not charged now)",
+    "depositHint": "Held on your card at pickup and refunded within 7 days of return in good condition. Separate from the protection plan.",
+    "noHiddenFees": "No hidden fees — what you see is what you pay."
+  },
+  "protectionRow": {
+    "deductible": "Deductible {{value}}"
+  },
+  "resumeCard": {
+    "pickUpWhereLeftOff": "PICK UP WHERE YOU LEFT OFF",
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
+    "completePayment": "Complete payment",
+    "continueCheckout": "Continue checkout"
+  },
+  "reviewsSection": {
+    "noReviewsYet": "No reviews yet",
+    "beFirstToReview": "Be the first to review after your trip.",
+    "reviewsCount_one": "{{count}} review",
+    "reviewsCount_other": "{{count}} reviews",
+    "verifiedReviewsHint": "Verified post-trip reviews from past renters",
+    "anonymous": "Anonymous"
+  },
+  "writeReviewModal": {
+    "ratingTap": "Tap a star to rate",
+    "ratingPoor": "Poor",
+    "ratingBelowAverage": "Below average",
+    "ratingGood": "Good",
+    "ratingVeryGood": "Very good",
+    "ratingExcellent": "Excellent",
+    "pleaseRateCar": "Please rate the car",
+    "thanksForReview": "Thanks for your review",
+    "submitError": "Unable to submit review",
+    "title": "Rate your trip",
+    "subtitle": "Your feedback helps the next renter choose well.",
+    "theCar": "The car",
+    "required": "REQUIRED",
+    "carCommentPlaceholder": "How was the car? Cleanliness, comfort, condition…",
+    "theProvider": "The provider",
+    "optional": "OPTIONAL",
+    "providerCommentPlaceholder": "Pickup punctuality, communication, professionalism…",
+    "submitting": "Submitting…",
+    "submitReview": "Submit review"
+  }
+}

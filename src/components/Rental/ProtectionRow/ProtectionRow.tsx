@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import styles from './styles';
@@ -30,6 +31,7 @@ export const ProtectionRow = ({
   deductibleLabel,
 }: Props) => {
   const accent = tier ? TIER_ACCENT[tier] : undefined;
+  const { t } = useTranslation('carRental');
   return (
     <View style={styles.row}>
       <View style={styles.left}>
@@ -59,7 +61,7 @@ export const ProtectionRow = ({
           </View>
           <Typo variant="caption">{subtitle}</Typo>
           {deductibleLabel ? (
-            <Typo variant="caption">Deductible {deductibleLabel}</Typo>
+            <Typo variant="caption">{t('protectionRow.deductible', { value: deductibleLabel })}</Typo>
           ) : null}
         </View>
       </View>

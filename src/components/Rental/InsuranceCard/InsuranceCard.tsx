@@ -1,4 +1,5 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '../../AppText/Typo';
 import { CheckRadio } from '../../CheckRadio/CheckRadio';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -37,6 +38,7 @@ export function InsuranceCard({
   highlights?: string[];
 }) {
   const { colors, mode } = useTheme();
+  const { t } = useTranslation('carRental');
   const selectedBg = mode === 'dark' ? SELECTED_BG_DARK : SELECTED_BG_LIGHT;
   const accent = tier ? TIER_ACCENT[tier] : undefined;
 
@@ -75,7 +77,7 @@ export function InsuranceCard({
           <View style={insuranceStyles.metaRow}>
             {deductibleLabel && (
               <Typo variant="caption" style={insuranceStyles.metaText}>
-                Deductible {deductibleLabel}
+                {t('insuranceCard.deductible', { value: deductibleLabel })}
               </Typo>
             )}
             {highlights?.slice(0, 2).map(h => (

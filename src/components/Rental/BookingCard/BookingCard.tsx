@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -59,6 +60,7 @@ export const BookingCard = ({
 }: Props) => {
   const { colors, mode } = useTheme();
   const fmtMoney = useFormatMoney();
+  const { t } = useTranslation('carRental');
 
   const statusInfo = useMemo(
     () => getBookingStatusInfo(status, pickupAt, returnAt),
@@ -155,13 +157,13 @@ export const BookingCard = ({
         <View style={s.footerRight}>
           {needsPayment ? (
             <View style={s.payCta}>
-              <Typo style={s.payCtaText}>Complete payment</Typo>
+              <Typo style={s.payCtaText}>{t('bookingCard.completePayment')}</Typo>
               <Icon name="arrow-forward" size={12} color="#fff" />
             </View>
           ) : statusInfo.bucket === 'past' && status?.toUpperCase() === 'COMPLETED' && !hasReview ? (
             <View style={s.reviewCta}>
               <Icon name="star-outline" size={12} color="#fff" />
-              <Typo style={s.payCtaText}>Write review</Typo>
+              <Typo style={s.payCtaText}>{t('bookingCard.writeReview')}</Typo>
             </View>
           ) : hasReview && typeof reviewRating === 'number' ? (
             <View style={s.reviewedChip}>
@@ -169,13 +171,13 @@ export const BookingCard = ({
               <Typo style={[s.footerMeta, { color: colors.textPrimary, fontWeight: '700' }]}>
                 {reviewRating.toFixed(1)}
               </Typo>
-              <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>Reviewed</Typo>
+              <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>{t('bookingCard.reviewed')}</Typo>
             </View>
           ) : (
             <>
               {days !== null && (
                 <Typo style={[s.footerMeta, { color: colors.textSecondary }]}>
-                  {days} day{days !== 1 ? 's' : ''}
+                  {t('bookingCard.daysCount', { count: days })}
                 </Typo>
               )}
               <View style={[s.footerDot, { backgroundColor: colors.border }]} />

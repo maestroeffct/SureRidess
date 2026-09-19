@@ -1,5 +1,6 @@
 import { Image, TouchableOpacity, View, ViewStyle } from 'react-native';
 import type { ComponentProps } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '../../AppText/Typo';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import type {
@@ -25,9 +26,10 @@ export function CarCard({
 }) {
   const { colors } = useTheme();
   const fmtMoney = useFormatMoney();
+  const { t } = useTranslation('carRental');
   const title =
-    car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Toyota RAV4';
-  const location = car?.location?.name ?? 'Ogun State';
+    car?.brand && car?.model ? `${car.brand} ${car.model}` : t('carCard.titleFallback');
+  const location = car?.location?.name ?? t('carCard.locationFallback');
   // Source currency: what the car is actually priced in (defaults to NGN
   // when backend doesn't return it yet).
   const sourceCurrency = car?.currency ?? 'NGN';
@@ -51,7 +53,7 @@ export function CarCard({
       .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
 
-  const categoryLabel = car?.category ? formatLabel(car.category) : 'Van';
+  const categoryLabel = car?.category ? formatLabel(car.category) : t('carCard.categoryFallback');
   const showVerified = car?.provider?.isVerified === true || car === undefined;
 
   const specs: {
@@ -65,7 +67,7 @@ export function CarCard({
   if (transmissionLabel) {
     specs.push({ icon: 'settings-outline', label: transmissionLabel });
   } else if (!car) {
-    specs.push({ icon: 'settings-outline', label: 'Auto' });
+    specs.push({ icon: 'settings-outline', label: t('carCard.transmissionFallback') });
   }
 
   if (typeof car?.seats === 'number') {
@@ -75,25 +77,28 @@ export function CarCard({
   }
 
   if (typeof car?.hasAC === 'boolean') {
-    specs.push({ icon: 'snow-outline', label: car.hasAC ? 'A/C' : 'No A/C' });
+    specs.push({
+      icon: 'snow-outline',
+      label: car.hasAC ? t('carCard.acLabel') : t('carCard.noAcLabel'),
+    });
   } else if (!car) {
-    specs.push({ icon: 'snow-outline', label: 'A/C' });
+    specs.push({ icon: 'snow-outline', label: t('carCard.acLabel') });
   }
 
   const mileageLabel = car?.mileagePolicy ? formatLabel(car.mileagePolicy) : '';
   if (mileageLabel) {
     specs.push({
       icon: 'speedometer-outline',
-      label: `${mileageLabel} Mileage`,
+      label: t('carCard.mileageSuffix', { label: mileageLabel }),
     });
   } else if (!car) {
-    specs.push({ icon: 'speedometer-outline', label: 'Unlimited Mileage' });
+    specs.push({ icon: 'speedometer-outline', label: t('carCard.mileageFallback') });
   }
 
   if (car?.bags) {
     specs.push({
       icon: 'briefcase-outline',
-      label: `${car.bags} Bags`,
+      label: t('carCard.bagsLabel', { count: car.bags }),
     });
   }
 
@@ -128,7 +133,7 @@ export function CarCard({
   const footerFeatures =
     featureLabels.length > 0
       ? featureLabels.slice(0, 2)
-      : ['Instant confirmation', 'Free cancelation'];
+      : [t('carCard.instantConfirmation'), t('carCard.freeCancelation')];
 
   return (
     <TouchableOpacity
@@ -153,7 +158,7 @@ export function CarCard({
           {showVerified && (
             <View style={[styles.tag, styles.verified]}>
               <Typo variant="caption" style={{ color: '#fff' }}>
-                Verified
+                {t('carCard.verified')}
               </Typo>
             </View>
           )}
@@ -228,7 +233,7 @@ export function CarCard({
           </View>
 
           <View style={styles.priceBox}>
-            <Typo variant="caption">Day/</Typo>
+            <Typo variant="caption">{t('carCard.perDayLabel')}</Typo>
             <Typo style={styles.price}>{dailyRate}</Typo>
           </View>
         </View>
@@ -255,7 +260,10 @@ export function CarCard({
               }}
             >
               <Typo style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                {car.availableQuantity} of {car.totalQuantity} available
+                {t('carCard.availableCount', {
+                  available: car.availableQuantity,
+                  total: car.totalQuantity,
+                })}
               </Typo>
             </View>
           )}

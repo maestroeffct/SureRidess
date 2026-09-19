@@ -1,1 +1,127 @@
-{}
+{
+  "bookingCard": {
+    "completePayment": "Finaliser le paiement",
+    "writeReview": "Laisser un avis",
+    "reviewed": "Avis laissé",
+    "daysCount_one": "{{count}} jour",
+    "daysCount_other": "{{count}} jours"
+  },
+  "bookingStatusTabs": {
+    "inProgress": "En cours",
+    "completed": "Terminées"
+  },
+  "carCard": {
+    "titleFallback": "Toyota RAV4",
+    "locationFallback": "État d'Ogun",
+    "categoryFallback": "Fourgon",
+    "verified": "Vérifié",
+    "transmissionFallback": "Auto",
+    "acLabel": "Clim.",
+    "noAcLabel": "Sans clim.",
+    "mileageFallback": "Kilométrage illimité",
+    "mileageSuffix": "Kilométrage {{label}}",
+    "bagsLabel": "{{count}} bagages",
+    "instantConfirmation": "Confirmation instantanée",
+    "freeCancelation": "Annulation gratuite",
+    "perDayLabel": "Jour/",
+    "availableCount": "{{available}} sur {{total}} disponibles"
+  },
+  "insuranceCard": {
+    "deductible": "Franchise {{value}}"
+  },
+  "pickupReturnChain": {
+    "stepBooked": "Réservé",
+    "stepPaid": "Payé",
+    "stepReady": "Prêt",
+    "stepPickedUp": "Récupéré",
+    "stepInTrip": "En trajet",
+    "stepReturned": "Rendu",
+    "stepCompleted": "Terminé",
+    "tripStatus": "Statut du trajet",
+    "waitingTitle": "En attente du prestataire",
+    "waitingBody": "Le prestataire marquera le véhicule comme prêt une fois qu'il sera nettoyé, plein fait et prêt à être récupéré. Vous recevrez une notification dès qu'il sera prêt.",
+    "pickupCodeLabel": "VOTRE CODE DE RÉCUPÉRATION",
+    "pickupCodeBody": "Le véhicule est prêt chez le prestataire. Montrez ce code, puis confirmez uniquement lorsque vous avez les clés en main.",
+    "receivedVehicleButton": "J'ai récupéré le véhicule",
+    "inTripTitle": "Trajet en cours",
+    "inTripBody": "Restituez le véhicule au prestataire à l'heure convenue. Une fois de retour, appuyez sur le bouton ci-dessous pour que le prestataire puisse l'inspecter et clôturer le trajet.",
+    "returnedVehicleButton": "J'ai restitué le véhicule",
+    "returnCodeLabel": "CODE DE RETOUR — À MONTRER AU PRESTATAIRE",
+    "returnCodeBody": "Le prestataire saisit ce code pour confirmer qu'il a bien récupéré le véhicule en bon état. Le trajet se clôture dès que c'est fait.",
+    "completedTitle": "Trajet terminé",
+    "completedBody": "Merci d'avoir loué avec nous. Votre dépôt de garantie est en cours de libération, et un reçu arrivera bientôt dans votre boîte mail.",
+    "confirmPickupTitle": "Confirmer la récupération",
+    "confirmPickupHint": "Saisissez le code à 6 chiffres affiché ci-dessus pour confirmer que vous avez bien le véhicule. Ne faites ceci que lorsque le véhicule est avec vous.",
+    "codePlaceholder": "000000",
+    "cancelButton": "Annuler",
+    "confirmPickupButton": "Confirmer la récupération",
+    "markReturnedTitle": "Marquer le véhicule comme restitué ?",
+    "markReturnedHint": "Ne faites ceci que lorsque le véhicule est physiquement chez le prestataire. Vous recevrez un code à 6 chiffres à lui remettre pour clôturer le trajet.",
+    "notYetButton": "Pas encore",
+    "yesReturnedButton": "Oui, restitué",
+    "toastEnterCode": "Saisissez le code de récupération à 6 chiffres",
+    "toastPickupConfirmed": "Récupération confirmée. Le trajet a commencé.",
+    "toastConfirmPickupError": "Impossible de confirmer la récupération",
+    "toastReturnRecorded": "Retour enregistré",
+    "toastReturnRecordedDetail": "Montrez le code de retour au prestataire pour finaliser.",
+    "toastRecordReturnError": "Impossible d'enregistrer le retour"
+  },
+  "priceBreakdown": {
+    "calculating": "Calcul du prix en cours…",
+    "carRentalLabel": "Location de voiture ({{details}})",
+    "daysCount_one": "{{count}} jour",
+    "daysCount_other": "{{count}} jours",
+    "daysCountWithRate_one": "{{count}} jour × {{rate}}",
+    "daysCountWithRate_other": "{{count}} jours × {{rate}}",
+    "insuranceWithLabel": "Assurance · {{label}}",
+    "insuranceFee": "Frais d'assurance",
+    "chargedAtCheckout": "Facturé au paiement",
+    "includesVat": "TVA de {{amount}} incluse",
+    "subtotal": "Sous-total",
+    "taxFallback": "Taxe",
+    "fxNotePrefix": "L'affichage est approximatif. Le montant facturé sera",
+    "fxNoteSuffix": "en {{currency}} au moment du paiement.",
+    "depositLabel": "Dépôt de garantie (non débité pour l'instant)",
+    "depositHint": "Bloqué sur votre carte au moment de la prise en charge et remboursé dans les 7 jours suivant le retour du véhicule en bon état. Distinct du plan de protection.",
+    "noHiddenFees": "Aucun frais caché — le prix affiché est le prix payé."
+  },
+  "protectionRow": {
+    "deductible": "Franchise {{value}}"
+  },
+  "resumeCard": {
+    "pickUpWhereLeftOff": "REPRENEZ LÀ OÙ VOUS ÉTIEZ",
+    "daysCount_one": "{{count}} jour",
+    "daysCount_other": "{{count}} jours",
+    "completePayment": "Finaliser le paiement",
+    "continueCheckout": "Continuer la réservation"
+  },
+  "reviewsSection": {
+    "noReviewsYet": "Aucun avis pour le moment",
+    "beFirstToReview": "Soyez le premier à laisser un avis après votre trajet.",
+    "reviewsCount_one": "{{count}} avis",
+    "reviewsCount_other": "{{count}} avis",
+    "verifiedReviewsHint": "Avis vérifiés laissés par d'anciens locataires",
+    "anonymous": "Anonyme"
+  },
+  "writeReviewModal": {
+    "ratingTap": "Touchez une étoile pour noter",
+    "ratingPoor": "Mauvais",
+    "ratingBelowAverage": "Insuffisant",
+    "ratingGood": "Bien",
+    "ratingVeryGood": "Très bien",
+    "ratingExcellent": "Excellent",
+    "pleaseRateCar": "Merci de noter le véhicule",
+    "thanksForReview": "Merci pour votre avis",
+    "submitError": "Impossible d'envoyer l'avis",
+    "title": "Évaluez votre trajet",
+    "subtitle": "Votre avis aide les prochains locataires à faire le bon choix.",
+    "theCar": "Le véhicule",
+    "required": "OBLIGATOIRE",
+    "carCommentPlaceholder": "Comment était le véhicule ? Propreté, confort, état…",
+    "theProvider": "Le prestataire",
+    "optional": "FACULTATIF",
+    "providerCommentPlaceholder": "Ponctualité à la prise en charge, communication, professionnalisme…",
+    "submitting": "Envoi en cours…",
+    "submitReview": "Envoyer l'avis"
+  }
+}

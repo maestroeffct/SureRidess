@@ -15,6 +15,7 @@ import React, { useCallback, useState } from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,6 +27,7 @@ const AMBER = '#F59E0B';
 export function ResumeCard() {
   const navigation = useNavigation<any>();
   const { colors, mode } = useTheme();
+  const { t } = useTranslation('carRental');
   const [draft, setDraft] = useState<CheckoutDraft | null>(null);
 
   useFocusEffect(
@@ -98,14 +100,14 @@ export function ResumeCard() {
         <View style={s.pillRow}>
           <View style={[s.pill, { backgroundColor: `${AMBER}22` }]}>
             <Icon name="time-outline" size={10} color={AMBER} />
-            <Typo style={[s.pillText, { color: AMBER }]}>PICK UP WHERE YOU LEFT OFF</Typo>
+            <Typo style={[s.pillText, { color: AMBER }]}>{t('resumeCard.pickUpWhereLeftOff')}</Typo>
           </View>
         </View>
         <Typo style={[s.title, { color: colors.textPrimary }]} numberOfLines={1}>
           {draft.carName}
         </Typo>
         <Typo style={[s.sub, { color: colors.textSecondary }]} numberOfLines={1}>
-          {days} day{days > 1 ? 's' : ''}
+          {t('resumeCard.daysCount', { count: days })}
           {draft.pickupLocationName ? ` · ${draft.pickupLocationName}` : ''}
         </Typo>
         <TouchableOpacity
@@ -114,7 +116,7 @@ export function ResumeCard() {
           style={[s.cta, { backgroundColor: BRAND }]}
         >
           <Typo style={s.ctaText}>
-            {draft.step === 'PAYMENT' ? 'Complete payment' : 'Continue checkout'}
+            {draft.step === 'PAYMENT' ? t('resumeCard.completePayment') : t('resumeCard.continueCheckout')}
           </Typo>
           <Icon name="arrow-forward" size={13} color="#fff" />
         </TouchableOpacity>

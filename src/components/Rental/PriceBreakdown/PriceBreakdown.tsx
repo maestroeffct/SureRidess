@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import type { PricingPreview } from '@/services/pricing.service';
@@ -35,6 +36,7 @@ export function PriceBreakdown({
   const { currency: userCurrency } = useCurrency();
   const fmtMoney = useFormatMoney();
   const { colors } = useTheme();
+  const { t } = useTranslation('carRental');
   const sourceCurrency = pricing?.currency ?? fallbackCurrency;
   const fmt = (amount?: number) => fmtMoney(amount, sourceCurrency, { round: true });
   const isConverted =
@@ -59,21 +61,29 @@ export function PriceBreakdown({
   if (loading) {
     return (
       <View style={s.wrap}>
-        <Typo style={s.calculating}>Calculating price…</Typo>
+        <Typo style={s.calculating}>{t('priceBreakdown.calculating')}</Typo>
       </View>
     );
   }
 
+  const daysDetail = perDay
+    ? t('priceBreakdown.daysCountWithRate', { count: days, rate: fmt(perDay) })
+    : t('priceBreakdown.daysCount', { count: days });
+
   return (
     <View style={s.wrap}>
       <Row
-        label={`Car rental (${days} day${days !== 1 ? 's' : ''}${perDay ? ` × ${fmt(perDay)}` : ''})`}
+        label={t('priceBreakdown.carRentalLabel', { details: daysDetail })}
         value={fmt(basePrice)}
       />
 
       {insuranceFee > 0 && (
         <Row
-          label={insuranceLabel ? `Insurance · ${insuranceLabel}` : 'Insurance fee'}
+          label={
+            insuranceLabel
+              ? t('priceBreakdown.insuranceWithLabel', { label: insuranceLabel })
+              : t('priceBreakdown.insuranceFee')
+          }
           value={fmt(insuranceFee)}
         />
       )}
@@ -115,13 +125,13 @@ export function PriceBreakdown({
           <View style={[s.divider, { backgroundColor: colors.border }]} />
           <View style={s.totalRow}>
             <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>
-              Charged at checkout
+              {t('priceBreakdown.chargedAtCheckout')}
             </Typo>
             <Typo style={s.totalValue}>{fmt(total)}</Typo>
           </View>
           {taxAmount > 0 && (
             <Typo style={[s.inclNote, { color: colors.textSecondary }]}>
-              Includes {fmt(taxAmount)} VAT
+              {t('priceBreakdown.includesVat', { amount: fmt(taxAmount) })}
               {pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}
             </Typo>
           )}
@@ -131,7 +141,7 @@ export function PriceBreakdown({
           {(insuranceFee > 0 || addonsFee > 0 || taxAmount > 0) && (
             <>
               <View style={[s.dividerLight, { backgroundColor: colors.border }]} />
-              <Row label="Subtotal" value={fmt(subtotal)} muted />
+              <Row label={t('priceBreakdown.subtotal')} value={fmt(subtotal)} muted />
             </>
           )}
 
@@ -145,7 +155,7 @@ export function PriceBreakdown({
             ))
           ) : taxAmount > 0 ? (
             <Row
-              label={`Tax${pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}`}
+              label={`${t('priceBreakdown.taxFallback')}${pricing?.taxRate ? ` (${pricing.taxRate.toFixed(1)}%)` : ''}`}
               value={fmt(taxAmount)}
             />
           ) : null}
@@ -154,7 +164,7 @@ export function PriceBreakdown({
 
           <View style={s.totalRow}>
             <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>
-              Charged at checkout
+              {t('priceBreakdown.chargedAtCheckout')}
             </Typo>
             <Typo style={s.totalValue}>{fmt(total)}</Typo>
           </View>
@@ -165,11 +175,11 @@ export function PriceBreakdown({
         <View style={s.fxNote}>
           <Icon name="swap-horizontal-outline" size={12} color={colors.textSecondary} />
           <Typo style={[s.fxNoteText, { color: colors.textSecondary }]}>
-            Display is approximate. You'll be charged{' '}
+            {t('priceBreakdown.fxNotePrefix')}{' '}
             <Typo style={[s.fxNoteText, { color: colors.textPrimary, fontWeight: '700' }]}>
               {fmtMoney(total, sourceCurrency, { round: true, strict: true })}
             </Typo>{' '}
-            in {sourceCurrency.toUpperCase()} at checkout.
+            {t('priceBreakdown.fxNoteSuffix', { currency: sourceCurrency.toUpperCase() })}
           </Typo>
         </View>
       )}
@@ -184,11 +194,10 @@ export function PriceBreakdown({
           <Icon name="lock-closed-outline" size={14} color={colors.textSecondary} />
           <View style={{ flex: 1 }}>
             <Typo style={[s.depositLabel, { color: colors.textPrimary }]}>
-              Security deposit (not charged now)
+              {t('priceBreakdown.depositLabel')}
             </Typo>
             <Typo style={[s.depositHint, { color: colors.textSecondary }]}>
-              Held on your card at pickup and refunded within 7 days of return
-              in good condition. Separate from the protection plan.
+              {t('priceBreakdown.depositHint')}
             </Typo>
           </View>
           <Typo style={[s.depositValue, { color: colors.textPrimary }]}>{fmt(deposit)}</Typo>
@@ -197,7 +206,7 @@ export function PriceBreakdown({
 
       <View style={s.assuranceRow}>
         <Icon name="shield-checkmark" size={14} color={GREEN} />
-        <Typo style={s.assuranceText}>No hidden fees — what you see is what you pay.</Typo>
+        <Typo style={s.assuranceText}>{t('priceBreakdown.noHiddenFees')}</Typo>
       </View>
     </View>
   );

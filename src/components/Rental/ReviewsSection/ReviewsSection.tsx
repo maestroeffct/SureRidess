@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { StarRating } from '@/components/StarRating/StarRating';
@@ -31,6 +32,7 @@ export function ReviewsSection({
   previewLimit = 3,
 }: Props) {
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('carRental');
 
   const [stats, setStats] = useState<RentalCarReviewStats | null>(() =>
     typeof initialAverage === 'number' && typeof initialCount === 'number'
@@ -91,10 +93,10 @@ export function ReviewsSection({
         </View>
         <View style={{ flex: 1 }}>
           <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>
-            No reviews yet
+            {t('reviewsSection.noReviewsYet')}
           </Typo>
           <Typo style={[s.emptyHint, { color: colors.textSecondary }]}>
-            Be the first to review after your trip.
+            {t('reviewsSection.beFirstToReview')}
           </Typo>
         </View>
       </View>
@@ -113,10 +115,10 @@ export function ReviewsSection({
         </View>
         <View style={{ flex: 1, paddingLeft: 16 }}>
           <Typo style={[s.countText, { color: colors.textPrimary }]}>
-            {count} review{count !== 1 ? 's' : ''}
+            {t('reviewsSection.reviewsCount', { count })}
           </Typo>
           <Typo style={[s.countHint, { color: colors.textSecondary }]}>
-            Verified post-trip reviews from past renters
+            {t('reviewsSection.verifiedReviewsHint')}
           </Typo>
         </View>
       </View>
@@ -128,7 +130,7 @@ export function ReviewsSection({
             <View style={s.reviewHeader}>
               <View style={{ flex: 1 }}>
                 <Typo style={[s.reviewName, { color: colors.textPrimary }]}>
-                  {r.userDisplayName || 'Anonymous'}
+                  {r.userDisplayName || t('reviewsSection.anonymous')}
                 </Typo>
                 <Typo style={[s.reviewDate, { color: colors.textSecondary }]}>
                   {dayjs(r.createdAt).format('MMM D, YYYY')}

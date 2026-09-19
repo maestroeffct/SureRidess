@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import styles from './styles';
 
@@ -9,15 +10,16 @@ type Props = {
 };
 
 export const BookingStatusTabs = ({ value, onChange }: Props) => {
+  const { t } = useTranslation('carRental');
   return (
     <View style={styles.wrapper}>
       <Tab
-        label="In Progress"
+        label={t('bookingStatusTabs.inProgress')}
         active={value === 'in_progress'}
         onPress={() => onChange('in_progress')}
       />
       <Tab
-        label="Completed"
+        label={t('bookingStatusTabs.completed')}
         active={value === 'completed'}
         onPress={() => onChange('completed')}
       />

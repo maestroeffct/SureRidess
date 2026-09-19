@@ -25,6 +25,7 @@ import {
   View,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -41,15 +42,25 @@ const AMBER = '#F59E0B';
 const RED = '#DC2626';
 
 const STEPS = [
-  { key: 'booked', label: 'Booked' },
-  { key: 'paid', label: 'Paid' },
-  { key: 'ready', label: 'Ready' },
-  { key: 'picked-up', label: 'Picked up' },
-  { key: 'in-trip', label: 'In trip' },
-  { key: 'returned', label: 'Returned' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'booked' },
+  { key: 'paid' },
+  { key: 'ready' },
+  { key: 'picked-up' },
+  { key: 'in-trip' },
+  { key: 'returned' },
+  { key: 'completed' },
 ] as const;
 type StepKey = (typeof STEPS)[number]['key'];
+
+const STEP_LABEL_KEYS: Record<StepKey, string> = {
+  booked: 'pickupReturnChain.stepBooked',
+  paid: 'pickupReturnChain.stepPaid',
+  ready: 'pickupReturnChain.stepReady',
+  'picked-up': 'pickupReturnChain.stepPickedUp',
+  'in-trip': 'pickupReturnChain.stepInTrip',
+  returned: 'pickupReturnChain.stepReturned',
+  completed: 'pickupReturnChain.stepCompleted',
+};
 
 type Props = {
   booking: BookingDetails;
@@ -73,6 +84,7 @@ function computeStep(b: BookingDetails): StepKey {
 
 export function PickupReturnChain({ booking, onChanged }: Props) {
   const { colors, mode } = useTheme();
+  const { t } = useTranslation('carRental');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [returnConfirmOpen, setReturnConfirmOpen] = useState(false);
   const [code, setCode] = useState('');
@@ -86,20 +98,20 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
 
   const onConfirmPickup = async () => {
     if (!/^\d{6}$/.test(code)) {
-      Toast.show({ type: 'error', text1: 'Enter the 6-digit pickup code' });
+      Toast.show({ type: 'error', text1: t('pickupReturnChain.toastEnterCode') });
       return;
     }
     try {
       setSubmitting(true);
       await confirmBookingPickup(booking.id, code);
-      Toast.show({ type: 'success', text1: 'Pickup confirmed. Trip started.' });
+      Toast.show({ type: 'success', text1: t('pickupReturnChain.toastPickupConfirmed') });
       setConfirmOpen(false);
       setCode('');
       await onChanged();
     } catch (e: any) {
       Toast.show({
         type: 'error',
-        text1: e?.response?.data?.message ?? 'Could not confirm pickup',
+        text1: e?.response?.data?.message ?? t('pickupReturnChain.toastConfirmPickupError'),
       });
     } finally {
       setSubmitting(false);
@@ -112,15 +124,15 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
       await markBookingReturned(booking.id);
       Toast.show({
         type: 'success',
-        text1: 'Return recorded',
-        text2: 'Show the return code to the provider to complete.',
+        text1: t('pickupReturnChain.toastReturnRecorded'),
+        text2: t('pickupReturnChain.toastReturnRecordedDetail'),
       });
       setReturnConfirmOpen(false);
       await onChanged();
     } catch (e: any) {
       Toast.show({
         type: 'error',
-        text1: e?.response?.data?.message ?? 'Could not record return',
+        text1: e?.response?.data?.message ?? t('pickupReturnChain.toastRecordReturnError'),
       });
     } finally {
       setSubmitting(false);
@@ -133,7 +145,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
       <View style={s.timelineHeader}>
         <Icon name="git-branch-outline" size={16} color={GREEN} />
         <Typo style={[s.timelineTitle, { color: colors.textPrimary }]}>
-          Trip status
+          {t('pickupReturnChain.tripStatus')}
         </Typo>
       </View>
       <View style={[s.timelineRow, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -166,7 +178,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
                   ]}
                   numberOfLines={1}
                 >
-                  {st.label}
+                  {t(STEP_LABEL_KEYS[st.key])}
                 </Typo>
               </View>
               {i < STEPS.length - 1 && (
@@ -182,11 +194,10 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
         <ChainCard tone="wait" colors={colors}>
           <Icon name="hourglass-outline" size={22} color={AMBER} />
           <Typo style={[s.cardTitle, { color: colors.textPrimary }]}>
-            Waiting for the provider
+            {t('pickupReturnChain.waitingTitle')}
           </Typo>
           <Typo style={[s.cardBody, { color: colors.textSecondary }]}>
-            The provider will mark the car ready when it's cleaned, fueled, and
-            waiting for you. You'll get a notification the moment it's ready.
+            {t('pickupReturnChain.waitingBody')}
           </Typo>
         </ChainCard>
       )}
@@ -195,7 +206,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
         <ChainCard tone="action" colors={colors}>
           <View style={s.codePillWrap}>
             <Typo style={[s.codeLabel, { color: colors.textSecondary }]}>
-              YOUR PICKUP CODE
+              {t('pickupReturnChain.pickupCodeLabel')}
             </Typo>
             <View
               style={[
@@ -212,11 +223,10 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
             </View>
           </View>
           <Typo style={[s.cardBody, { color: colors.textSecondary, textAlign: 'center' }]}>
-            The provider has the car ready. Show this code, then confirm when
-            you actually have the keys in hand.
+            {t('pickupReturnChain.pickupCodeBody')}
           </Typo>
           <AppButton
-            title="I received the vehicle"
+            title={t('pickupReturnChain.receivedVehicleButton')}
             onPress={() => setConfirmOpen(true)}
           />
         </ChainCard>
@@ -227,15 +237,14 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
           <View style={s.liveHeader}>
             <View style={s.liveDot} />
             <Typo style={[s.cardTitle, { color: colors.textPrimary }]}>
-              Trip in progress
+              {t('pickupReturnChain.inTripTitle')}
             </Typo>
           </View>
           <Typo style={[s.cardBody, { color: colors.textSecondary }]}>
-            Return the car to the provider on time. When you're back, tap the
-            button below so the provider can inspect and close the trip.
+            {t('pickupReturnChain.inTripBody')}
           </Typo>
           <AppButton
-            title="I've returned the vehicle"
+            title={t('pickupReturnChain.returnedVehicleButton')}
             onPress={() => setReturnConfirmOpen(true)}
           />
         </ChainCard>
@@ -245,7 +254,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
         <ChainCard tone="action" colors={colors}>
           <View style={s.codePillWrap}>
             <Typo style={[s.codeLabel, { color: colors.textSecondary }]}>
-              RETURN CODE — SHOW TO PROVIDER
+              {t('pickupReturnChain.returnCodeLabel')}
             </Typo>
             <View
               style={[
@@ -262,8 +271,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
             </View>
           </View>
           <Typo style={[s.cardBody, { color: colors.textSecondary, textAlign: 'center' }]}>
-            The provider enters this code to confirm they've received the car
-            back in good condition. The trip closes once they do.
+            {t('pickupReturnChain.returnCodeBody')}
           </Typo>
         </ChainCard>
       )}
@@ -272,11 +280,10 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
         <ChainCard tone="done" colors={colors}>
           <Icon name="checkmark-circle" size={28} color={GREEN} />
           <Typo style={[s.cardTitle, { color: colors.textPrimary }]}>
-            Trip completed
+            {t('pickupReturnChain.completedTitle')}
           </Typo>
           <Typo style={[s.cardBody, { color: colors.textSecondary, textAlign: 'center' }]}>
-            Thanks for renting with us. Your security deposit is being
-            released, and a receipt will land in your inbox shortly.
+            {t('pickupReturnChain.completedBody')}
           </Typo>
         </ChainCard>
       )}
@@ -289,16 +296,15 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
               <Icon name="key-outline" size={24} color={GREEN} />
             </View>
             <Typo style={[s.modalTitle, { color: colors.textPrimary }]}>
-              Confirm pickup
+              {t('pickupReturnChain.confirmPickupTitle')}
             </Typo>
             <Typo style={[s.modalHint, { color: colors.textSecondary }]}>
-              Enter the 6-digit code shown above to confirm you have the
-              vehicle. Do this only when the car is with you.
+              {t('pickupReturnChain.confirmPickupHint')}
             </Typo>
             <TextInput
               value={code}
-              onChangeText={t => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
-              placeholder="000000"
+              onChangeText={val => setCode(val.replace(/[^0-9]/g, '').slice(0, 6))}
+              placeholder={t('pickupReturnChain.codePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="number-pad"
               style={[
@@ -317,7 +323,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
                 onPress={() => setConfirmOpen(false)}
                 disabled={submitting}
               >
-                <Typo style={{ color: colors.textPrimary, fontWeight: '700' }}>Cancel</Typo>
+                <Typo style={{ color: colors.textPrimary, fontWeight: '700' }}>{t('pickupReturnChain.cancelButton')}</Typo>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.modalBtn, { backgroundColor: GREEN, borderColor: GREEN, flex: 1 }]}
@@ -327,7 +333,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
                 {submitting ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Typo style={{ color: '#fff', fontWeight: '800' }}>Confirm pickup</Typo>
+                  <Typo style={{ color: '#fff', fontWeight: '800' }}>{t('pickupReturnChain.confirmPickupButton')}</Typo>
                 )}
               </TouchableOpacity>
             </View>
@@ -343,11 +349,10 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
               <Icon name="return-down-back-outline" size={24} color={AMBER} />
             </View>
             <Typo style={[s.modalTitle, { color: colors.textPrimary }]}>
-              Mark vehicle as returned?
+              {t('pickupReturnChain.markReturnedTitle')}
             </Typo>
             <Typo style={[s.modalHint, { color: colors.textSecondary }]}>
-              Only do this when the car is physically with the provider. You'll
-              get a 6-digit code to give them so they can close out the trip.
+              {t('pickupReturnChain.markReturnedHint')}
             </Typo>
             <View style={s.modalRow}>
               <TouchableOpacity
@@ -355,7 +360,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
                 onPress={() => setReturnConfirmOpen(false)}
                 disabled={submitting}
               >
-                <Typo style={{ color: colors.textPrimary, fontWeight: '700' }}>Not yet</Typo>
+                <Typo style={{ color: colors.textPrimary, fontWeight: '700' }}>{t('pickupReturnChain.notYetButton')}</Typo>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.modalBtn, { backgroundColor: AMBER, borderColor: AMBER, flex: 1 }]}
@@ -365,7 +370,7 @@ export function PickupReturnChain({ booking, onChanged }: Props) {
                 {submitting ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Typo style={{ color: '#fff', fontWeight: '800' }}>Yes, returned</Typo>
+                  <Typo style={{ color: '#fff', fontWeight: '800' }}>{t('pickupReturnChain.yesReturnedButton')}</Typo>
                 )}
               </TouchableOpacity>
             </View>
