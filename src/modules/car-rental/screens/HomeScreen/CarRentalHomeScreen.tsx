@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
@@ -52,6 +53,7 @@ const CATEGORY_MAP: Record<string, string> = {
 const CarRentalHomeScreen = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('carRental');
   const { user, refreshUser } = useAuth();
   const { colors, mode } = useTheme();
   const { count: unreadCount } = useUnreadNotifications();
@@ -73,7 +75,7 @@ const CarRentalHomeScreen = () => {
   const currencySymbol = symbolFor(displayCurrency);
   const browseCountryFlag = flagForCountry(browseCountry);
 
-  const firstName = user?.firstName?.trim() || 'there';
+  const firstName = user?.firstName?.trim() || t('carRentalHomeScreen.fallbackName');
   const avatarText =
     `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'SU';
 
@@ -227,7 +229,7 @@ const CarRentalHomeScreen = () => {
                     setCountryPickerOpen(true);
                   }}
                   activeOpacity={0.8}
-                  accessibilityLabel={`Browse region, currently ${browseCountry}`}
+                  accessibilityLabel={t('carRentalHomeScreen.browseRegionA11y', { country: browseCountry })}
                 >
                   {browseCountryFlag ? (
                     <Typo style={s.countryFlag}>{browseCountryFlag}</Typo>
@@ -240,7 +242,7 @@ const CarRentalHomeScreen = () => {
                   style={s.topChip}
                   onPress={() => setCurrencyPickerOpen(true)}
                   activeOpacity={0.8}
-                  accessibilityLabel={`Change display currency, currently ${displayCurrency}`}
+                  accessibilityLabel={t('carRentalHomeScreen.changeCurrencyA11y', { currency: displayCurrency })}
                 >
                   <Typo style={s.currencySymbol}>
                     {currencySymbol || displayCurrency}
@@ -261,8 +263,8 @@ const CarRentalHomeScreen = () => {
 
             {/* Greeting */}
             <View style={s.greetingBlock}>
-              <Typo style={s.greeting}>Hello, {firstName} 👋</Typo>
-              <Typo style={s.tagline}>Where are you headed today?</Typo>
+              <Typo style={s.greeting}>{t('carRentalHomeScreen.greeting', { name: firstName })}</Typo>
+              <Typo style={s.tagline}>{t('carRentalHomeScreen.tagline')}</Typo>
             </View>
 
             {/* Spacer pushes the chips to the bottom of the hero */}
@@ -334,7 +336,7 @@ const CarRentalHomeScreen = () => {
               >
                 <Ionicons name="location-outline" size={18} color={GREEN} />
                 <Typo style={[s.searchFieldLabel, { color: colors.textSecondary }]}>
-                  Pickup
+                  {t('carRentalHomeScreen.pickup')}
                 </Typo>
               </TouchableOpacity>
 
@@ -349,7 +351,7 @@ const CarRentalHomeScreen = () => {
               >
                 <Ionicons name="calendar-outline" size={18} color={GREEN} />
                 <Typo style={[s.searchFieldLabel, { color: colors.textSecondary }]}>
-                  Dates
+                  {t('carRentalHomeScreen.dates')}
                 </Typo>
               </TouchableOpacity>
 
@@ -375,12 +377,14 @@ const CarRentalHomeScreen = () => {
           <View style={s.emptyWrap}>
             <Ionicons name="car-outline" size={56} color={colors.border} />
             <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>
-              No cars in {markets.find(m => m.code === browseCountry)?.name ?? browseCountry} yet
+              {t('carRentalHomeScreen.emptyTitle', {
+                country: markets.find(m => m.code === browseCountry)?.name ?? browseCountry,
+              })}
             </Typo>
             <Typo style={[s.emptyHint, { color: colors.textSecondary }]}>
               {activeCategory === 'All'
-                ? 'Try another country or check back as new fleets are added.'
-                : `No ${activeCategory} cars in this country — try All or change region.`}
+                ? t('carRentalHomeScreen.emptyHintDefault')
+                : t('carRentalHomeScreen.emptyHintCategory', { category: activeCategory })}
             </Typo>
             <TouchableOpacity
               style={s.emptyCta}
@@ -391,7 +395,7 @@ const CarRentalHomeScreen = () => {
               }}
             >
               <Ionicons name="earth-outline" size={16} color="#fff" />
-              <Typo style={s.emptyCtaText}>Change country</Typo>
+              <Typo style={s.emptyCtaText}>{t('carRentalHomeScreen.changeCountry')}</Typo>
             </TouchableOpacity>
           </View>
         ) : (
@@ -453,7 +457,7 @@ const CarRentalHomeScreen = () => {
             </TouchableOpacity>
 
             <SectionHeader
-              title="Featured"
+              title={t('carRentalHomeScreen.featured')}
               onSeeAll={openSearchLocation}
               colors={colors}
             />
@@ -477,7 +481,7 @@ const CarRentalHomeScreen = () => {
             {newestCars.length > 0 && (
               <>
                 <SectionHeader
-                  title="Newest arrivals"
+                  title={t('carRentalHomeScreen.newestArrivals')}
                   onSeeAll={openSearchLocation}
                   colors={colors}
                   topSpacing={28}
@@ -526,8 +530,8 @@ const CarRentalHomeScreen = () => {
 
       <AppSelectSheet
         visible={currencyPickerOpen}
-        title="Display Currency"
-        searchPlaceholder="Search currency"
+        title={t('carRentalHomeScreen.displayCurrency')}
+        searchPlaceholder={t('carRentalHomeScreen.searchCurrency')}
         options={SUPPORTED_CURRENCIES.map(c => {
           const sym = symbolFor(c.code);
           return {
@@ -545,8 +549,8 @@ const CarRentalHomeScreen = () => {
 
       <AppSelectSheet
         visible={countryPickerOpen}
-        title="Browse cars in"
-        searchPlaceholder="Search country"
+        title={t('carRentalHomeScreen.browseCarsIn')}
+        searchPlaceholder={t('carRentalHomeScreen.searchCountry')}
         options={markets.map(c => {
           const flag = flagForCountry(c.code);
           return {
@@ -596,6 +600,7 @@ function SectionHeader({
   colors: ColorSet;
   topSpacing?: number;
 }) {
+  const { t } = useTranslation('carRental');
   return (
     <View style={[s.sectionHeader, { marginTop: topSpacing }]}>
       <Typo style={[s.sectionTitle, { color: colors.textPrimary }]}>
@@ -603,7 +608,7 @@ function SectionHeader({
       </Typo>
       {onSeeAll ? (
         <TouchableOpacity activeOpacity={0.7} onPress={onSeeAll}>
-          <Typo style={s.sectionLink}>See all</Typo>
+          <Typo style={s.sectionLink}>{t('carRentalHomeScreen.seeAll')}</Typo>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -623,12 +628,15 @@ function FeaturedCard({
   onPress: () => void;
   colors: ColorSet;
 }) {
+  const { t } = useTranslation('carRental');
   const cardWidth = SCREEN_WIDTH * 0.78;
   const fmtMoney = useFormatMoney();
 
   const title =
-    car.brand && car.model ? `${car.brand} ${car.model}` : 'Vehicle';
-  const location = car.location?.name ?? 'Nigeria';
+    car.brand && car.model
+      ? `${car.brand} ${car.model}`
+      : t('carRentalHomeScreen.vehicleFallback');
+  const location = car.location?.name ?? t('carRentalHomeScreen.nigeriaFallback');
   const dailyRate = fmtMoney(car.dailyRate, car.currency ?? 'NGN', { round: true });
 
   const rawImageUrl =
@@ -683,7 +691,7 @@ function FeaturedCard({
         {showVerified && (
           <View style={s.verifiedPill}>
             <Ionicons name="checkmark-circle" size={12} color="#fff" />
-            <Typo style={s.verifiedPillText}>Verified</Typo>
+            <Typo style={s.verifiedPillText}>{t('carRentalHomeScreen.verified')}</Typo>
           </View>
         )}
       </View>

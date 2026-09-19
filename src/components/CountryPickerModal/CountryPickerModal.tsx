@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { Country } from '@/services/country.service';
 import { getFlagEmoji } from '@/helpers/countryFlag';
@@ -18,6 +19,7 @@ export const CountryPickerModal = ({
   onClose,
   onSelect,
 }: Props) => {
+  const { t } = useTranslation('common');
   const options = useMemo(
     () =>
       countries.map(c => ({
@@ -31,10 +33,10 @@ export const CountryPickerModal = ({
   return (
     <AppSelectSheet
       visible={visible}
-      title="Select Country"
+      title={t('countryPickerModal.title')}
       options={options}
       selected={selected?.code}
-      searchPlaceholder="Search country..."
+      searchPlaceholder={t('countryPickerModal.searchPlaceholder')}
       onClose={onClose}
       onSelect={opt => {
         const country = countries.find(c => c.code === opt.value);

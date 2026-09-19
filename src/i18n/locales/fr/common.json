@@ -1,1 +1,29 @@
-{}
+{
+  "generic": {
+    "ok": "OK"
+  },
+  "appSelectSheet": {
+    "searchPlaceholder": "Rechercher...",
+    "noResults": "Aucun résultat"
+  },
+  "countryPickerModal": {
+    "title": "Choisir un pays",
+    "searchPlaceholder": "Rechercher un pays..."
+  },
+  "dateRangePicker": {
+    "months": [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ],
+    "days": ["D", "L", "M", "M", "J", "V", "S"],
+    "pickupTab": "PRISE EN CHARGE",
+    "dropoffTab": "RETOUR",
+    "youveChosenPrefix": "Vous avez choisi",
+    "rentalDaysCount_one": "{{count}} jour de location",
+    "rentalDaysCount_other": "{{count}} jours de location",
+    "pickupTimeLabel": "HEURE DE PRISE EN CHARGE",
+    "dropoffTimeLabel": "HEURE DE RETOUR",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
+  }
+}

@@ -11,6 +11,7 @@ import {
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -33,6 +34,7 @@ import {
 export function FinanceScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
+  const { t } = useTranslation('main');
   const fmtMoney = useFormatMoney();
   const [data, setData] = useState<MyFinanceOverview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,19 +85,19 @@ export function FinanceScreen() {
         }
       >
         <View style={[s.header, { borderBottomColor: colors.border }]}>
-          <Typo variant="subheading">My Finances</Typo>
+          <Typo variant="subheading">{t('financeScreen.title')}</Typo>
         </View>
 
         {/* KPI strip */}
         <View style={s.kpiRow}>
           <View style={[s.kpi, { backgroundColor: '#FEF3C7' }]}>
-            <Typo style={[s.kpiLabel, { color: '#92400E' }]}>Outstanding fines</Typo>
+            <Typo style={[s.kpiLabel, { color: '#92400E' }]}>{t('financeScreen.outstandingFines')}</Typo>
             <Typo style={[s.kpiValue, { color: '#7C2D12' }]}>
               {fmt(totals?.outstandingFines)}
             </Typo>
           </View>
           <View style={[s.kpi, { backgroundColor: '#DBEAFE' }]}>
-            <Typo style={[s.kpiLabel, { color: '#1E40AF' }]}>Held on card</Typo>
+            <Typo style={[s.kpiLabel, { color: '#1E40AF' }]}>{t('financeScreen.heldOnCard')}</Typo>
             <Typo style={[s.kpiValue, { color: '#1E3A8A' }]}>
               {fmt(totals?.heldDeposit)}
             </Typo>
@@ -103,27 +105,27 @@ export function FinanceScreen() {
         </View>
 
         {/* Fines section */}
-        <Section title="Fines" icon="alert-circle-outline" count={fines.length} colors={colors}>
+        <Section title={t('financeScreen.finesSection')} icon="alert-circle-outline" count={fines.length} colors={colors}>
           {fines.length === 0 ? (
-            <EmptyRow text="No fines. Keep it up." colors={colors} />
+            <EmptyRow text={t('financeScreen.noFines')} colors={colors} />
           ) : (
             fines.map(f => <FineRow key={f.id} fine={f} colors={colors} fmt={fmt} />)
           )}
         </Section>
 
         {/* Damage claims section */}
-        <Section title="Damage claims" icon="construct-outline" count={damages.length} colors={colors}>
+        <Section title={t('financeScreen.damageClaimsSection')} icon="construct-outline" count={damages.length} colors={colors}>
           {damages.length === 0 ? (
-            <EmptyRow text="No damage claims on your bookings." colors={colors} />
+            <EmptyRow text={t('financeScreen.noDamageClaims')} colors={colors} />
           ) : (
             damages.map(d => <DamageRow key={d.id} claim={d} colors={colors} fmt={fmt} />)
           )}
         </Section>
 
         {/* Deposits section */}
-        <Section title="Security deposits" icon="lock-closed-outline" count={deposits.length} colors={colors}>
+        <Section title={t('financeScreen.securityDepositsSection')} icon="lock-closed-outline" count={deposits.length} colors={colors}>
           {deposits.length === 0 ? (
-            <EmptyRow text="No active deposits." colors={colors} />
+            <EmptyRow text={t('financeScreen.noDeposits')} colors={colors} />
           ) : (
             deposits.map(d => (
               <DepositRow key={d.id} deposit={d} colors={colors} fmt={fmt} onOpenBooking={() =>
@@ -166,6 +168,7 @@ function EmptyRow({ text, colors }: { text: string; colors: any }) {
 }
 
 function FineRow({ fine, colors, fmt }: { fine: MyFine; colors: any; fmt: (a?: number, c?: string) => string }) {
+  const { t } = useTranslation('main');
   const unpaid = fine.status === 'PENDING' || fine.status === 'OVERDUE';
   const openPayment = () => {
     // Public web checkout — deep-linked via the reference. Works on
@@ -192,7 +195,7 @@ function FineRow({ fine, colors, fmt }: { fine: MyFine; colors: any; fmt: (a?: n
       </View>
       {unpaid ? (
         <TouchableOpacity onPress={openPayment} style={s.payBtn}>
-          <Typo style={s.payBtnText}>Pay</Typo>
+          <Typo style={s.payBtnText}>{t('financeScreen.pay')}</Typo>
         </TouchableOpacity>
       ) : (
         <View style={[s.pill, statusPillStyle(fine.status)]}>
@@ -204,6 +207,7 @@ function FineRow({ fine, colors, fmt }: { fine: MyFine; colors: any; fmt: (a?: n
 }
 
 function DamageRow({ claim, colors, fmt }: { claim: MyDamageClaim; colors: any; fmt: (a?: number, c?: string) => string }) {
+  const { t } = useTranslation('main');
   return (
     <View style={[s.row, { borderBottomColor: colors.border, alignItems: 'flex-start' }]}>
       <View style={{ flex: 1 }}>
@@ -215,12 +219,12 @@ function DamageRow({ claim, colors, fmt }: { claim: MyDamageClaim; colors: any; 
         </Typo>
         {claim.resolutionNote && (
           <Typo style={{ color: colors.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
-            Admin: {claim.resolutionNote}
+            {t('financeScreen.adminNote', { note: claim.resolutionNote })}
           </Typo>
         )}
         {claim.fine && (
           <Typo style={{ color: '#B45309', fontSize: 11, marginTop: 4, fontWeight: '600' }}>
-            Fine issued · {claim.fine.status}
+            {t('financeScreen.fineIssued', { status: claim.fine.status })}
           </Typo>
         )}
       </View>
@@ -234,10 +238,13 @@ function DamageRow({ claim, colors, fmt }: { claim: MyDamageClaim; colors: any; 
 function DepositRow({ deposit, colors, fmt, onOpenBooking }: {
   deposit: MyDeposit; colors: any; fmt: (a?: number, c?: string) => string; onOpenBooking: () => void;
 }) {
-  const statusText = deposit.status === 'AUTHORIZED' ? 'Held on your card'
-    : deposit.status === 'RELEASED' ? 'Released to your card'
-    : deposit.status === 'CAPTURED' ? `Captured ${fmt(deposit.capturedAmount ?? deposit.amount, deposit.currency)}`
-    : deposit.failureReason || 'Failed';
+  const { t } = useTranslation('main');
+  const statusText = deposit.status === 'AUTHORIZED' ? t('financeScreen.heldOnYourCard')
+    : deposit.status === 'RELEASED' ? t('financeScreen.releasedToYourCard')
+    : deposit.status === 'CAPTURED' ? t('financeScreen.captured', {
+        amount: fmt(deposit.capturedAmount ?? deposit.amount, deposit.currency),
+      })
+    : deposit.failureReason || t('financeScreen.failed');
   return (
     <TouchableOpacity onPress={onOpenBooking} style={[s.row, { borderBottomColor: colors.border }]}>
       <View style={{ flex: 1 }}>
@@ -248,7 +255,10 @@ function DepositRow({ deposit, colors, fmt, onOpenBooking }: {
           {fmt(deposit.amount, deposit.currency)} · {statusText}
         </Typo>
         <Typo style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
-          Trip {dayjs(deposit.booking.pickupAt).format('D MMM')} – {dayjs(deposit.booking.returnAt).format('D MMM YYYY')}
+          {t('financeScreen.tripDates', {
+            pickup: dayjs(deposit.booking.pickupAt).format('D MMM'),
+            return: dayjs(deposit.booking.returnAt).format('D MMM YYYY'),
+          })}
         </Typo>
       </View>
       <View style={[s.pill, depositPillStyle(deposit.status)]}>

@@ -1,1 +1,21 @@
-{}
+{
+  "financeScreen": {
+    "title": "My Finances",
+    "outstandingFines": "Outstanding fines",
+    "heldOnCard": "Held on card",
+    "finesSection": "Fines",
+    "noFines": "No fines. Keep it up.",
+    "damageClaimsSection": "Damage claims",
+    "noDamageClaims": "No damage claims on your bookings.",
+    "securityDepositsSection": "Security deposits",
+    "noDeposits": "No active deposits.",
+    "pay": "Pay",
+    "adminNote": "Admin: {{note}}",
+    "fineIssued": "Fine issued · {{status}}",
+    "heldOnYourCard": "Held on your card",
+    "releasedToYourCard": "Released to your card",
+    "captured": "Captured {{amount}}",
+    "failed": "Failed",
+    "tripDates": "Trip {{pickup}} – {{return}}"
+  }
+}

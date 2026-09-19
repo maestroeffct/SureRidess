@@ -1,1 +1,21 @@
-{}
+{
+  "financeScreen": {
+    "title": "Mes finances",
+    "outstandingFines": "Amendes impayées",
+    "heldOnCard": "Bloqué sur la carte",
+    "finesSection": "Amendes",
+    "noFines": "Aucune amende. Continuez ainsi.",
+    "damageClaimsSection": "Réclamations pour dommages",
+    "noDamageClaims": "Aucune réclamation pour dommages sur vos réservations.",
+    "securityDepositsSection": "Dépôts de garantie",
+    "noDeposits": "Aucun dépôt actif.",
+    "pay": "Payer",
+    "adminNote": "Admin : {{note}}",
+    "fineIssued": "Amende émise · {{status}}",
+    "heldOnYourCard": "Bloqué sur votre carte",
+    "releasedToYourCard": "Libéré sur votre carte",
+    "captured": "Débité {{amount}}",
+    "failed": "Échec",
+    "tripDates": "Trajet du {{pickup}} au {{return}}"
+  }
+}

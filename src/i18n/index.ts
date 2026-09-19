@@ -5,14 +5,21 @@ import enCommon from './locales/en/common.json';
 import enAuth from './locales/en/auth.json';
 import enOnboarding from './locales/en/onboarding.json';
 import enKyc from './locales/en/kyc.json';
-import enCarRental from './locales/en/carRental.json';
+// carRental is split into two source files (bookings-management screens vs.
+// browse/booking-flow screens) purely so two people/agents can work on it
+// without touching the same file — they're merged into one namespace here.
+import enCarRentalBookings from './locales/en/carRentalBookings.json';
+import enCarRentalBrowse from './locales/en/carRentalBrowse.json';
+import enCarRentalComponents from './locales/en/carRentalComponents.json';
 import enMain from './locales/en/main.json';
 
 import frCommon from './locales/fr/common.json';
 import frAuth from './locales/fr/auth.json';
 import frOnboarding from './locales/fr/onboarding.json';
 import frKyc from './locales/fr/kyc.json';
-import frCarRental from './locales/fr/carRental.json';
+import frCarRentalBookings from './locales/fr/carRentalBookings.json';
+import frCarRentalBrowse from './locales/fr/carRentalBrowse.json';
+import frCarRentalComponents from './locales/fr/carRentalComponents.json';
 import frMain from './locales/fr/main.json';
 
 export const SUPPORTED_LANGUAGES = ['en', 'fr'] as const;
@@ -39,7 +46,11 @@ void i18n.use(initReactI18next).init({
       auth: enAuth,
       onboarding: enOnboarding,
       kyc: enKyc,
-      carRental: enCarRental,
+      carRental: {
+        ...enCarRentalBookings,
+        ...enCarRentalBrowse,
+        ...enCarRentalComponents,
+      },
       main: enMain,
     },
     fr: {
@@ -47,7 +58,11 @@ void i18n.use(initReactI18next).init({
       auth: frAuth,
       onboarding: frOnboarding,
       kyc: frKyc,
-      carRental: frCarRental,
+      carRental: {
+        ...frCarRentalBookings,
+        ...frCarRentalBrowse,
+        ...frCarRentalComponents,
+      },
       main: frMain,
     },
   },

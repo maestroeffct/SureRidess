@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -25,11 +26,12 @@ type Props = {
 
 export function AppAlert({ visible, title, message, buttons, onDismiss }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation('common');
 
   const resolvedButtons: Button[] =
     buttons && buttons.length > 0
       ? buttons
-      : [{ text: 'OK', onPress: onDismiss, style: 'default' }];
+      : [{ text: t('generic.ok'), onPress: onDismiss, style: 'default' }];
 
   return (
     <Modal

@@ -8,18 +8,13 @@ import {
 } from 'react-native';
 import { Typo } from '@/components/AppText/Typo';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/theme/ThemeProvider';
 
 const GREEN = '#0A6A4B';
 const GREEN_LIGHT = '#DFF0E9';
 const { width: SW } = Dimensions.get('window');
 const CELL = Math.floor((SW - 48) / 7);
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function clearTime(d: Date): Date {
   const c = new Date(d);
@@ -154,6 +149,9 @@ export const DateRangePicker: React.FC<Props> = ({
   onCancel,
 }) => {
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('common');
+  const MONTH_NAMES = t('dateRangePicker.months', { returnObjects: true }) as string[];
+  const DAY_LABELS = t('dateRangePicker.days', { returnObjects: true }) as string[];
   const today = clearTime(new Date());
 
   const [activeTab, setActiveTab] = useState<'pickup' | 'dropoff'>('pickup');
@@ -271,7 +269,9 @@ export const DateRangePicker: React.FC<Props> = ({
                       { color: isActive ? GREEN : colors.textSecondary },
                     ]}
                   >
-                    {tab === 'pickup' ? 'PICK-UP' : 'DROP-OFF'}
+                    {tab === 'pickup'
+                      ? t('dateRangePicker.pickupTab')
+                      : t('dateRangePicker.dropoffTab')}
                   </Typo>
                   <Typo
                     style={[
@@ -288,9 +288,9 @@ export const DateRangePicker: React.FC<Props> = ({
 
           {/* ── RENTAL DAYS ── */}
           <Typo style={[s.rentalLine, { color: colors.textSecondary }]}>
-            You've chosen{' '}
+            {t('dateRangePicker.youveChosenPrefix')}{' '}
             <Typo style={s.rentalCount}>
-              {rentalDays} rental day{rentalDays !== 1 ? 's' : ''}
+              {t('dateRangePicker.rentalDaysCount', { count: rentalDays })}
             </Typo>
           </Typo>
 
@@ -397,13 +397,13 @@ export const DateRangePicker: React.FC<Props> = ({
           <View style={[s.timeSeparator, { backgroundColor: colors.border }]} />
           <View style={s.timeRow}>
             <TimeStepper
-              label="PICK-UP TIME"
+              label={t('dateRangePicker.pickupTimeLabel')}
               value={pickupTime}
               onChange={setPickupTime}
             />
             <View style={[s.timeVertDivider, { backgroundColor: colors.border }]} />
             <TimeStepper
-              label="DROP-OFF TIME"
+              label={t('dateRangePicker.dropoffTimeLabel')}
               value={returnTime}
               onChange={setReturnTime}
             />
@@ -412,10 +412,10 @@ export const DateRangePicker: React.FC<Props> = ({
           {/* ── ACTIONS ── */}
           <View style={s.actions}>
             <TouchableOpacity style={s.cancelBtn} onPress={onCancel}>
-              <Typo style={s.cancelText}>Cancel</Typo>
+              <Typo style={s.cancelText}>{t('dateRangePicker.cancel')}</Typo>
             </TouchableOpacity>
             <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm}>
-              <Typo style={s.confirmText}>Confirm</Typo>
+              <Typo style={s.confirmText}>{t('dateRangePicker.confirm')}</Typo>
             </TouchableOpacity>
           </View>
         </View>

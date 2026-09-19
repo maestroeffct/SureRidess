@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { AppBottomSheet } from '@/components/AppBottomSheet/AppBottomSheet';
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -38,10 +39,11 @@ export function AppSelectSheet({
   onClose,
   onSelect,
   searchable = true,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder,
   heightFactor,
 }: Props) {
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('common');
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -89,7 +91,7 @@ export function AppSelectSheet({
           <Icon name="search-outline" size={16} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t('appSelectSheet.searchPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             value={query}
             onChangeText={setQuery}
@@ -112,7 +114,7 @@ export function AppSelectSheet({
         ListEmptyComponent={
           <View style={styles.empty}>
             <Typo variant="caption" style={{ color: colors.textSecondary }}>
-              No results found
+              {t('appSelectSheet.noResults')}
             </Typo>
           </View>
         }

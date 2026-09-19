@@ -1,0 +1,25 @@
+{
+  "carRentalHomeScreen": {
+    "fallbackName": "there",
+    "browseRegionA11y": "Browse region, currently {{country}}",
+    "changeCurrencyA11y": "Change display currency, currently {{currency}}",
+    "greeting": "Hello, {{name}} 👋",
+    "tagline": "Where are you headed today?",
+    "pickup": "Pickup",
+    "dates": "Dates",
+    "emptyTitle": "No cars in {{country}} yet",
+    "emptyHintDefault": "Try another country or check back as new fleets are added.",
+    "emptyHintCategory": "No {{category}} cars in this country — try All or change region.",
+    "changeCountry": "Change country",
+    "featured": "Featured",
+    "newestArrivals": "Newest arrivals",
+    "displayCurrency": "Display Currency",
+    "searchCurrency": "Search currency",
+    "browseCarsIn": "Browse cars in",
+    "searchCountry": "Search country",
+    "seeAll": "See all",
+    "verified": "Verified",
+    "vehicleFallback": "Vehicle",
+    "nigeriaFallback": "Nigeria"
+  }
+}
