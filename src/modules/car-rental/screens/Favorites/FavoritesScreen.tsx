@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
@@ -21,6 +22,7 @@ export function FavoritesScreen() {
   const { colors } = useTheme();
   const { favorites, ready } = useFavorites();
   const navigation = useNavigation<any>();
+  const { t } = useTranslation('carRental');
 
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,11 +85,11 @@ export function FavoritesScreen() {
         ]}
       >
         <Typo style={[s.headerTitle, { color: colors.textPrimary }]}>
-          Saved Vehicles
+          {t('favoritesScreen.title')}
         </Typo>
         {favorites.length > 0 ? (
           <Typo style={[s.headerSub, { color: colors.textSecondary }]}>
-            {favorites.length} saved
+            {t('favoritesScreen.savedCount', { count: favorites.length })}
           </Typo>
         ) : null}
       </View>
@@ -100,10 +102,10 @@ export function FavoritesScreen() {
         <View style={s.centerWrap}>
           <Icon name="heart-outline" size={48} color={colors.textSecondary} />
           <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>
-            No saved vehicles yet
+            {t('favoritesScreen.emptyTitle')}
           </Typo>
           <Typo style={[s.emptyHint, { color: colors.textSecondary }]}>
-            Tap the heart on any car to save it here for later.
+            {t('favoritesScreen.emptyHint')}
           </Typo>
         </View>
       ) : (

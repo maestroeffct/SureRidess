@@ -36,6 +36,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 import { AppAlert } from '@/components/AppAlert/AppAlert';
 import { Typo } from '@/components/AppText/Typo';
@@ -100,25 +101,28 @@ function resolveState(b: BookingDetails): BookingState {
   return 'PAY_PENDING';
 }
 
-function statusPill(state: BookingState): { label: string; bg: string; fg: string } {
+function statusPill(
+  state: BookingState,
+  t: (key: string) => string,
+): { label: string; bg: string; fg: string } {
   switch (state) {
     case 'PAY_PENDING':
-      return { label: 'PAYMENT PENDING', bg: 'rgba(245,158,11,0.18)', fg: '#FCD34D' };
+      return { label: t('bookingDetailScreen.statusPaymentPending'), bg: 'rgba(245,158,11,0.18)', fg: '#FCD34D' };
     case 'PAY_PROCESSING':
-      return { label: 'PROCESSING', bg: 'rgba(37,99,235,0.18)', fg: '#93C5FD' };
+      return { label: t('bookingDetailScreen.statusProcessing'), bg: 'rgba(37,99,235,0.18)', fg: '#93C5FD' };
     case 'CONFIRMED_WAITING_PROVIDER':
     case 'CONFIRMED_COLLECTION':
-      return { label: 'CONFIRMED', bg: 'rgba(10,106,75,0.22)', fg: '#6EE7B7' };
+      return { label: t('bookingDetailScreen.statusConfirmed'), bg: 'rgba(10,106,75,0.22)', fg: '#6EE7B7' };
     case 'PICKUP_READY':
-      return { label: 'READY FOR PICKUP', bg: 'rgba(10,106,75,0.24)', fg: '#6EE7B7' };
+      return { label: t('bookingDetailScreen.statusReadyForPickup'), bg: 'rgba(10,106,75,0.24)', fg: '#6EE7B7' };
     case 'IN_TRIP':
-      return { label: 'IN TRIP', bg: 'rgba(37,99,235,0.2)', fg: '#93C5FD' };
+      return { label: t('bookingDetailScreen.statusInTrip'), bg: 'rgba(37,99,235,0.2)', fg: '#93C5FD' };
     case 'RETURN_REQUESTED':
-      return { label: 'RETURN IN PROGRESS', bg: 'rgba(245,158,11,0.18)', fg: '#FCD34D' };
+      return { label: t('bookingDetailScreen.statusReturnInProgress'), bg: 'rgba(245,158,11,0.18)', fg: '#FCD34D' };
     case 'COMPLETED':
-      return { label: 'COMPLETED', bg: 'rgba(34,197,94,0.2)', fg: '#86EFAC' };
+      return { label: t('bookingDetailScreen.statusCompleted'), bg: 'rgba(34,197,94,0.2)', fg: '#86EFAC' };
     case 'CANCELLED':
-      return { label: 'CANCELLED', bg: 'rgba(239,68,68,0.18)', fg: '#FCA5A5' };
+      return { label: t('bookingDetailScreen.statusCancelled'), bg: 'rgba(239,68,68,0.18)', fg: '#FCA5A5' };
   }
 }
 
@@ -128,6 +132,7 @@ const BookingDetailScreen = () => {
   const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
   const fmtMoney = useFormatMoney();
+  const { t } = useTranslation('carRental');
   const { bookingId } = route.params || { bookingId: '' };
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
@@ -173,7 +178,7 @@ const BookingDetailScreen = () => {
   const period = booking?.rentalPeriod;
   const payment = booking?.payment;
 
-  const carName = car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle';
+  const carName = car?.brand && car?.model ? `${car.brand} ${car.model}` : t('bookingDetailScreen.vehicleFallback');
   const primaryImage =
     car?.images?.find(i => i.isPrimary)?.url ?? car?.images?.[0]?.url;
   const imageSource = primaryImage
@@ -184,7 +189,7 @@ const BookingDetailScreen = () => {
 
   const pickupAt = period?.pickupAt ? new Date(period.pickupAt) : null;
   const returnAt = period?.returnAt ? new Date(period.returnAt) : null;
-  const pickupLocationName = period?.pickupLocation?.name ?? 'Pickup location';
+  const pickupLocationName = period?.pickupLocation?.name ?? t('bookingDetailScreen.pickupLocationFallback');
   const pickupAddress = period?.pickupLocation?.address ?? '';
 
   const currency = payment?.currency ?? 'NGN';
@@ -209,10 +214,10 @@ const BookingDetailScreen = () => {
     try {
       setCancelling(true);
       await cancelBooking(bookingId);
-      showSuccess('Booking cancelled');
+      showSuccess(t('bookingDetailScreen.bookingCancelledToast'));
       navigation.goBack();
     } catch (e: any) {
-      showError(e?.response?.data?.message ?? 'Failed to cancel booking');
+      showError(e?.response?.data?.message ?? t('bookingDetailScreen.cancelFailedDefault'));
     } finally {
       setCancelling(false);
     }
@@ -237,7 +242,7 @@ const BookingDetailScreen = () => {
     );
   }
 
-  const pill = statusPill(state);
+  const pill = statusPill(state, t);
   const showFooter = state === 'PAY_PENDING';
 
   return (
@@ -282,7 +287,9 @@ const BookingDetailScreen = () => {
                 </Typo>
               </View>
               <Typo style={s.heroSub}>
-                {days} day{days > 1 ? 's' : ''} · {money(payment?.totalPrice)}
+                {days > 1
+                  ? t('bookingDetailScreen.heroSubDays', { count: days, price: money(payment?.totalPrice) })
+                  : t('bookingDetailScreen.heroSubDay', { count: days, price: money(payment?.totalPrice) })}
               </Typo>
             </View>
           </View>
@@ -308,13 +315,13 @@ const BookingDetailScreen = () => {
         )}
 
         {/* ── TRIP STOPS ──────────────────────────────────────── */}
-        <SectionHead icon="git-branch-outline" label="Trip" />
+        <SectionHead icon="git-branch-outline" label={t('bookingDetailScreen.tripSectionLabel')} />
         <View style={[s.card, cardBg(colors)]}>
           <StopRow
             colors={colors}
             color={BRAND}
             iconBg={mode === 'dark' ? '#0F3027' : '#E7F5F0'}
-            label="Pick-up"
+            label={t('bookingDetailScreen.pickupLabel')}
             date={pickupAt ? dayjs(pickupAt).format('ddd, D MMM YYYY') : '—'}
             time={pickupAt ? dayjs(pickupAt).format('HH:mm') : ''}
             place={pickupLocationName}
@@ -325,7 +332,7 @@ const BookingDetailScreen = () => {
             colors={colors}
             color={AMBER}
             iconBg={mode === 'dark' ? '#3A2A08' : '#FEF3C7'}
-            label="Drop-off"
+            label={t('bookingDetailScreen.dropoffLabel')}
             date={returnAt ? dayjs(returnAt).format('ddd, D MMM YYYY') : '—'}
             time={returnAt ? dayjs(returnAt).format('HH:mm') : ''}
             place={pickupLocationName}
@@ -340,20 +347,20 @@ const BookingDetailScreen = () => {
           state !== 'COMPLETED' &&
           state !== 'CANCELLED' && (
             <>
-              <SectionHead icon="key-outline" label="Collection code" />
+              <SectionHead icon="key-outline" label={t('bookingDetailScreen.collectionCodeSectionLabel')} />
               <View style={[s.card, cardBg(colors), { alignItems: 'center', gap: 6 }]}>
                 <Typo style={[s.codeChip, { color: BRAND }]}>
                   {booking.collectionCode}
                 </Typo>
                 <Typo style={[s.mutedCenter, { color: colors.textSecondary }]}>
-                  Show this to the provider when you pick up the car.
+                  {t('bookingDetailScreen.collectionCodeHint')}
                 </Typo>
               </View>
             </>
           )}
 
         {/* ── PROVIDER ────────────────────────────────────────── */}
-        <SectionHead icon="business-outline" label="Provider" />
+        <SectionHead icon="business-outline" label={t('bookingDetailScreen.providerSectionLabel')} />
         <View style={[s.card, cardBg(colors)]}>
           <View style={s.providerRow}>
             <View style={[s.avatar, { backgroundColor: mode === 'dark' ? '#0F3027' : '#E7F5F0' }]}>
@@ -362,12 +369,12 @@ const BookingDetailScreen = () => {
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Typo style={[s.providerName, { color: colors.textPrimary }]}>
-                  {provider?.name ?? 'Provider'}
+                  {provider?.name ?? t('bookingDetailScreen.providerFallback')}
                 </Typo>
                 <Icon name="checkmark-circle" size={14} color={BRAND} />
               </View>
               <Typo style={[s.providerSub, { color: colors.textSecondary }]}>
-                Verified provider
+                {t('bookingDetailScreen.verifiedProvider')}
               </Typo>
             </View>
             {provider?.phone && (
@@ -379,13 +386,13 @@ const BookingDetailScreen = () => {
         </View>
 
         {/* ── VEHICLE SPECS GRID ──────────────────────────────── */}
-        <SectionHead icon="car-outline" label="Vehicle" />
+        <SectionHead icon="car-outline" label={t('bookingDetailScreen.vehicleSectionLabel')} />
         <View style={[s.card, cardBg(colors)]}>
           <View style={s.specsGrid}>
-            <Spec icon="cog-outline" label="Transmission" value={fmtLabel(car?.transmission)} colors={colors} />
-            <Spec icon="people-outline" label="Seats" value={car?.seats ? String(car.seats) : '—'} colors={colors} />
-            <Spec icon="snow-outline" label="AC" value={car?.hasAC == null ? '—' : car.hasAC ? 'Yes' : 'No'} colors={colors} />
-            <Spec icon="speedometer-outline" label="Mileage" value={fmtLabel(car?.mileagePolicy) || '—'} colors={colors} />
+            <Spec icon="cog-outline" label={t('bookingDetailScreen.specTransmission')} value={fmtLabel(car?.transmission)} colors={colors} />
+            <Spec icon="people-outline" label={t('bookingDetailScreen.specSeats')} value={car?.seats ? String(car.seats) : '—'} colors={colors} />
+            <Spec icon="snow-outline" label={t('bookingDetailScreen.specAc')} value={car?.hasAC == null ? '—' : car.hasAC ? t('bookingDetailScreen.yes') : t('bookingDetailScreen.no')} colors={colors} />
+            <Spec icon="speedometer-outline" label={t('bookingDetailScreen.specMileage')} value={fmtLabel(car?.mileagePolicy) || '—'} colors={colors} />
           </View>
         </View>
 
@@ -403,16 +410,29 @@ const BookingDetailScreen = () => {
                   carName,
                 })
               }
+              t={t}
             />
           ))}
 
         {/* ── PRICE BREAKDOWN ─────────────────────────────────── */}
-        <SectionHead icon="receipt-outline" label="Price breakdown" />
+        <SectionHead icon="receipt-outline" label={t('bookingDetailScreen.priceBreakdownSectionLabel')} />
         <View style={[s.card, cardBg(colors)]}>
-          <PriceRow label={`Rental (${days} day${days > 1 ? 's' : ''})`} value={money(payment?.basePrice)} colors={colors} />
+          <PriceRow
+            label={
+              days > 1
+                ? t('bookingDetailScreen.rentalDays', { count: days })
+                : t('bookingDetailScreen.rentalDay', { count: days })
+            }
+            value={money(payment?.basePrice)}
+            colors={colors}
+          />
           {(payment?.protectionFeeTotal ?? payment?.insuranceFee ?? 0) > 0 && (
             <PriceRow
-              label={payment?.protectionTier ? `Protection · ${payment.protectionTier}` : 'Protection'}
+              label={
+                payment?.protectionTier
+                  ? t('bookingDetailScreen.protectionWithTier', { tier: payment.protectionTier })
+                  : t('bookingDetailScreen.protection')
+              }
               value={money(payment?.protectionFeeTotal ?? payment?.insuranceFee)}
               colors={colors}
             />
@@ -426,22 +446,22 @@ const BookingDetailScreen = () => {
             />
           ))}
           {(payment?.taxAmount ?? 0) > 0 && (
-            <PriceRow label="Tax" value={money(payment?.taxAmount)} colors={colors} />
+            <PriceRow label={t('bookingDetailScreen.tax')} value={money(payment?.taxAmount)} colors={colors} />
           )}
           <View style={[s.totalDivider, { backgroundColor: colors.border }]} />
           <View style={s.totalRow}>
-            <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>Total</Typo>
+            <Typo style={[s.totalLabel, { color: colors.textPrimary }]}>{t('bookingDetailScreen.total')}</Typo>
             <Typo style={[s.totalValue, { color: BRAND }]}>{money(payment?.totalPrice)}</Typo>
           </View>
           {(payment?.depositAmount ?? 0) > 0 && (
             <Typo style={[s.depositHint, { color: colors.textSecondary }]}>
-              + {money(payment?.depositAmount)} security deposit (pre-authorized at pickup)
+              {t('bookingDetailScreen.depositHint', { amount: money(payment?.depositAmount) })}
             </Typo>
           )}
         </View>
 
         {/* ── PAYMENT METHOD ──────────────────────────────────── */}
-        <SectionHead icon="card-outline" label="Payment" />
+        <SectionHead icon="card-outline" label={t('bookingDetailScreen.paymentSectionLabel')} />
         <View style={[s.card, cardBg(colors)]}>
           <View style={s.pmRow}>
             <View style={[s.pmIcon, { backgroundColor: mode === 'dark' ? '#0F3027' : '#E7F5F0' }]}>
@@ -454,14 +474,14 @@ const BookingDetailScreen = () => {
             <View style={{ flex: 1 }}>
               <Typo style={[s.pmLabel, { color: colors.textPrimary }]}>
                 {booking.paymentMethod === 'COLLECTION'
-                  ? 'Pay on Collection'
-                  : payment?.provider || 'Card'}
+                  ? t('bookingDetailScreen.payOnCollection')
+                  : payment?.provider || t('bookingDetailScreen.cardFallback')}
               </Typo>
               <Typo style={[s.pmSub, { color: colors.textSecondary }]}>
                 {payment?.paidAt
-                  ? `Paid on ${dayjs(payment.paidAt).format('DD MMM YYYY, HH:mm')}`
+                  ? t('bookingDetailScreen.paidOn', { date: dayjs(payment.paidAt).format('DD MMM YYYY, HH:mm') })
                   : booking.paymentMethod === 'COLLECTION'
-                    ? 'Due at pickup'
+                    ? t('bookingDetailScreen.dueAtPickup')
                     : payment?.status
                       ? fmtLabel(payment.status)
                       : ''}
@@ -469,31 +489,31 @@ const BookingDetailScreen = () => {
             </View>
             {payment?.status === 'SUCCEEDED' && (
               <View style={[s.pmPaidPill, { backgroundColor: mode === 'dark' ? '#0F3027' : '#DCFCE7' }]}>
-                <Typo style={[s.pmPaidText, { color: BRAND }]}>PAID</Typo>
+                <Typo style={[s.pmPaidText, { color: BRAND }]}>{t('bookingDetailScreen.paidPill')}</Typo>
               </View>
             )}
           </View>
         </View>
 
         {/* ── POLICIES ────────────────────────────────────────── */}
-        <SectionHead icon="shield-checkmark-outline" label="Policies" />
+        <SectionHead icon="shield-checkmark-outline" label={t('bookingDetailScreen.policiesSectionLabel')} />
         <View style={[s.card, cardBg(colors)]}>
-          <PolicyRow title="Cancellation" value="Free cancellation up to 24 hours before pickup" colors={colors} />
-          <PolicyRow title="Fuel policy" value="Full to Full" colors={colors} />
-          <PolicyRow title="Mileage" value="Unlimited mileage included" colors={colors} last />
+          <PolicyRow title={t('bookingDetailScreen.policyCancellationTitle')} value={t('bookingDetailScreen.policyCancellationValue')} colors={colors} />
+          <PolicyRow title={t('bookingDetailScreen.policyFuelTitle')} value={t('bookingDetailScreen.policyFuelValue')} colors={colors} />
+          <PolicyRow title={t('bookingDetailScreen.policyMileageTitle')} value={t('bookingDetailScreen.policyMileageValue')} colors={colors} last />
         </View>
 
         {/* ── REVIEW (completed only) ─────────────────────────── */}
         {state === 'COMPLETED' && booking.car?.id && (
           <>
-            <SectionHead icon="star-outline" label="Your review" />
+            <SectionHead icon="star-outline" label={t('bookingDetailScreen.yourReviewSectionLabel')} />
             {booking.hasReview ? (
               <View style={[s.card, cardBg(colors), s.simpleRow]}>
                 <Icon name="checkmark-circle" size={20} color={BRAND} />
                 <View style={{ flex: 1 }}>
-                  <Typo style={[s.rowTitle, { color: colors.textPrimary }]}>Review submitted</Typo>
+                  <Typo style={[s.rowTitle, { color: colors.textPrimary }]}>{t('bookingDetailScreen.reviewSubmittedTitle')}</Typo>
                   <Typo style={[s.rowSub, { color: colors.textSecondary }]}>
-                    Thanks for sharing your experience.
+                    {t('bookingDetailScreen.reviewSubmittedSub')}
                   </Typo>
                 </View>
               </View>
@@ -509,9 +529,9 @@ const BookingDetailScreen = () => {
               >
                 <Icon name="star" size={20} color="#D97706" />
                 <View style={{ flex: 1 }}>
-                  <Typo style={[s.rowTitle, { color: colors.textPrimary }]}>Rate your trip</Typo>
+                  <Typo style={[s.rowTitle, { color: colors.textPrimary }]}>{t('bookingDetailScreen.rateYourTripTitle')}</Typo>
                   <Typo style={[s.rowSub, { color: colors.textSecondary }]}>
-                    Help other renters — takes less than a minute.
+                    {t('bookingDetailScreen.rateYourTripSub')}
                   </Typo>
                 </View>
                 <Icon name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -523,25 +543,25 @@ const BookingDetailScreen = () => {
         {/* ── SUPPORT ─────────────────────────────────────────── */}
         {state !== 'CANCELLED' && (
           <>
-            <SectionHead icon="help-circle-outline" label="Need help?" />
+            <SectionHead icon="help-circle-outline" label={t('bookingDetailScreen.needHelpSectionLabel')} />
             <View style={[s.card, cardBg(colors), { padding: 6 }]}>
               {provider?.phone && (
                 <SupportItem
                   icon="call-outline"
-                  label={`Call ${provider.name}`}
+                  label={t('bookingDetailScreen.callProvider', { name: provider.name })}
                   onPress={openDial}
                   colors={colors}
                 />
               )}
               <SupportItem
                 icon="chatbubbles-outline"
-                label="Message support"
+                label={t('bookingDetailScreen.messageSupport')}
                 onPress={() => navigation.navigate('SupportChat' as any, { bookingId: booking.id })}
                 colors={colors}
               />
               <SupportItem
                 icon="navigate-outline"
-                label="Get directions"
+                label={t('bookingDetailScreen.getDirections')}
                 onPress={() => {
                   const q = encodeURIComponent(pickupAddress || pickupLocationName);
                   Linking.openURL(`https://maps.google.com/?q=${q}`);
@@ -577,7 +597,7 @@ const BookingDetailScreen = () => {
             >
               <Icon name="close-circle-outline" size={18} color={RED} />
               <Typo style={s.cancelText}>
-                {cancelling ? 'Cancelling…' : 'Cancel booking'}
+                {cancelling ? t('bookingDetailScreen.cancelling') : t('bookingDetailScreen.cancelBooking')}
               </Typo>
             </TouchableOpacity>
           </View>
@@ -597,13 +617,11 @@ const BookingDetailScreen = () => {
             >
               <Icon name="return-up-back-outline" size={18} color={colors.textPrimary} />
               <Typo style={[s.refundText, { color: colors.textPrimary }]}>
-                Request cancellation & refund
+                {t('bookingDetailScreen.requestCancellationRefund')}
               </Typo>
             </TouchableOpacity>
             <Typo style={[s.refundHint, { color: colors.textSecondary }]}>
-              Payment is captured. Any refund is calculated against the
-              cancellation policy — our team confirms in chat before
-              releasing the car.
+              {t('bookingDetailScreen.refundHint')}
             </Typo>
           </View>
         )}
@@ -625,12 +643,12 @@ const BookingDetailScreen = () => {
         >
           <View style={{ flex: 1 }}>
             <Typo style={[s.footerHint, { color: colors.textSecondary }]}>
-              Reservation expires if unpaid
+              {t('bookingDetailScreen.reservationExpiresHint')}
             </Typo>
             <Typo style={[s.footerTotal, { color: BRAND }]}>{money(payment?.totalPrice)}</Typo>
           </View>
           <TouchableOpacity style={s.footerBtn} onPress={goToPayment} activeOpacity={0.85}>
-            <Typo style={s.footerBtnText}>Complete payment</Typo>
+            <Typo style={s.footerBtnText}>{t('bookingDetailScreen.completePayment')}</Typo>
             <Icon name="arrow-forward" size={15} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -639,11 +657,11 @@ const BookingDetailScreen = () => {
       {/* ── MODALS ────────────────────────────────────────────── */}
       <AppAlert
         visible={cancelAlertOpen}
-        title="Cancel booking?"
-        message="This releases the car back to the provider. If you already paid, a refund is processed based on the cancellation policy."
+        title={t('bookingDetailScreen.cancelAlertTitle')}
+        message={t('bookingDetailScreen.cancelAlertMessage')}
         buttons={[
-          { text: 'Keep booking', style: 'cancel', onPress: () => setCancelAlertOpen(false) },
-          { text: 'Yes, cancel', style: 'destructive', onPress: confirmCancel },
+          { text: t('bookingDetailScreen.keepBooking'), style: 'cancel', onPress: () => setCancelAlertOpen(false) },
+          { text: t('bookingDetailScreen.yesCancel'), style: 'destructive', onPress: confirmCancel },
         ]}
         onDismiss={() => setCancelAlertOpen(false)}
       />
@@ -673,7 +691,7 @@ const BookingDetailScreen = () => {
           <View style={[menu.sheet, { top: insets.top + 48, backgroundColor: colors.surface, borderColor: colors.border }]}>
             <MenuItem
               icon="share-outline"
-              label="Share booking"
+              label={t('bookingDetailScreen.shareBooking')}
               onPress={() => {
                 setMenuOpen(false);
               }}
@@ -681,7 +699,7 @@ const BookingDetailScreen = () => {
             />
             <MenuItem
               icon="document-text-outline"
-              label={state === 'COMPLETED' ? 'Download receipt' : 'View invoice'}
+              label={state === 'COMPLETED' ? t('bookingDetailScreen.downloadReceipt') : t('bookingDetailScreen.viewInvoice')}
               onPress={() => {
                 setMenuOpen(false);
               }}
@@ -692,7 +710,7 @@ const BookingDetailScreen = () => {
               state === 'CONFIRMED_COLLECTION') && (
               <MenuItem
                 icon="close-circle-outline"
-                label="Cancel booking"
+                label={t('bookingDetailScreen.cancelBooking')}
                 onPress={() => {
                   setMenuOpen(false);
                   doCancel();
@@ -732,6 +750,7 @@ function NextActionCard({
   onReview: () => void;
   hasReview: boolean;
 }) {
+  const { t } = useTranslation('carRental');
   switch (state) {
     case 'PAY_PENDING':
       return (
@@ -740,14 +759,13 @@ function NextActionCard({
             <Icon name="alert-circle" size={22} color={AMBER} />
           </View>
           <View style={{ flex: 1 }}>
-            <Typo style={[a.title, { color: colors.textPrimary }]}>Complete your payment</Typo>
+            <Typo style={[a.title, { color: colors.textPrimary }]}>{t('bookingDetailScreen.actionPayPendingTitle')}</Typo>
             <Typo style={[a.body, { color: colors.textSecondary }]}>
-              Your reservation is being held. Pay {money(payment?.totalPrice)} to lock this car
-              in — otherwise it releases back to the pool.
+              {t('bookingDetailScreen.actionPayPendingBody', { amount: money(payment?.totalPrice) })}
             </Typo>
           </View>
           <TouchableOpacity onPress={onPay} style={[a.cta, { backgroundColor: AMBER }]}>
-            <Typo style={a.ctaText}>Pay now</Typo>
+            <Typo style={a.ctaText}>{t('bookingDetailScreen.payNow')}</Typo>
           </TouchableOpacity>
         </ActionShell>
       );
@@ -759,10 +777,9 @@ function NextActionCard({
             <ActivityIndicator color={BLUE} />
           </View>
           <View style={{ flex: 1 }}>
-            <Typo style={[a.title, { color: colors.textPrimary }]}>Payment processing</Typo>
+            <Typo style={[a.title, { color: colors.textPrimary }]}>{t('bookingDetailScreen.actionPayProcessingTitle')}</Typo>
             <Typo style={[a.body, { color: colors.textSecondary }]}>
-              We're waiting on the gateway to confirm. This usually takes a few
-              seconds — pull down to refresh.
+              {t('bookingDetailScreen.actionPayProcessingBody')}
             </Typo>
           </View>
         </ActionShell>
@@ -775,10 +792,9 @@ function NextActionCard({
             <Icon name="wallet-outline" size={22} color={BRAND} />
           </View>
           <View style={{ flex: 1 }}>
-            <Typo style={[a.title, { color: colors.textPrimary }]}>You're all set</Typo>
+            <Typo style={[a.title, { color: colors.textPrimary }]}>{t('bookingDetailScreen.actionCollectionTitle')}</Typo>
             <Typo style={[a.body, { color: colors.textSecondary }]}>
-              Bring the collection code below to the provider at pickup time.
-              Payment happens on the spot.
+              {t('bookingDetailScreen.actionCollectionBody')}
             </Typo>
           </View>
         </ActionShell>
@@ -799,9 +815,9 @@ function NextActionCard({
               <Icon name="checkmark-circle" size={22} color={BRAND} />
             </View>
             <View style={{ flex: 1 }}>
-              <Typo style={[a.title, { color: colors.textPrimary }]}>Trip completed</Typo>
+              <Typo style={[a.title, { color: colors.textPrimary }]}>{t('bookingDetailScreen.actionTripCompletedTitle')}</Typo>
               <Typo style={[a.body, { color: colors.textSecondary }]}>
-                Deposit released. Thanks for renting with us.
+                {t('bookingDetailScreen.actionTripCompletedBody')}
               </Typo>
             </View>
           </ActionShell>
@@ -813,13 +829,13 @@ function NextActionCard({
             <Icon name="star" size={22} color="#D97706" />
           </View>
           <View style={{ flex: 1 }}>
-            <Typo style={[a.title, { color: colors.textPrimary }]}>How was your trip?</Typo>
+            <Typo style={[a.title, { color: colors.textPrimary }]}>{t('bookingDetailScreen.actionHowWasTripTitle')}</Typo>
             <Typo style={[a.body, { color: colors.textSecondary }]}>
-              Your review helps the next renter choose the right car.
+              {t('bookingDetailScreen.actionHowWasTripBody')}
             </Typo>
           </View>
           <TouchableOpacity onPress={onReview} style={[a.cta, { backgroundColor: '#D97706' }]}>
-            <Typo style={a.ctaText}>Rate</Typo>
+            <Typo style={a.ctaText}>{t('bookingDetailScreen.rate')}</Typo>
           </TouchableOpacity>
         </ActionShell>
       );
@@ -831,10 +847,9 @@ function NextActionCard({
             <Icon name="close-circle" size={22} color={RED} />
           </View>
           <View style={{ flex: 1 }}>
-            <Typo style={[a.title, { color: colors.textPrimary }]}>Booking cancelled</Typo>
+            <Typo style={[a.title, { color: colors.textPrimary }]}>{t('bookingDetailScreen.actionCancelledTitle')}</Typo>
             <Typo style={[a.body, { color: colors.textSecondary }]}>
-              This booking is no longer active. Any refund is processed based on
-              the cancellation policy — check your inbox.
+              {t('bookingDetailScreen.actionCancelledBody')}
             </Typo>
           </View>
         </ActionShell>
@@ -944,18 +959,24 @@ function HandoverBlock({
   handover,
   colors,
   onSign,
+  t,
 }: {
   handover: NonNullable<BookingDetails['handovers']>[number];
   colors: any;
   onSign: () => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const isSigned = !!handover.customerSignatureUrl;
-  const typeLabel = handover.type === 'PICKUP' ? 'Pick-up' : 'Return';
+  const isPickup = handover.type === 'PICKUP';
   return (
     <>
       <SectionHead
-        icon={handover.type === 'PICKUP' ? 'log-in-outline' : 'log-out-outline'}
-        label={`${typeLabel} inspection`}
+        icon={isPickup ? 'log-in-outline' : 'log-out-outline'}
+        label={
+          isPickup
+            ? t('bookingDetailScreen.pickupInspectionSectionLabel')
+            : t('bookingDetailScreen.returnInspectionSectionLabel')
+        }
       />
       <View style={[s.card, cardBg(colors)]}>
         {isSigned ? (
@@ -963,17 +984,23 @@ function HandoverBlock({
             <Icon name="checkmark-circle" size={20} color={BRAND} />
             <View style={{ flex: 1 }}>
               <Typo style={[s.rowTitle, { color: colors.textPrimary }]}>
-                Signed on {handover.customerSignedAt ? dayjs(handover.customerSignedAt).format('DD MMM, HH:mm') : ''}
+                {t('bookingDetailScreen.signedOn', {
+                  date: handover.customerSignedAt ? dayjs(handover.customerSignedAt).format('DD MMM, HH:mm') : '',
+                })}
               </Typo>
               <Typo style={[s.rowSub, { color: colors.textSecondary }]}>
-                Your signature is on file for this inspection.
+                {t('bookingDetailScreen.signatureOnFile')}
               </Typo>
             </View>
           </View>
         ) : (
           <TouchableOpacity onPress={onSign} activeOpacity={0.85} style={s.handoverCta}>
             <Icon name="create-outline" size={18} color="#fff" />
-            <Typo style={s.handoverCtaText}>Confirm & sign {typeLabel.toLowerCase()} inspection</Typo>
+            <Typo style={s.handoverCtaText}>
+              {isPickup
+                ? t('bookingDetailScreen.confirmSignPickup')
+                : t('bookingDetailScreen.confirmSignReturn')}
+            </Typo>
           </TouchableOpacity>
         )}
       </View>

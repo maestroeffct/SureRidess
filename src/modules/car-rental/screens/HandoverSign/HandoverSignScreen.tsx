@@ -9,6 +9,7 @@ import {
 import Icon from '@react-native-vector-icons/ionicons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import SignatureCanvas, { SignatureViewRef } from 'react-native-signature-canvas';
+import { useTranslation } from 'react-i18next';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
@@ -29,6 +30,7 @@ const HandoverSignScreen: React.FC = () => {
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
+  const { t } = useTranslation('carRental');
 
   const { bookingId, type, carName } = route.params || ({} as RouteParams);
 
@@ -43,29 +45,29 @@ const HandoverSignScreen: React.FC = () => {
   const handleSignatureOk = useCallback(
     async (dataUri: string) => {
       if (!dataUri) {
-        showError('Please draw your signature before saving');
+        showError(t('handoverSignScreen.drawSignatureFirst'));
         return;
       }
       if (!bookingId || !type) {
-        showError('Missing booking info');
+        showError(t('handoverSignScreen.missingBookingInfo'));
         return;
       }
       try {
         setSaving(true);
         await submitHandoverSignature(bookingId, type, dataUri);
-        showSuccess('Signature saved. Thank you.');
+        showSuccess(t('handoverSignScreen.signatureSaved'));
         navigation.goBack();
       } catch (err: any) {
         const message =
           err?.response?.data?.message ??
           err?.message ??
-          'Could not save your signature. Try again.';
+          t('handoverSignScreen.saveFailedDefault');
         // Offer a retry rather than dumping the user back into the form
         // with no context — helps on flaky connections at pickup.
-        Alert.alert('Upload failed', message, [
-          { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('handoverSignScreen.uploadFailedTitle'), message, [
+          { text: t('handoverSignScreen.cancel'), style: 'cancel' },
           {
-            text: 'Retry',
+            text: t('handoverSignScreen.retry'),
             onPress: () => sigRef.current?.readSignature(),
           },
         ]);
@@ -73,7 +75,7 @@ const HandoverSignScreen: React.FC = () => {
         setSaving(false);
       }
     },
-    [bookingId, type, navigation],
+    [bookingId, type, navigation, t],
   );
 
   const handleClear = () => {
@@ -83,7 +85,7 @@ const HandoverSignScreen: React.FC = () => {
 
   const handleConfirm = () => {
     if (!hasStroke) {
-      showError('Please draw your signature before saving');
+      showError(t('handoverSignScreen.drawSignatureFirst'));
       return;
     }
     // Ask the canvas for the PNG data URI — resolves via onOK.
@@ -99,7 +101,7 @@ const HandoverSignScreen: React.FC = () => {
     body, html { background: transparent; }
   `;
 
-  const typeLabel = type === 'PICKUP' ? 'Pick-up' : 'Return';
+  const typeLabel = type === 'PICKUP' ? t('handoverSignScreen.typePickup') : t('handoverSignScreen.typeReturn');
   const typeColor = type === 'PICKUP' ? '#22C55E' : '#F97316';
 
   return (
@@ -117,7 +119,7 @@ const HandoverSignScreen: React.FC = () => {
           <Icon name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
-        <Typo variant="subheading">Sign inspection</Typo>
+        <Typo variant="subheading">{t('handoverSignScreen.headerTitle')}</Typo>
 
         <View style={{ width: 24 }} />
       </View>
@@ -125,7 +127,7 @@ const HandoverSignScreen: React.FC = () => {
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Typo style={[styles.carName, { color: colors.textPrimary }]}>
-            {carName || 'Vehicle'}
+            {carName || t('handoverSignScreen.vehicleFallback')}
           </Typo>
           <View style={[styles.badge, { backgroundColor: `${typeColor}20` }]}>
             <Typo style={[styles.badgeText, { color: typeColor }]}>
@@ -135,15 +137,14 @@ const HandoverSignScreen: React.FC = () => {
         </View>
 
         <Typo style={[styles.explainer, { color: colors.textSecondary }]}>
-          The rental host has completed the inspection. By signing below you
-          agree the vehicle condition is as recorded.
+          {t('handoverSignScreen.explainer')}
         </Typo>
 
         <View style={styles.canvasWrap}>
           <SignatureCanvas
             ref={sigRef}
             onOK={handleSignatureOk}
-            onEmpty={() => showError('Please draw your signature before saving')}
+            onEmpty={() => showError(t('handoverSignScreen.drawSignatureFirst'))}
             onBegin={() => setHasStroke(true)}
             onClear={() => setHasStroke(false)}
             webStyle={webStyle}
@@ -155,7 +156,7 @@ const HandoverSignScreen: React.FC = () => {
 
           <View style={styles.signatureLine} />
           <Typo style={[styles.signHint, { color: colors.textSecondary }]}>
-            Sign inside the box above
+            {t('handoverSignScreen.signHint')}
           </Typo>
         </View>
 
@@ -168,7 +169,7 @@ const HandoverSignScreen: React.FC = () => {
           >
             <Icon name="refresh-outline" size={18} color={colors.textPrimary} />
             <Typo style={{ color: colors.textPrimary, fontWeight: '600' }}>
-              Clear
+              {t('handoverSignScreen.clear')}
             </Typo>
           </TouchableOpacity>
 
@@ -187,7 +188,7 @@ const HandoverSignScreen: React.FC = () => {
               <>
                 <Icon name="checkmark-circle" size={18} color="#fff" />
                 <Typo style={{ color: '#fff', fontWeight: '700' }}>
-                  Save signature
+                  {t('handoverSignScreen.saveSignature')}
                 </Typo>
               </>
             )}

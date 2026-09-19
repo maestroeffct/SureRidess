@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { BookingCard } from '@/components/Rental/BookingCard/BookingCard';
@@ -55,15 +56,16 @@ function needsPayment(b: RawBooking): boolean {
 
 type EnrichedBooking = RawBooking & { bucket: BookingBucket };
 
-const TABS: { key: BookingBucket; label: string }[] = [
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'active', label: 'Active' },
-  { key: 'past', label: 'Past' },
-];
-
 const BookingsScreen = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
+  const { t } = useTranslation('carRental');
+
+  const TABS: { key: BookingBucket; label: string }[] = [
+    { key: 'upcoming', label: t('bookingsScreen.tabUpcoming') },
+    { key: 'active', label: t('bookingsScreen.tabActive') },
+    { key: 'past', label: t('bookingsScreen.tabPast') },
+  ];
 
   const [tab, setTab] = useState<BookingBucket>('upcoming');
   const [bookings, setBookings] = useState<EnrichedBooking[]>([]);
@@ -149,7 +151,7 @@ const BookingsScreen = () => {
       {/* HEADER */}
       <View style={s.header}>
         <Typo style={[s.headerTitle, { color: colors.textPrimary }]}>
-          Your trips
+          {t('bookingsScreen.title')}
         </Typo>
         <TouchableOpacity
           style={[
@@ -187,7 +189,7 @@ const BookingsScreen = () => {
               autoFocus
               value={query}
               onChangeText={setQuery}
-              placeholder="Search by car, booking ID, pickup code…"
+              placeholder={t('bookingsScreen.searchPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               style={[s.searchInput, { color: colors.textPrimary }]}
               returnKeyType="search"
@@ -285,13 +287,14 @@ const BookingsScreen = () => {
             isSearching={!!query.trim()}
             onBrowse={browseCars}
             colors={colors}
+            t={t}
           />
         ) : (
           filtered.map(b => (
             <BookingCard
               key={b.id}
               bookingId={b.id}
-              carName={b.car ? `${b.car.brand} ${b.car.model}` : 'Vehicle'}
+              carName={b.car ? `${b.car.brand} ${b.car.model}` : t('bookingsScreen.vehicleFallback')}
               imageUrl={b.car?.images?.[0]?.url}
               pickupLocation={
                 b.car?.location?.name ?? b.car?.location?.address
@@ -346,38 +349,40 @@ function EmptyState({
   isSearching,
   onBrowse,
   colors,
+  t,
 }: {
   tab: BookingBucket;
   isSearching: boolean;
   onBrowse: () => void;
   colors: ReturnType<typeof useTheme>['colors'];
+  t: (key: string) => string;
 }) {
   const meta = isSearching
     ? {
         icon: 'search-outline' as const,
-        title: 'No matches',
-        body: 'Try a different car name, booking ID, or pickup code.',
+        title: t('bookingsScreen.emptyNoMatchesTitle'),
+        body: t('bookingsScreen.emptyNoMatchesBody'),
         cta: null,
       }
     : tab === 'upcoming'
     ? {
         icon: 'calendar-outline' as const,
-        title: 'No upcoming trips',
-        body: 'Once you book a car, the next pickup will show up here.',
-        cta: 'Browse cars',
+        title: t('bookingsScreen.emptyUpcomingTitle'),
+        body: t('bookingsScreen.emptyUpcomingBody'),
+        cta: t('bookingsScreen.browseCars'),
       }
     : tab === 'active'
     ? {
         icon: 'car-sport-outline' as const,
-        title: 'No active trips',
-        body: 'A trip becomes active once your pickup window starts.',
-        cta: 'Browse cars',
+        title: t('bookingsScreen.emptyActiveTitle'),
+        body: t('bookingsScreen.emptyActiveBody'),
+        cta: t('bookingsScreen.browseCars'),
       }
     : {
         icon: 'time-outline' as const,
-        title: 'Nothing here yet',
-        body: 'Completed and cancelled trips will appear here.',
-        cta: 'Browse cars',
+        title: t('bookingsScreen.emptyPastTitle'),
+        body: t('bookingsScreen.emptyPastBody'),
+        cta: t('bookingsScreen.browseCars'),
       };
 
   return (

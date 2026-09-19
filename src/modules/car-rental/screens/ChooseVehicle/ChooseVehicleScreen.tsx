@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -33,6 +34,7 @@ const ChooseVehicleScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { colors } = useTheme();
+  const { t } = useTranslation('carRental');
 
   const initialCars: RentalCar[] = route?.params?.cars ?? [];
   const initialSearch = route?.params?.search;
@@ -55,10 +57,10 @@ const ChooseVehicleScreen = () => {
 
   const pickupStr = pickupAt
     ? `${formatDate(pickupAt)}, ${formatTime(pickupAt)}`
-    : 'Select date';
+    : t('chooseVehicleScreen.selectDate');
   const returnStr = returnAt
     ? `${formatDate(returnAt)}, ${formatTime(returnAt)}`
-    : 'Select date';
+    : t('chooseVehicleScreen.selectDate');
 
   // ── Modals ───────────────────────────────────────────────────────────────
   const [datePickerVisible, setDatePickerVisible] = useState(false);
@@ -203,7 +205,7 @@ const ChooseVehicleScreen = () => {
     })();
 
     if (new Date(returnIso) <= new Date(pickupIso)) {
-      showError('Return time must be after pickup time.');
+      showError(t('chooseVehicleScreen.returnAfterPickup'));
       return;
     }
 
@@ -225,7 +227,7 @@ const ChooseVehicleScreen = () => {
     } catch (err: any) {
       showError(
         err?.response?.data?.message ||
-          'Unable to search cars. Please try again.',
+          t('chooseVehicleScreen.unableToSearchCars'),
       );
     } finally {
       setReSearching(false);
@@ -248,7 +250,7 @@ const ChooseVehicleScreen = () => {
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <Icon name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <Typo style={s.headerTitle}>Choose Vehicle</Typo>
+        <Typo style={s.headerTitle}>{t('chooseVehicleScreen.headerTitle')}</Typo>
         <View style={s.headerRight} />
       </View>
 
@@ -262,19 +264,19 @@ const ChooseVehicleScreen = () => {
           </View>
           <View style={s.summaryTextCol}>
             <View style={s.summaryLeg}>
-              <Typo style={[s.summaryLabel, { color: colors.textSecondary }]}>Pickup</Typo>
+              <Typo style={[s.summaryLabel, { color: colors.textSecondary }]}>{t('chooseVehicleScreen.pickup')}</Typo>
               <Typo style={[s.summaryLocation, { color: colors.textPrimary }]} numberOfLines={1}>
-                {pickupLocationName || pickupLocationId || 'Select location'}
+                {pickupLocationName || pickupLocationId || t('chooseVehicleScreen.selectLocation')}
               </Typo>
               <Typo style={[s.summaryTime, { color: colors.textSecondary }]}>{pickupStr}</Typo>
             </View>
             <View style={[s.legDivider, { backgroundColor: colors.border }]} />
             <View style={s.summaryLeg}>
-              <Typo style={[s.summaryLabel, { color: colors.textSecondary }]}>Drop-off</Typo>
+              <Typo style={[s.summaryLabel, { color: colors.textSecondary }]}>{t('chooseVehicleScreen.dropoff')}</Typo>
               <Typo style={[s.summaryLocation, { color: colors.textPrimary }]} numberOfLines={1}>
                 {showDropoff
                   ? dropoffLocationName || dropoffLocationId
-                  : pickupLocationName || pickupLocationId || 'Same as pickup'}
+                  : pickupLocationName || pickupLocationId || t('chooseVehicleScreen.sameAsPickup')}
               </Typo>
               <Typo style={[s.summaryTime, { color: colors.textSecondary }]}>{returnStr}</Typo>
             </View>
@@ -287,7 +289,7 @@ const ChooseVehicleScreen = () => {
         {reSearching && (
           <View style={[s.reSearchRow, { borderTopColor: colors.border }]}>
             <ActivityIndicator size="small" color={GREEN} />
-            <Typo style={s.reSearchText}>Updating results…</Typo>
+            <Typo style={s.reSearchText}>{t('chooseVehicleScreen.updatingResults')}</Typo>
           </View>
         )}
       </View>
@@ -298,7 +300,7 @@ const ChooseVehicleScreen = () => {
         <View style={s.toolbar}>
           <Typo style={[s.countLabel, { color: colors.textPrimary }]}>
             {filtered.length}{' '}
-            <Typo style={[s.countSub, { color: colors.textSecondary }]}>vehicles available</Typo>
+            <Typo style={[s.countSub, { color: colors.textSecondary }]}>{t('chooseVehicleScreen.vehiclesAvailable')}</Typo>
           </Typo>
           <TouchableOpacity
             style={[s.filterChip, activeFilterCount > 0 && s.filterChipActive]}
@@ -315,7 +317,9 @@ const ChooseVehicleScreen = () => {
                 activeFilterCount > 0 && s.filterChipTextActive,
               ]}
             >
-              {activeFilterCount > 0 ? `Filter (${activeFilterCount})` : 'Filter'}
+              {activeFilterCount > 0
+                ? t('chooseVehicleScreen.filterWithCount', { count: activeFilterCount })
+                : t('chooseVehicleScreen.filter')}
             </Typo>
           </TouchableOpacity>
         </View>
@@ -350,18 +354,18 @@ const ChooseVehicleScreen = () => {
           {filtered.length === 0 ? (
             <View style={s.emptyState}>
               <Icon name="car-outline" size={48} color={colors.textSecondary} />
-              <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>No vehicles found</Typo>
+              <Typo style={[s.emptyTitle, { color: colors.textPrimary }]}>{t('chooseVehicleScreen.noVehiclesFound')}</Typo>
               <Typo style={[s.emptyText, { color: colors.textSecondary }]}>
                 {activeFilterCount > 0
-                  ? 'Try adjusting your filters'
-                  : 'Try adjusting your search dates or location'}
+                  ? t('chooseVehicleScreen.tryAdjustingFilters')
+                  : t('chooseVehicleScreen.tryAdjustingSearch')}
               </Typo>
               {activeFilterCount > 0 && (
                 <TouchableOpacity
                   style={s.clearFiltersBtn}
                   onPress={() => setFilters(DEFAULT_FILTERS)}
                 >
-                  <Typo style={s.clearFiltersText}>Clear filters</Typo>
+                  <Typo style={s.clearFiltersText}>{t('chooseVehicleScreen.clearFilters')}</Typo>
                 </TouchableOpacity>
               )}
             </View>

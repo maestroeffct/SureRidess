@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -30,6 +31,7 @@ const BookingStatusScreen = () => {
   const paymentMethod: string = route?.params?.paymentMethod ?? 'ONLINE';
   const fmtMoney = useFormatMoney();
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('carRental');
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(!!bookingId);
@@ -62,7 +64,7 @@ const BookingStatusScreen = () => {
     ? dayjs(booking.rentalPeriod.returnAt).format('D MMM YYYY, HH:mm')
     : undefined;
 
-  const pickupName = booking?.rentalPeriod?.pickupLocation?.name ?? 'Pickup location';
+  const pickupName = booking?.rentalPeriod?.pickupLocation?.name ?? t('bookingStatusScreen.pickupLocationFallback');
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -78,14 +80,14 @@ const BookingStatusScreen = () => {
         </View>
 
         <Typo style={s.heroTitle}>
-          {isCollection ? 'Booking Confirmed!' : 'Payment Successful!'}
+          {isCollection ? t('bookingStatusScreen.bookingConfirmed') : t('bookingStatusScreen.paymentSuccessful')}
         </Typo>
 
         {carName && <Typo style={s.heroCarName}>{carName}</Typo>}
 
         {typeof totalPrice === 'number' && (
           <View style={s.heroPriceRow}>
-            <Typo style={s.heroPriceSub}>Total amount</Typo>
+            <Typo style={s.heroPriceSub}>{t('bookingStatusScreen.totalAmount')}</Typo>
             <Typo style={s.heroPrice}>
               {fmtMoney(totalPrice, rawCurrency, { round: true })}
             </Typo>
@@ -98,7 +100,7 @@ const BookingStatusScreen = () => {
         {loading ? (
           <View style={s.loadingWrap}>
             <ActivityIndicator size="large" color={GREEN} />
-            <Typo style={[s.loadingText, { color: colors.textSecondary }]}>Loading booking details…</Typo>
+            <Typo style={[s.loadingText, { color: colors.textSecondary }]}>{t('bookingStatusScreen.loadingBookingDetails')}</Typo>
           </View>
         ) : (
           <ScrollView
@@ -108,12 +110,12 @@ const BookingStatusScreen = () => {
             {/* Collection code */}
             {isCollection && collectionCode && (
               <View style={[s.codeCard, { backgroundColor: colors.surface }]}>
-                <Typo style={s.codeLabel}>Collection Code</Typo>
+                <Typo style={s.codeLabel}>{t('bookingStatusScreen.collectionCode')}</Typo>
                 <Typo style={s.codeValue}>{collectionCode}</Typo>
                 <View style={s.codeHintRow}>
                   <Icon name="information-circle-outline" size={14} color={GREEN} />
                   <Typo style={[s.codeHint, { color: colors.textSecondary }]}>
-                    Show this code when picking up the vehicle
+                    {t('bookingStatusScreen.collectionCodeHint')}
                   </Typo>
                 </View>
               </View>
@@ -122,8 +124,8 @@ const BookingStatusScreen = () => {
             {/* Subtitle */}
             <Typo style={[s.subtitle, { color: colors.textSecondary }]}>
               {isCollection
-                ? 'Your booking is confirmed. Present the code above when you arrive to collect the car.'
-                : 'Your rental booking is confirmed. Check your email for a receipt.'}
+                ? t('bookingStatusScreen.subtitleCollection')
+                : t('bookingStatusScreen.subtitleOnline')}
             </Typo>
 
             {/* Details card */}
@@ -133,31 +135,31 @@ const BookingStatusScreen = () => {
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
             >
-              <Typo style={[s.detailsTitle, { color: colors.textPrimary }]}>Booking Details</Typo>
+              <Typo style={[s.detailsTitle, { color: colors.textPrimary }]}>{t('bookingStatusScreen.bookingDetailsTitle')}</Typo>
 
               {bookingId && (
                 <DetailRow
                   icon="receipt-outline"
-                  label="Booking ID"
+                  label={t('bookingStatusScreen.bookingId')}
                   value={bookingId.slice(0, 8).toUpperCase()}
                 />
               )}
               {carName && (
-                <DetailRow icon="car-outline" label="Vehicle" value={carName} />
+                <DetailRow icon="car-outline" label={t('bookingStatusScreen.vehicle')} value={carName} />
               )}
               <DetailRow
                 icon={isCollection ? 'wallet-outline' : 'card-outline'}
-                label="Payment"
-                value={isCollection ? 'Pay on Collection' : 'Paid Online'}
+                label={t('bookingStatusScreen.payment')}
+                value={isCollection ? t('bookingStatusScreen.payOnCollection') : t('bookingStatusScreen.paidOnline')}
                 valueColor={GREEN}
               />
               {pickupName && (
-                <DetailRow icon="location-outline" label="Pickup" value={pickupName} />
+                <DetailRow icon="location-outline" label={t('bookingStatusScreen.pickup')} value={pickupName} />
               )}
               {pickupAt && returnAt && (
                 <>
-                  <DetailRow icon="time-outline" label="Pick-up" value={pickupAt} />
-                  <DetailRow icon="time-outline" label="Drop-off" value={returnAt} isLast />
+                  <DetailRow icon="time-outline" label={t('bookingStatusScreen.pickupLabel')} value={pickupAt} />
+                  <DetailRow icon="time-outline" label={t('bookingStatusScreen.dropoffLabel')} value={returnAt} isLast />
                 </>
               )}
             </View>
@@ -170,7 +172,7 @@ const BookingStatusScreen = () => {
                   { backgroundColor: colors.surface, borderColor: colors.border },
                 ]}
               >
-                <Typo style={[s.detailsTitle, { color: colors.textPrimary }]}>Rental Period</Typo>
+                <Typo style={[s.detailsTitle, { color: colors.textPrimary }]}>{t('bookingStatusScreen.rentalPeriodTitle')}</Typo>
                 <View style={s.timeline}>
                   <View style={s.timelineLeft}>
                     <View style={[s.timelineDot, s.timelineDotGreen]} />
@@ -179,12 +181,12 @@ const BookingStatusScreen = () => {
                   </View>
                   <View style={s.timelineRight}>
                     <View style={s.timelineLeg}>
-                      <Typo style={[s.timelineLegLabel, { color: colors.textSecondary }]}>Pick-up</Typo>
+                      <Typo style={[s.timelineLegLabel, { color: colors.textSecondary }]}>{t('bookingStatusScreen.pickupLabel')}</Typo>
                       <Typo style={[s.timelineLegDate, { color: colors.textPrimary }]}>{pickupAt}</Typo>
                       <Typo style={[s.timelineLegPlace, { color: colors.textSecondary }]}>{pickupName}</Typo>
                     </View>
                     <View style={s.timelineLeg}>
-                      <Typo style={[s.timelineLegLabel, { color: colors.textSecondary }]}>Drop-off</Typo>
+                      <Typo style={[s.timelineLegLabel, { color: colors.textSecondary }]}>{t('bookingStatusScreen.dropoffLabel')}</Typo>
                       <Typo style={[s.timelineLegDate, { color: colors.textPrimary }]}>{returnAt}</Typo>
                       <Typo style={[s.timelineLegPlace, { color: colors.textSecondary }]}>{pickupName}</Typo>
                     </View>
@@ -203,13 +205,13 @@ const BookingStatusScreen = () => {
                 },
               ]}
             >
-              <Typo style={[s.detailsTitle, { color: colors.textPrimary }]}>What's next?</Typo>
+              <Typo style={[s.detailsTitle, { color: colors.textPrimary }]}>{t('bookingStatusScreen.whatsNextTitle')}</Typo>
               {[
                 isCollection
-                  ? { icon: 'wallet-outline', text: 'Bring your collection code and cash payment to pickup' }
-                  : { icon: 'mail-outline', text: 'A confirmation receipt has been sent to your email' },
-                { icon: 'id-card-outline', text: 'Bring your valid driver\'s license and ID' },
-                { icon: 'checkmark-circle-outline', text: 'Arrive on time — the rental period starts at pickup time' },
+                  ? { icon: 'wallet-outline', text: t('bookingStatusScreen.nextCollection') }
+                  : { icon: 'mail-outline', text: t('bookingStatusScreen.nextOnline') },
+                { icon: 'id-card-outline', text: t('bookingStatusScreen.nextBringId') },
+                { icon: 'checkmark-circle-outline', text: t('bookingStatusScreen.nextArriveOnTime') },
               ].map((item, i) => (
                 <View key={i} style={s.nextRow}>
                   <View style={[s.nextIconWrap, { backgroundColor: colors.background }]}>
@@ -233,7 +235,7 @@ const BookingStatusScreen = () => {
         ]}
       >
         <AppButton
-          title="View My Bookings"
+          title={t('bookingStatusScreen.viewMyBookings')}
           onPress={() => navigation.navigate('CarRentalTabs', { screen: 'Bookings' })}
         />
         <TouchableOpacity
@@ -241,7 +243,7 @@ const BookingStatusScreen = () => {
           onPress={() => navigation.navigate('CarRentalTabs', { screen: 'Home' })}
         >
           <Icon name="home-outline" size={18} color={GREEN} />
-          <Typo style={s.homeBtnText}>Home</Typo>
+          <Typo style={s.homeBtnText}>{t('bookingStatusScreen.home')}</Typo>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
