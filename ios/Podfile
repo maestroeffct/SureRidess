@@ -5,6 +5,12 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+# Sumsub's IdensicMobileSDK pod is only published to their own spec repo —
+# declaring a custom `source` opts CocoaPods out of the implicit default
+# trunk, so it has to be listed explicitly alongside it.
+source 'https://cdn.cocoapods.org/'
+source 'https://github.com/sumsub/Specs.git'
+
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 

@@ -21,28 +21,11 @@ buildscript {
 
 apply plugin: "com.facebook.react.rootproject"
 
-// Smile ID's android-sdk transitively pulls in kotlin-stdlib 2.3.0. React
-// Native 0.83's Kotlin compiler is 2.1.x and its K2 type checker CRASHES on
-// the incompatible metadata (not just errors — actually crashes in
-// FirIncompatibleClassExpressionChecker). Two-part fix:
-//   1. dependencySubstitution: replace every 2.3.0 stdlib reference with the
-//      project's kotlinVersion so the incompatible bytecode never lands on
-//      the classpath. `force` alone doesn't work here because Smile ID's
-//      module resolves early.
-//   2. -Xskip-metadata-version-check: safety net for anything that still
-//      slips through.
 allprojects {
+    repositories {
+        maven { url "https://maven.sumsub.com/repository/maven-public/" }
+    }
     configurations.all {
-        resolutionStrategy.dependencySubstitution {
-            substitute(module("org.jetbrains.kotlin:kotlin-stdlib"))
-                .using(module("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.ext.kotlinVersion}"))
-            substitute(module("org.jetbrains.kotlin:kotlin-stdlib-jdk7"))
-                .using(module("org.jetbrains.kotlin:kotlin-stdlib-jdk7:${rootProject.ext.kotlinVersion}"))
-            substitute(module("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
-                .using(module("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${rootProject.ext.kotlinVersion}"))
-            substitute(module("org.jetbrains.kotlin:kotlin-stdlib-common"))
-                .using(module("org.jetbrains.kotlin:kotlin-stdlib-common:${rootProject.ext.kotlinVersion}"))
-        }
         // Force a single OkHttp version. Firebase Auth pulls in 5.x while
         // React Native 0.83 was built against 4.x — the mismatch shows up as
         // `NoClassDefFoundError: okhttp3.internal.Util` at first HTTP call
@@ -52,11 +35,6 @@ allprojects {
                 details.useVersion '4.12.0'
                 details.because 'Pin OkHttp to RN 0.83-compatible 4.x to avoid Util class mismatch'
             }
-        }
-    }
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions {
-            freeCompilerArgs += "-Xskip-metadata-version-check"
         }
     }
 }

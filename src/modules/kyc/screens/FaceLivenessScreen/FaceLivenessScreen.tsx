@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import {
-  SmileID,
-  SmileIDSmartSelfieAuthenticationView,
-} from '@smile_identity/react-native';
+import SNSMobileSDK from '@sumsub/react-native-mobilesdk-module';
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { KYCStepHeader } from '@/components/kyc/KYCStepHeader/KYCStepHeader';
 import { KYCInfoAlert } from '@/components/kyc/KYCInfoAlert/KYCInfoAlert';
@@ -15,11 +12,10 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { showError, showSuccess } from '@/helpers/toast';
 import {
   fetchKycStatus,
-  signSmileIdentityJob,
-  type SmileSignedSpec,
+  getSumsubAccessToken,
 } from '@/services/kyc.service';
 
-type Stage = 'intro' | 'launching' | 'sdk' | 'polling' | 'done' | 'error';
+type Stage = 'intro' | 'launching' | 'polling' | 'done' | 'error';
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_MAX_MS = 30000;
@@ -30,7 +26,6 @@ export default function FaceLivenessScreen() {
   const { colors } = useTheme();
 
   const [stage, setStage] = useState<Stage>('intro');
-  const [spec, setSpec] = useState<SmileSignedSpec | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Guard against setting state after unmount when a poll resolves late.
@@ -42,42 +37,9 @@ export default function FaceLivenessScreen() {
     };
   }, []);
 
-  // Initialize the Smile SDK once. Uses sandbox unless the returned spec
-  // says otherwise (we don't know the env until /sign responds, but the
-  // native SDK also reads it per-call from the view props).
-  useEffect(() => {
-    (async () => {
-      try {
-        await SmileID.initialize(true, false);
-      } catch (err) {
-        if (__DEV__) console.log('[FaceLiveness] SmileID.initialize failed', err);
-      }
-    })();
-  }, []);
-
   const continueToDocuments = useCallback(() => {
     navigation.navigate('Documents', route.params ?? {});
   }, [navigation, route.params]);
-
-  const startVerification = async () => {
-    try {
-      setStage('launching');
-      setErrorMessage(null);
-      const signed = await signSmileIdentityJob('SMART_SELFIE_AUTHENTICATION');
-      if (!mountedRef.current) return;
-      setSpec(signed);
-      setStage('sdk');
-    } catch (err: any) {
-      if (!mountedRef.current) return;
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to start face verification';
-      setErrorMessage(message);
-      setStage('error');
-      showError(message);
-    }
-  };
 
   // Poll /kyc/status every POLL_INTERVAL_MS until the webhook lands a
   // verdict, or POLL_MAX_MS elapses. On timeout we let the user press
@@ -90,11 +52,11 @@ export default function FaceLivenessScreen() {
         const status = await fetchKycStatus();
         if (!mountedRef.current) return;
         if (
-          status.smileVerdict === 'APPROVED' ||
-          status.smileVerdict === 'NEEDS_REVIEW'
+          status.sumsubVerdict === 'APPROVED' ||
+          status.sumsubVerdict === 'NEEDS_REVIEW'
         ) {
           showSuccess(
-            status.smileVerdict === 'APPROVED'
+            status.sumsubVerdict === 'APPROVED'
               ? 'Face verified'
               : 'Verification received — moving on',
           );
@@ -102,7 +64,7 @@ export default function FaceLivenessScreen() {
           continueToDocuments();
           return;
         }
-        if (status.smileVerdict === 'REJECTED') {
+        if (status.sumsubVerdict === 'REJECTED') {
           setErrorMessage(
             'Face verification failed. Please try again in a well-lit area.',
           );
@@ -124,26 +86,55 @@ export default function FaceLivenessScreen() {
     continueToDocuments();
   }, [continueToDocuments]);
 
-  const handleSdkResult = (event: any) => {
-    if (__DEV__) console.log('[FaceLiveness] SDK result', event);
-    // The RN wrapper emits either a plain success payload or an error.
-    // We treat anything with a truthy `error` field as failure and every
-    // other resolved event as "SDK finished — now poll the backend for
-    // the webhook-driven verdict."
-    const isError =
-      event &&
-      (event.error ||
-        event.errorCode ||
-        (typeof event === 'object' && 'success' in event && event.success === false));
-    if (isError) {
+  const startVerification = async () => {
+    try {
+      setStage('launching');
+      setErrorMessage(null);
+
+      const { token } = await getSumsubAccessToken();
+      if (!mountedRef.current) return;
+
+      const sdk = SNSMobileSDK.init(token, async () => {
+        // Token expired mid-flow — mint a fresh one so the SDK can
+        // continue without the user restarting.
+        const refreshed = await getSumsubAccessToken();
+        return refreshed.token;
+      })
+        .withHandlers({
+          onStatusChanged: (event: any) => {
+            if (__DEV__) {
+              console.log(
+                `[FaceLiveness] status: [${event.prevStatus}] => [${event.newStatus}]`,
+              );
+            }
+          },
+        })
+        .withDebug(__DEV__)
+        .build();
+
+      const result = await sdk.launch();
+      if (!mountedRef.current) return;
+      if (__DEV__) console.log('[FaceLiveness] SDK result', result);
+
+      if (result?.success === false) {
+        const message =
+          result?.errorMsg || 'Face verification was cancelled or failed';
+        setErrorMessage(String(message));
+        setStage('error');
+        return;
+      }
+
+      startPolling();
+    } catch (err: any) {
+      if (!mountedRef.current) return;
       const message =
-        (event && (event.error || event.message || event.errorMessage)) ||
-        'Face verification was cancelled or failed';
-      setErrorMessage(String(message));
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to start face verification';
+      setErrorMessage(message);
       setStage('error');
-      return;
+      showError(message);
     }
-    startPolling();
   };
 
   return (
@@ -155,92 +146,67 @@ export default function FaceLivenessScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {stage === 'sdk' && spec ? (
-          <View style={styles.sdkFrame}>
-            <SmileIDSmartSelfieAuthenticationView
-              userId={spec.partner_params.user_id}
-              showInstructions
-              showAttribution
-              showConfirmation
-              allowAgentMode={false}
-              extraPartnerParams={{
-                signature: spec.signature,
-                timestamp: spec.timestamp,
-                callback_url: spec.callback_url,
-                job_id: spec.partner_params.job_id,
-                job_type: spec.partner_params.job_type,
-                env: spec.env,
-                partner_id: spec.partner_id,
-              }}
-              onResult={handleSdkResult}
-              style={StyleSheet.absoluteFill}
-            />
+        <KYCInfoAlert message="We use Sumsub to confirm you're a real person and guard against deepfakes. Your selfie stays encrypted and is only used for verification." />
+
+        <View style={styles.copyBlock}>
+          <Typo variant="subheading" style={{ marginBottom: Spacing.sm }}>
+            Before you start
+          </Typo>
+          <Typo variant="body" color={colors.textSecondary}>
+            {'•'} Find a well-lit spot{'\n'}
+            {'•'} Remove hats, sunglasses or masks{'\n'}
+            {'•'} Hold your phone at eye level{'\n'}
+            {'•'} Follow the on-screen prompts
+          </Typo>
+        </View>
+
+        {stage === 'polling' && (
+          <View style={styles.copyBlock}>
+            <Typo variant="body" color={colors.textSecondary}>
+              Waiting for Sumsub to finalise the check...
+            </Typo>
           </View>
-        ) : (
+        )}
+
+        {stage === 'error' && (
+          <View style={styles.copyBlock}>
+            <Typo variant="body" color="#c0392b">
+              {errorMessage ?? 'Something went wrong.'}
+            </Typo>
+          </View>
+        )}
+
+        {stage === 'intro' || stage === 'launching' ? (
+          <AppButton
+            title="Start verification"
+            loading={stage === 'launching'}
+            onPress={startVerification}
+            style={styles.button}
+          />
+        ) : null}
+
+        {stage === 'polling' && (
+          <AppButton
+            title="Continue anyway"
+            variant="outline"
+            onPress={continueToDocuments}
+            style={styles.button}
+          />
+        )}
+
+        {stage === 'error' && (
           <>
-            <KYCInfoAlert message="We use Smile Identity to confirm you're a real person. Your selfie stays encrypted and is only used for verification." />
-
-            <View style={styles.copyBlock}>
-              <Typo variant="subheading" style={{ marginBottom: Spacing.sm }}>
-                Before you start
-              </Typo>
-              <Typo variant="body" color={colors.textSecondary}>
-                {'•'} Find a well-lit spot{'\n'}
-                {'•'} Remove hats, sunglasses or masks{'\n'}
-                {'•'} Hold your phone at eye level{'\n'}
-                {'•'} Follow the on-screen prompts
-              </Typo>
-            </View>
-
-            {stage === 'polling' && (
-              <View style={styles.copyBlock}>
-                <Typo variant="body" color={colors.textSecondary}>
-                  Waiting for Smile Identity to finalise the check...
-                </Typo>
-              </View>
-            )}
-
-            {stage === 'error' && (
-              <View style={styles.copyBlock}>
-                <Typo variant="body" color="#c0392b">
-                  {errorMessage ?? 'Something went wrong.'}
-                </Typo>
-              </View>
-            )}
-
-            {stage === 'intro' || stage === 'launching' ? (
-              <AppButton
-                title="Start verification"
-                loading={stage === 'launching'}
-                onPress={startVerification}
-                style={styles.button}
-              />
-            ) : null}
-
-            {stage === 'polling' && (
-              <AppButton
-                title="Continue anyway"
-                variant="outline"
-                onPress={continueToDocuments}
-                style={styles.button}
-              />
-            )}
-
-            {stage === 'error' && (
-              <>
-                <AppButton
-                  title="Retry"
-                  onPress={startVerification}
-                  style={styles.button}
-                />
-                <AppButton
-                  title="Skip for now"
-                  variant="outline"
-                  onPress={continueToDocuments}
-                  style={styles.buttonSecondary}
-                />
-              </>
-            )}
+            <AppButton
+              title="Retry"
+              onPress={startVerification}
+              style={styles.button}
+            />
+            <AppButton
+              title="Skip for now"
+              variant="outline"
+              onPress={continueToDocuments}
+              style={styles.buttonSecondary}
+            />
           </>
         )}
       </ScrollView>
@@ -261,11 +227,5 @@ const styles = StyleSheet.create({
   },
   buttonSecondary: {
     marginTop: Spacing.md,
-  },
-  sdkFrame: {
-    height: 560,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#000',
   },
 });

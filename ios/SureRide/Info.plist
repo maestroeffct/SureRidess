@@ -38,6 +38,10 @@
 		<true />
 		<key>NSCameraUsageDescription</key>
 		<string>SureRide needs camera access to capture your KYC selfie and verify your identity.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>SureRide needs microphone access to record a short liveness video during identity verification.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>SureRide needs photo library access so you can upload identity documents during verification.</string>
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSAllowsArbitraryLoads</key>
@@ -46,7 +50,7 @@
 			<true />
 		</dict>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string></string>
+		<string>SureRide uses your location to help confirm your identity during verification.</string>
 		<key>RCTNewArchEnabled</key>
 		<true />
 		<key>UIAppFonts</key>
