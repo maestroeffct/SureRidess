@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, ScrollView } from 'react-native';
 import dayjs from 'dayjs';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
 import styles from './styles';
 
-const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 const SelectDatesScreen = ({ navigation, route }: any) => {
+  const { t } = useTranslation('carRental');
+  const WEEK_DAYS = t('selectDatesScreen.weekDays', { returnObjects: true }) as string[];
   const initialPickupDate = route?.params?.pickupDate
     ? new Date(route.params.pickupDate)
     : new Date();
@@ -111,7 +112,7 @@ const SelectDatesScreen = ({ navigation, route }: any) => {
               onPress={() => setActiveTab(tab)}
             >
               <Typo variant="caption" style={styles.tabLabel}>
-                {tab === 'pickup' ? 'Pickup' : 'Return'}
+                {tab === 'pickup' ? t('selectDatesScreen.pickupTab') : t('selectDatesScreen.returnTab')}
               </Typo>
               <Typo variant="subheading">
                 {date ? dayjs(date).format('MMM D') : '—'}
@@ -128,7 +129,7 @@ const SelectDatesScreen = ({ navigation, route }: any) => {
       </ScrollView>
 
       <AppButton
-        title="Select dates"
+        title={t('selectDatesScreen.selectDatesButton')}
         disabled={!pickupDate || !returnDate}
         onPress={() => {
           if (!pickupDate || !returnDate) return;

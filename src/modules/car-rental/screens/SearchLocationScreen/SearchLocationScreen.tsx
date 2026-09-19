@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -42,6 +43,7 @@ const SearchLocationScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('carRental');
 
   // ── Location state ───────────────────────────────────────────────────────
   const [sameDropOff, setSameDropOff] = useState(true);
@@ -73,7 +75,7 @@ const SearchLocationScreen = () => {
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<Country>({
-    name: 'Nigeria',
+    name: t('searchLocationScreen.defaultCountryName'),
     callingCode: '+234',
     code: 'NG',
   });
@@ -293,15 +295,15 @@ const SearchLocationScreen = () => {
     const dropoffId = (sameDropOff ? pickupLocationId : dropoffLocationId).trim();
 
     if (!pickupId) {
-      showError('Please select a pickup location.');
+      showError(t('searchLocationScreen.selectPickupLocationError'));
       return;
     }
     if (!dropoffId) {
-      showError('Please select a drop-off location.');
+      showError(t('searchLocationScreen.selectDropoffLocationError'));
       return;
     }
     if (!selectedCountry?.code) {
-      showError('Please select a country.');
+      showError(t('searchLocationScreen.selectCountryError'));
       return;
     }
 
@@ -309,7 +311,7 @@ const SearchLocationScreen = () => {
     const returnDT = buildDateTime(returnDate, returnTimeVal);
 
     if (returnDT <= pickupDT) {
-      showError('Return time must be after pickup time.');
+      showError(t('searchLocationScreen.returnAfterPickupError'));
       return;
     }
 
@@ -361,7 +363,7 @@ const SearchLocationScreen = () => {
     } catch (error: any) {
       showError(
         error?.response?.data?.message ||
-          'Unable to search cars. Please try again.',
+          t('searchLocationScreen.searchCarsFailedFallback'),
       );
     } finally {
       setSearching(false);
@@ -406,8 +408,8 @@ const SearchLocationScreen = () => {
           <Icon name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={s.heroText}>
-          <Typo style={s.heroTitle}>Find a Car</Typo>
-          <Typo style={s.heroSub}>Search by location & dates</Typo>
+          <Typo style={s.heroTitle}>{t('searchLocationScreen.heroTitle')}</Typo>
+          <Typo style={s.heroSub}>{t('searchLocationScreen.heroSubtitle')}</Typo>
         </View>
         <View style={{ width: 38 }} />
       </View>
@@ -437,10 +439,10 @@ const SearchLocationScreen = () => {
           {/* ── PICKUP LOCATION ── */}
           <View style={s.fieldBlock}>
             <Typo style={[s.fieldLabel, { color: colors.textPrimary }]}>
-              <Icon name="radio-button-on" size={11} color={GREEN} /> Pick-up Location
+              <Icon name="radio-button-on" size={11} color={GREEN} /> {t('searchLocationScreen.pickupLocationLabel')}
             </Typo>
             <AppInput
-              placeholder="Search for a location"
+              placeholder={t('searchLocationScreen.locationSearchPlaceholder')}
               value={pickupQuery}
               onChangeText={handlePickupChange}
               onFocus={() => {
@@ -482,17 +484,17 @@ const SearchLocationScreen = () => {
                 <Icon name="checkmark" color="#fff" size={13} />
               )}
             </View>
-            <Typo style={[s.checkboxLabel, { color: colors.textPrimary }]}>Same location for drop-off</Typo>
+            <Typo style={[s.checkboxLabel, { color: colors.textPrimary }]}>{t('searchLocationScreen.sameDropoffLabel')}</Typo>
           </TouchableOpacity>
 
           {/* ── DROPOFF LOCATION ── */}
           {!sameDropOff && (
             <View style={s.fieldBlock}>
               <Typo style={[s.fieldLabel, { color: colors.textPrimary }]}>
-                <Icon name="radio-button-on" size={11} color="#E53935" /> Drop-off Location
+                <Icon name="radio-button-on" size={11} color="#E53935" /> {t('searchLocationScreen.dropoffLocationLabel')}
               </Typo>
               <AppInput
-                placeholder="Search for a location"
+                placeholder={t('searchLocationScreen.locationSearchPlaceholder')}
                 value={dropoffQuery}
                 onChangeText={handleDropoffChange}
                 onFocus={() => {
@@ -528,12 +530,12 @@ const SearchLocationScreen = () => {
                 {isLoadingResults ? (
                   <View style={s.resultsLoading}>
                     <ActivityIndicator size="small" color={GREEN} />
-                    <Typo style={[s.resultsHint, { color: colors.textSecondary }]}>Searching locations…</Typo>
+                    <Typo style={[s.resultsHint, { color: colors.textSecondary }]}>{t('searchLocationScreen.searchingLocations')}</Typo>
                   </View>
                 ) : showEmptyState ? (
                   <View style={s.resultsLoading}>
                     <Icon name="search-outline" size={20} color={colors.textSecondary} />
-                    <Typo style={[s.resultsHint, { color: colors.textSecondary }]}>No locations found</Typo>
+                    <Typo style={[s.resultsHint, { color: colors.textSecondary }]}>{t('searchLocationScreen.noLocationsFound')}</Typo>
                   </View>
                 ) : (
                   visibleLocations.map(location => (
@@ -575,7 +577,7 @@ const SearchLocationScreen = () => {
           >
             <View style={s.dateCardHeader}>
               <Icon name="calendar-outline" size={16} color={colors.textSecondary} />
-              <Typo style={[s.dateCardTitle, { color: colors.textPrimary }]}>Rental Period</Typo>
+              <Typo style={[s.dateCardTitle, { color: colors.textPrimary }]}>{t('searchLocationScreen.rentalPeriod')}</Typo>
               <View
                 style={[
                   s.dateCardBadge,
@@ -583,7 +585,7 @@ const SearchLocationScreen = () => {
                 ]}
               >
                 <Typo style={[s.dateCardBadgeText, { color: colors.textSecondary }]}>
-                  {rentalDays} day{rentalDays !== 1 ? 's' : ''}
+                  {t('searchLocationScreen.dayCount', { count: rentalDays })}
                 </Typo>
               </View>
               <Icon
@@ -596,7 +598,7 @@ const SearchLocationScreen = () => {
 
             <View style={s.dateRow}>
               <View style={s.dateCol}>
-                <Typo style={[s.dateColLabel, { color: colors.textSecondary }]}>PICK-UP</Typo>
+                <Typo style={[s.dateColLabel, { color: colors.textSecondary }]}>{t('searchLocationScreen.pickupColumnLabel')}</Typo>
                 <Typo style={[s.dateColDate, { color: colors.textPrimary }]}>{formatDate(pickupDate)}</Typo>
                 <Typo style={[s.dateColTime, { color: colors.textSecondary }]}>
                   {String(pickupTimeVal.hour).padStart(2, '0')}:
@@ -607,7 +609,7 @@ const SearchLocationScreen = () => {
                 <Icon name="arrow-forward" size={18} color={colors.textSecondary} />
               </View>
               <View style={s.dateCol}>
-                <Typo style={[s.dateColLabel, { color: colors.textSecondary }]}>DROP-OFF</Typo>
+                <Typo style={[s.dateColLabel, { color: colors.textSecondary }]}>{t('searchLocationScreen.dropoffColumnLabel')}</Typo>
                 <Typo style={[s.dateColDate, { color: colors.textPrimary }]}>{formatDate(returnDate)}</Typo>
                 <Typo style={[s.dateColTime, { color: colors.textSecondary }]}>
                   {String(returnTimeVal.hour).padStart(2, '0')}:
@@ -629,7 +631,7 @@ const SearchLocationScreen = () => {
           ]}
         >
           <AppButton
-            title="Search Available Cars"
+            title={t('searchLocationScreen.searchAvailableCarsButton')}
             onPress={handleSearch}
             loading={searching}
             disabled={loadingCountries}

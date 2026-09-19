@@ -13,6 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -52,6 +53,7 @@ const VehicleDetailsScreen = () => {
   const fmtMoney = useFormatMoney();
   const { mode, colors } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation('carRental');
   // Verified customers see "Book Now" / "Choose Dates"; unverified see
   // "Verify to Book" that jumps to KYC — moves the friction upstream
   // instead of springing it on them at the payment sheet.
@@ -181,7 +183,7 @@ const VehicleDetailsScreen = () => {
   const FALLBACK = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
   const displayImages = imageUrls.length > 0 ? imageUrls : [FALLBACK];
 
-  const title = car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle Details';
+  const title = car?.brand && car?.model ? `${car.brand} ${car.model}` : t('vehicleDetailsScreen.fallbackTitle');
   const locationName = car?.location?.name ?? pickupLocationName ?? '';
   const locationAddress = car?.location?.address ?? '';
 
@@ -221,14 +223,14 @@ const VehicleDetailsScreen = () => {
   // Source currency: what the backend says these prices are in
   const sourceCurrency = pricing?.currency ?? car?.currency ?? 'NGN';
   const fmtPrice = (amount?: number) =>
-    typeof amount !== 'number' ? 'Free' : fmtMoney(amount, sourceCurrency, { round: true });
+    typeof amount !== 'number' ? t('vehicleDetailsScreen.freeLabel') : fmtMoney(amount, sourceCurrency, { round: true });
   const fmtInsurance = (pkg: RentalInsurancePackage) => {
     const pkgCurrency = pkg.currency ?? sourceCurrency;
-    if (typeof pkg.dailyPrice === 'number') return `${fmtMoney(pkg.dailyPrice, pkgCurrency, { round: true })} / Day`;
-    if (typeof pkg.dailyRate === 'number') return `${fmtMoney(pkg.dailyRate, pkgCurrency, { round: true })} / Day`;
+    if (typeof pkg.dailyPrice === 'number') return t('vehicleDetailsScreen.perDaySuffix', { amount: fmtMoney(pkg.dailyPrice, pkgCurrency, { round: true }) });
+    if (typeof pkg.dailyRate === 'number') return t('vehicleDetailsScreen.perDaySuffix', { amount: fmtMoney(pkg.dailyRate, pkgCurrency, { round: true }) });
     if (typeof pkg.price === 'number') return fmtMoney(pkg.price, pkgCurrency, { round: true });
     if (typeof pkg.amount === 'number') return fmtMoney(pkg.amount, pkgCurrency, { round: true });
-    return 'Free';
+    return t('vehicleDetailsScreen.freeLabel');
   };
 
   const handleProceedToPayment = () => {
@@ -260,9 +262,9 @@ const VehicleDetailsScreen = () => {
   // Quick-stat chips
   const stats = [
     car?.transmission && { icon: 'settings-outline', label: fmt(car.transmission) },
-    typeof car?.seats === 'number' && { icon: 'people-outline', label: `${car.seats} Seats` },
-    typeof car?.hasAC === 'boolean' && { icon: 'snow-outline', label: car.hasAC ? 'A/C' : 'No A/C' },
-    car?.mileagePolicy && { icon: 'speedometer-outline', label: `${fmt(car.mileagePolicy)} Mileage` },
+    typeof car?.seats === 'number' && { icon: 'people-outline', label: t('vehicleDetailsScreen.seatsLabel', { count: car.seats }) },
+    typeof car?.hasAC === 'boolean' && { icon: 'snow-outline', label: car.hasAC ? t('vehicleDetailsScreen.acLabel') : t('vehicleDetailsScreen.noAcLabel') },
+    car?.mileagePolicy && { icon: 'speedometer-outline', label: t('vehicleDetailsScreen.mileageLabel', { value: fmt(car.mileagePolicy) }) },
     car?.category && { icon: 'car-outline', label: fmt(car.category) },
   ].filter(Boolean) as { icon: string; label: string }[];
 
@@ -366,8 +368,8 @@ const VehicleDetailsScreen = () => {
                 >
                   <Typo style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
                     {typeof car.availableQuantity === 'number'
-                      ? `${car.availableQuantity} of ${car.totalQuantity} available`
-                      : `${car.totalQuantity} in fleet`}
+                      ? t('vehicleDetailsScreen.availableOfTotal', { available: car.availableQuantity, total: car.totalQuantity })
+                      : t('vehicleDetailsScreen.inFleet', { count: car.totalQuantity })}
                   </Typo>
                 </View>
               )}
@@ -391,7 +393,7 @@ const VehicleDetailsScreen = () => {
                 {car?.dailyRate ? fmtPrice(car.dailyRate) : '—'}
               </Typo>
               <Typo style={[s.priceLabel, { color: colors.textSecondary }]}>
-                {' '}/ day
+                {t('vehicleDetailsScreen.perDay')}
               </Typo>
             </View>
             {totalDays > 1 && totalPrice ? (
@@ -405,7 +407,7 @@ const VehicleDetailsScreen = () => {
                 ]}
               >
                 <Typo style={[s.totalBadgeLabel, { color: colors.textSecondary }]}>
-                  {totalDays} day{totalDays !== 1 ? 's' : ''} total
+                  {t('vehicleDetailsScreen.totalDaysLabel', { count: totalDays })}
                 </Typo>
                 <Typo style={s.totalBadgeAmount}>{fmtPrice(totalPrice)}</Typo>
               </View>
@@ -449,10 +451,10 @@ const VehicleDetailsScreen = () => {
             </View>
             <View style={s.providerInfo}>
               <Typo style={[s.providerName, { color: colors.textPrimary }]}>
-                {car?.provider?.name || 'Provider'}
+                {car?.provider?.name || t('vehicleDetailsScreen.providerFallback')}
               </Typo>
               <Typo style={[s.providerSub, { color: colors.textSecondary }]}>
-                {car?.provider?.isVerified ? 'Verified Provider' : 'Rental Service'}
+                {car?.provider?.isVerified ? t('vehicleDetailsScreen.verifiedProviderLabel') : t('vehicleDetailsScreen.rentalServiceLabel')}
               </Typo>
             </View>
             {car?.provider?.isVerified && (
@@ -464,45 +466,45 @@ const VehicleDetailsScreen = () => {
               >
                 <Icon name="checkmark-circle" size={18} color={mode === 'dark' ? '#34D399' : GREEN} />
                 <Typo style={[s.verifiedText, { color: mode === 'dark' ? '#34D399' : GREEN }]}>
-                  Verified
+                  {t('vehicleDetailsScreen.verifiedLabel')}
                 </Typo>
               </View>
             )}
           </View>
 
           {/* Includes */}
-          <SectionCard title="This Booking Includes">
+          <SectionCard title={t('vehicleDetailsScreen.includesSectionTitle')}>
             {(comfortFeatures?.length ? comfortFeatures : allFeatures).slice(0, 4).map(f => (
               <CheckItem key={f.id} label={f.name} />
             ))}
             {allFeatures.length === 0 && (
               <>
-                <CheckItem label="Vehicle Protection" />
-                <CheckItem label="Theft Protection" />
-                <CheckItem label="Third-Party Protection" />
+                <CheckItem label={t('vehicleDetailsScreen.defaultFeatureVehicleProtection')} />
+                <CheckItem label={t('vehicleDetailsScreen.defaultFeatureTheftProtection')} />
+                <CheckItem label={t('vehicleDetailsScreen.defaultFeatureThirdPartyProtection')} />
               </>
             )}
           </SectionCard>
 
-          <InfoText label="Useful information for your booking" />
+          <InfoText label={t('vehicleDetailsScreen.usefulInfoLabel')} />
 
           {/* Safety */}
-          <SectionCard title="Safety & Security">
+          <SectionCard title={t('vehicleDetailsScreen.safetySectionTitle')}>
             {(safetyFeatures?.length ? safetyFeatures : allFeatures).slice(0, 4).map(f => (
               <CheckItem key={f.id} label={f.name} />
             ))}
             {allFeatures.length === 0 && (
               <>
-                <CheckItem label="ABS Braking System" />
-                <CheckItem label="Airbags (Front & Side)" />
-                <CheckItem label="GPS Tracking" />
+                <CheckItem label={t('vehicleDetailsScreen.defaultFeatureAbs')} />
+                <CheckItem label={t('vehicleDetailsScreen.defaultFeatureAirbags')} />
+                <CheckItem label={t('vehicleDetailsScreen.defaultFeatureGps')} />
               </>
             )}
           </SectionCard>
 
           {/* Reviews */}
           {car?.id ? (
-            <SectionCard title="Reviews">
+            <SectionCard title={t('vehicleDetailsScreen.reviewsSectionTitle')}>
               <ReviewsSection
                 carId={car.id}
                 initialAverage={car.rating}
@@ -512,13 +514,13 @@ const VehicleDetailsScreen = () => {
           ) : null}
 
           {/* Protection Plans */}
-          <SectionCard title="Protection Plans">
+          <SectionCard title={t('vehicleDetailsScreen.protectionPlansSectionTitle')}>
             <InsuranceCard
-              title="No Protection"
-              price="Free"
+              title={t('vehicleDetailsScreen.noProtectionTitle')}
+              price={t('vehicleDetailsScreen.freeLabel')}
               selected={insurance === 'none'}
               onPress={() => setInsurance('none')}
-              description="Skip protection — you'll be liable for the full excess in the event of a claim"
+              description={t('vehicleDetailsScreen.noProtectionDescription')}
             />
             {insurancePackages.length > 0
               ? insurancePackages.map(pkg => (
@@ -528,7 +530,7 @@ const VehicleDetailsScreen = () => {
                     price={fmtInsurance(pkg)}
                     selected={insurance === pkg.id}
                     onPress={() => setInsurance(pkg.id)}
-                    description={pkg.description || 'Protection plan provided by the host'}
+                    description={pkg.description || t('vehicleDetailsScreen.protectionPlanFallbackDescription')}
                     tier={pkg.tier}
                     deductibleLabel={
                       typeof pkg.deductibleAmount === 'number' && pkg.deductibleAmount > 0
@@ -538,27 +540,27 @@ const VehicleDetailsScreen = () => {
                     highlights={pkg.productHighlights ?? undefined}
                   />
                 ))
-              : <InfoText label="No protection plans available for this car." />}
+              : <InfoText label={t('vehicleDetailsScreen.noProtectionPlansAvailable')} />}
           </SectionCard>
 
           {/* Pick-up & Drop-off */}
           {hasBookingData ? (
-            <SectionCard title="Pick-up & Drop-off">
+            <SectionCard title={t('vehicleDetailsScreen.pickupDropoffSectionTitle')}>
               <TimelineLocation
-                label="Pick-up"
+                label={t('vehicleDetailsScreen.pickupLabel')}
                 icon="location"
                 color={GREEN}
-                date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
+                date={pickupAt ? t('vehicleDetailsScreen.dateAtTime', { date: formatDate(pickupAt), time: formatTime(pickupAt) }) : ''}
                 place={pickupLocationName || locationName}
-                address={locationAddress || 'Pickup location'}
+                address={locationAddress || t('vehicleDetailsScreen.pickupLocationFallback')}
               />
               <TimelineLocation
-                label="Drop-off"
+                label={t('vehicleDetailsScreen.dropoffLabel')}
                 icon="location"
                 color="#F59E0B"
-                date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
+                date={returnAt ? t('vehicleDetailsScreen.dateAtTime', { date: formatDate(returnAt), time: formatTime(returnAt) }) : ''}
                 place={dropoffLocationName || locationName}
-                address={locationAddress || 'Drop-off location'}
+                address={locationAddress || t('vehicleDetailsScreen.dropoffLocationFallback')}
                 isLast
               />
             </SectionCard>
@@ -584,10 +586,10 @@ const VehicleDetailsScreen = () => {
                     { color: mode === 'dark' ? '#FBBF24' : '#D97706' },
                   ]}
                 >
-                  No dates selected
+                  {t('vehicleDetailsScreen.noDatesTitle')}
                 </Typo>
                 <Typo style={[s.noDatesHint, { color: colors.textSecondary }]}>
-                  You'll be asked to choose dates before checkout
+                  {t('vehicleDetailsScreen.noDatesHint')}
                 </Typo>
               </View>
             </View>
@@ -595,7 +597,7 @@ const VehicleDetailsScreen = () => {
 
           {/* Price Breakdown */}
           {hasBookingData && (
-            <SectionCard title="Price Breakdown">
+            <SectionCard title={t('vehicleDetailsScreen.priceBreakdownSectionTitle')}>
               <PriceBreakdown
                 pricing={pricing}
                 loading={pricingLoading}
@@ -627,7 +629,7 @@ const VehicleDetailsScreen = () => {
       >
         <View style={s.bottomPrice}>
           {pricingLoading ? (
-            <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>Calculating price…</Typo>
+            <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>{t('vehicleDetailsScreen.calculatingPrice')}</Typo>
           ) : (
             <>
               <Typo style={s.bottomPriceAmount}>
@@ -635,19 +637,19 @@ const VehicleDetailsScreen = () => {
               </Typo>
               {hasBookingData && pricing ? (
                 <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>
-                  {totalDays} day{totalDays !== 1 ? 's' : ''}
-                  {taxAmount > 0 ? ` · incl. ${fmtPrice(taxAmount)} tax` : ''}
+                  {t('vehicleDetailsScreen.daysCount', { count: totalDays })}
+                  {taxAmount > 0 ? t('vehicleDetailsScreen.inclTaxSuffix', { amount: fmtPrice(taxAmount) }) : ''}
                 </Typo>
               ) : hasBookingData && car?.dailyRate ? (
                 <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>
-                  {totalDays} day{totalDays !== 1 ? 's' : ''} · {fmtPrice(car.dailyRate)}/day
+                  {t('vehicleDetailsScreen.daysCount', { count: totalDays })}{t('vehicleDetailsScreen.perDayRateSuffix', { amount: fmtPrice(car.dailyRate) })}
                 </Typo>
               ) : (
-                <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>Select dates to see price</Typo>
+                <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>{t('vehicleDetailsScreen.selectDatesToSeePrice')}</Typo>
               )}
               {depositAmount && depositAmount > 0 ? (
                 <Typo style={[s.bottomPriceSub, { color: colors.textSecondary }]}>
-                  + {fmtPrice(depositAmount)} deposit (collected at pickup)
+                  {t('vehicleDetailsScreen.depositNote', { amount: fmtPrice(depositAmount) })}
                 </Typo>
               ) : null}
             </>
@@ -656,10 +658,10 @@ const VehicleDetailsScreen = () => {
         <AppButton
           title={
             !isKycVerified
-              ? 'Verify to Book'
+              ? t('vehicleDetailsScreen.verifyToBookButton')
               : hasBookingData
-                ? 'Book Now'
-                : 'Choose Dates'
+                ? t('vehicleDetailsScreen.bookNowButton')
+                : t('vehicleDetailsScreen.chooseDatesButton')
           }
           onPress={
             !isKycVerified

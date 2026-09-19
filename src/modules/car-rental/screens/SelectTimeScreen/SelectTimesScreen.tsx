@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, ScrollView } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { ScreenWrapper } from '@/components/Screenwrapper/Screenwrapper';
 import { Typo } from '@/components/AppText/Typo';
@@ -8,14 +9,14 @@ import { AppButton } from '@/components/AppButton/CustomButton';
 import styles from './styles';
 import { formatTime, generateTimes } from '@/helpers/dateTime';
 
-const TIME_GROUPS = [
-  { label: 'Early morning', times: generateTimes(0, 5) },
-  { label: 'Morning', times: generateTimes(6, 11) },
-  { label: 'Afternoon', times: generateTimes(12, 16) },
-  { label: 'Evening', times: generateTimes(17, 23) },
-];
-
 const SelectTimesScreen = ({ navigation, route }: any) => {
+  const { t } = useTranslation('carRental');
+  const TIME_GROUPS = [
+    { label: t('selectTimesScreen.earlyMorning'), times: generateTimes(0, 5) },
+    { label: t('selectTimesScreen.morning'), times: generateTimes(6, 11) },
+    { label: t('selectTimesScreen.afternoon'), times: generateTimes(12, 16) },
+    { label: t('selectTimesScreen.evening'), times: generateTimes(17, 23) },
+  ];
   const initialPickupTime = route?.params?.pickupTime
     ? new Date(route.params.pickupTime)
     : new Date();
@@ -57,7 +58,7 @@ const SelectTimesScreen = ({ navigation, route }: any) => {
             onPress={() => setActiveTab(tab)}
           >
             <Typo variant="caption" style={styles.tabLabel}>
-              {tab === 'pickup' ? 'Pickup' : 'Return'}
+              {tab === 'pickup' ? t('selectTimesScreen.pickupTab') : t('selectTimesScreen.returnTab')}
             </Typo>
             <Typo>
               {tab === 'pickup' ? formatTime(pickupTime) : formatTime(returnTime)}
@@ -97,7 +98,7 @@ const SelectTimesScreen = ({ navigation, route }: any) => {
       </ScrollView>
 
       <AppButton
-        title="Select times"
+        title={t('selectTimesScreen.selectTimesButton')}
         onPress={() =>
           navigation.navigate('SearchLocation', {
             pickupTime: pickupTime.toISOString(),

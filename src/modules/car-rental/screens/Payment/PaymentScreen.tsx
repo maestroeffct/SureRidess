@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -78,6 +79,7 @@ const PaymentScreen = () => {
   const { currency: userCurrency } = useCurrency();
   const fmtMoney = useFormatMoney();
   const { mode, colors } = useTheme();
+  const { t } = useTranslation('carRental');
   const [car, setCar] = useState<RentalCar | undefined>(routeCar);
   // Admin-configured payment gateways (fetched from /payments/gateways).
   // gatewayKey is the identifier we pass back to the backend on session
@@ -189,7 +191,7 @@ const PaymentScreen = () => {
     if (createdBookingId) return;
     saveCheckoutDraft({
       carId,
-      carName: car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle',
+      carName: car?.brand && car?.model ? `${car.brand} ${car.model}` : t('paymentScreen.vehicleFallback'),
       carImage: car?.images?.find(i => i.isPrimary)?.url ?? car?.images?.[0]?.url,
       pickupAt: search.pickupAt,
       returnAt: search.returnAt,
@@ -310,7 +312,7 @@ const PaymentScreen = () => {
         }
       })
       .catch(() => {
-        showError('Unable to load booking. Try again from your bookings list.');
+        showError(t('paymentScreen.unableToLoadBooking'));
       });
     return () => { cancelled = true; };
   }, [route?.params?.bookingId, car, vehicleId]);
@@ -326,7 +328,7 @@ const PaymentScreen = () => {
   const FALLBACK = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=600';
   const displayImages = imageUrls.length > 0 ? imageUrls : [FALLBACK];
 
-  const title = car?.brand && car?.model ? `${car.brand} ${car.model}` : 'Vehicle';
+  const title = car?.brand && car?.model ? `${car.brand} ${car.model}` : t('paymentScreen.vehicleFallback');
   const locationName = car?.location?.name ?? pickupLocationName ?? '';
   const locationAddress = car?.location?.address ?? '';
 
@@ -453,7 +455,7 @@ const PaymentScreen = () => {
     });
 
   const unitLabel = (unit: AddOnPickerItem['unit']) =>
-    unit === 'PER_DAY' ? '/day' : unit === 'PER_HOUR' ? '/hour' : '';
+    unit === 'PER_DAY' ? t('paymentScreen.perDaySuffix') : unit === 'PER_HOUR' ? t('paymentScreen.perHourSuffix') : '';
 
   const getProfileStatus = (me: any) => {
     const user = me?.user ?? me?.data?.user ?? me?.data ?? me;
@@ -466,15 +468,15 @@ const PaymentScreen = () => {
     try {
       const me = await fetchMe();
       const status = getProfileStatus(me);
-      if (!status) { showError('Profile status unavailable.'); setShowKycModal(true); return false; }
+      if (!status) { showError(t('paymentScreen.profileStatusUnavailable')); setShowKycModal(true); return false; }
       if (['APPROVED', 'VERIFIED', 'COMPLETED'].includes(status)) return true;
-      if (['PENDING', 'PENDING_VERIFICATION', 'IN_REVIEW'].includes(status)) { showError('KYC pending verification'); return false; }
-      if (['REJECTED', 'DECLINED', 'FAILED'].includes(status)) { showError('KYC rejected. Please re-upload documents.'); setShowKycModal(true); return false; }
-      showError('Profile not completed'); setShowKycModal(true); return false;
+      if (['PENDING', 'PENDING_VERIFICATION', 'IN_REVIEW'].includes(status)) { showError(t('paymentScreen.kycPendingVerification')); return false; }
+      if (['REJECTED', 'DECLINED', 'FAILED'].includes(status)) { showError(t('paymentScreen.kycRejected')); setShowKycModal(true); return false; }
+      showError(t('paymentScreen.profileNotCompleted')); setShowKycModal(true); return false;
     } catch (error: any) {
       const status = error?.response?.status;
       if (status === 401) return false;
-      showError('Unable to verify profile status'); return false;
+      showError(t('paymentScreen.unableToVerifyProfile')); return false;
     }
   };
 
@@ -483,7 +485,7 @@ const PaymentScreen = () => {
     const canProceed = await ensureProfileEligible();
     if (!canProceed) return;
     const bookingPayload = createdBookingId ? null : buildBookingPayload();
-    if (!createdBookingId && !bookingPayload) { showError('Missing booking details.'); return; }
+    if (!createdBookingId && !bookingPayload) { showError(t('paymentScreen.missingBookingDetails')); return; }
     try {
       setProcessingPayment(true);
       let bookingId = createdBookingId;
@@ -495,14 +497,14 @@ const PaymentScreen = () => {
       }
       await confirmCollectionBooking(bookingId);
       void clearDraft('checkout');
-      showSuccess('Booking confirmed! Pay on collection.');
+      showSuccess(t('paymentScreen.bookingConfirmedCollection'));
       navigation.navigate('BookingStatus', { status: 'success', bookingId, paymentMethod: 'COLLECTION' });
     } catch (error: any) {
       const message = error?.response?.data?.message;
-      if (message === 'Complete your profile before booking') { showError('Complete your profile before booking.'); setShowKycModal(true); }
-      else if (message === 'Booking already processed') { showSuccess('Booking already confirmed!'); navigation.navigate('BookingStatus', { status: 'success', bookingId: createdBookingId, paymentMethod: 'COLLECTION' }); }
-      else if (message === 'CAR_ALREADY_BOOKED') showError('This car is already booked for the selected dates.');
-      else showError(message || 'Unable to confirm booking.');
+      if (message === 'Complete your profile before booking') { showError(t('paymentScreen.completeProfileBeforeBooking')); setShowKycModal(true); }
+      else if (message === 'Booking already processed') { showSuccess(t('paymentScreen.bookingAlreadyConfirmed')); navigation.navigate('BookingStatus', { status: 'success', bookingId: createdBookingId, paymentMethod: 'COLLECTION' }); }
+      else if (message === 'CAR_ALREADY_BOOKED') showError(t('paymentScreen.carAlreadyBooked'));
+      else showError(message || t('paymentScreen.unableToConfirmBooking'));
     } finally { setProcessingPayment(false); }
   };
 
@@ -510,7 +512,7 @@ const PaymentScreen = () => {
     if (processingPayment) return;
     const selectedGateway = gateways.find(g => g.gatewayKey === gatewayKey);
     if (!selectedGateway) {
-      showError('Pick a payment method to continue.');
+      showError(t('paymentScreen.pickPaymentMethod'));
       return;
     }
     // STRIPE uses the native PaymentSheet SDK; FLUTTERWAVE and PAYSTACK
@@ -523,13 +525,13 @@ const PaymentScreen = () => {
       selectedGateway.provider !== 'FLUTTERWAVE' &&
       selectedGateway.provider !== 'PAYSTACK'
     ) {
-      showError(`${selectedGateway.displayName} isn't available in-app yet — pick another method.`);
+      showError(t('paymentScreen.gatewayNotAvailable', { name: selectedGateway.displayName }));
       return;
     }
     const canProceed = await ensureProfileEligible();
     if (!canProceed) return;
     const bookingPayload = createdBookingId ? null : buildBookingPayload();
-    if (!createdBookingId && !bookingPayload) { showError('Missing booking details.'); return; }
+    if (!createdBookingId && !bookingPayload) { showError(t('paymentScreen.missingBookingDetails')); return; }
     try {
       setProcessingPayment(true);
       let bookingId = createdBookingId;
@@ -555,7 +557,7 @@ const PaymentScreen = () => {
         // happens server-side via the provider's webhook.
         const checkoutUrl = session.paymentIntentClientSecret;
         if (!checkoutUrl) {
-          showError(`${provider} checkout URL is missing.`);
+          showError(t('paymentScreen.checkoutUrlMissing', { provider }));
           return;
         }
         setFlutterwaveBookingId(bookingId);
@@ -563,9 +565,9 @@ const PaymentScreen = () => {
         return;
       }
 
-      if (provider !== 'STRIPE') { showError('Only Stripe, Paystack, and Flutterwave are supported.'); return; }
+      if (provider !== 'STRIPE') { showError(t('paymentScreen.onlySupportedGateways')); return; }
       const publishableKey = session.publishableKey || config.publishableKey;
-      if (!publishableKey) { showError('Stripe publishable key is missing.'); return; }
+      if (!publishableKey) { showError(t('paymentScreen.stripeKeyMissing')); return; }
       if (__DEV__) {
         const clientSecret = session.paymentIntentClientSecret || '';
         const pkMode = publishableKey.startsWith('pk_live_') ? 'live' : publishableKey.startsWith('pk_test_') ? 'test' : 'unknown';
@@ -575,16 +577,16 @@ const PaymentScreen = () => {
       }
       await initStripe({ publishableKey, merchantIdentifier: STRIPE_MERCHANT_ID, urlScheme: STRIPE_URL_SCHEME });
       const { error: initError } = await initPaymentSheet({ merchantDisplayName: config.merchantDisplayName || 'SureRide', paymentIntentClientSecret: session.paymentIntentClientSecret, allowsDelayedPaymentMethods: true, returnURL: `${STRIPE_URL_SCHEME}://stripe-redirect` });
-      if (initError) { showError(initError.message || 'Unable to initialize payment sheet'); return; }
+      if (initError) { showError(initError.message || t('paymentScreen.unableToInitPaymentSheet')); return; }
       const { error: presentError } = await presentPaymentSheet();
-      if (presentError) { const code = String(presentError.code || '').toLowerCase(); showError(code.includes('canceled') ? 'Payment cancelled' : presentError.message || 'Payment failed'); return; }
+      if (presentError) { const code = String(presentError.code || '').toLowerCase(); showError(code.includes('canceled') ? t('paymentScreen.paymentCancelled') : presentError.message || t('paymentScreen.paymentFailed')); return; }
       void clearDraft('checkout');
-      showSuccess('Payment successful');
+      showSuccess(t('paymentScreen.paymentSuccessful'));
       navigation.navigate('BookingStatus', { status: 'success', bookingId });
     } catch (error: any) {
       const message = error?.response?.data?.message;
-      if (message === 'Complete your profile before booking') { showError('Complete your profile before booking.'); setShowKycModal(true); }
-      else showError(message || 'Unable to process payment right now');
+      if (message === 'Complete your profile before booking') { showError(t('paymentScreen.completeProfileBeforeBooking')); setShowKycModal(true); }
+      else showError(message || t('paymentScreen.unableToProcessPayment'));
     } finally { setProcessingPayment(false); }
   };
 
@@ -629,7 +631,7 @@ const PaymentScreen = () => {
     const verifyAndNavigate = async () => {
       closeFlutterwaveModal();
       if (!bookingId) {
-        showSuccess('Payment received — confirming with our servers…');
+        showSuccess(t('paymentScreen.paymentReceivedConfirming'));
         navigation.navigate('BookingStatus', { status: 'success' });
         return;
       }
@@ -637,18 +639,18 @@ const PaymentScreen = () => {
         const result = await verifyBookingPayment(bookingId, reference);
         if (result.paymentStatus === 'SUCCEEDED') {
           void clearDraft('checkout');
-          showSuccess('Payment confirmed');
+          showSuccess(t('paymentScreen.paymentConfirmed'));
           navigation.navigate('BookingStatus', {
             status: 'success',
             bookingId,
           });
         } else if (result.paymentStatus === 'FAILED') {
-          showError('Payment could not be verified');
+          showError(t('paymentScreen.paymentCouldNotBeVerified'));
         } else {
           // Provider still ambiguous (Paystack "pending") — trust the
           // return URL enough to send them to BookingStatus; webhook
           // will finish the flip.
-          showSuccess('Payment received — confirming with our servers…');
+          showSuccess(t('paymentScreen.paymentReceivedConfirming'));
           navigation.navigate('BookingStatus', {
             status: 'success',
             bookingId,
@@ -658,7 +660,7 @@ const PaymentScreen = () => {
         // Verify endpoint failed (network / provider outage). Fall
         // back to optimistic navigation — webhook will still land
         // eventually.
-        showSuccess('Payment received — confirming with our servers…');
+        showSuccess(t('paymentScreen.paymentReceivedConfirming'));
         navigation.navigate('BookingStatus', {
           status: 'success',
           bookingId,
@@ -672,12 +674,12 @@ const PaymentScreen = () => {
     }
     if (lower.includes('status=cancelled') || lower.includes('status=canceled')) {
       closeFlutterwaveModal();
-      showError('Payment cancelled');
+      showError(t('paymentScreen.paymentCancelled'));
       return;
     }
     if (lower.includes('status=failed')) {
       closeFlutterwaveModal();
-      showError('Payment failed');
+      showError(t('paymentScreen.paymentFailed'));
       return;
     }
     // Paystack often returns just ?trxref=... with no status when the
@@ -734,7 +736,7 @@ const PaymentScreen = () => {
             pointerEvents="box-none"
             style={[s.headerTitle, { top: insets.top + 14 }]}
           >
-            <Typo style={s.headerTitleText}>Checkout</Typo>
+            <Typo style={s.headerTitleText}>{t('paymentScreen.checkoutTitle')}</Typo>
           </View>
 
           {displayImages.length > 1 && (
@@ -749,8 +751,8 @@ const PaymentScreen = () => {
             <Typo style={s.heroTitle}>{title}</Typo>
             <View style={s.heroMeta}>
               {car?.transmission && <View style={s.heroBadge}><Typo style={s.heroBadgeText}>{fmt(car.transmission)}</Typo></View>}
-              {typeof car?.seats === 'number' && <View style={s.heroBadge}><Typo style={s.heroBadgeText}>{car.seats} Seats</Typo></View>}
-              {typeof car?.hasAC === 'boolean' && <View style={s.heroBadge}><Typo style={s.heroBadgeText}>{car.hasAC ? 'A/C' : 'No A/C'}</Typo></View>}
+              {typeof car?.seats === 'number' && <View style={s.heroBadge}><Typo style={s.heroBadgeText}>{t('paymentScreen.seatsLabel', { count: car.seats })}</Typo></View>}
+              {typeof car?.hasAC === 'boolean' && <View style={s.heroBadge}><Typo style={s.heroBadgeText}>{car.hasAC ? t('paymentScreen.acLabel') : t('paymentScreen.noAcLabel')}</Typo></View>}
             </View>
           </View>
         </View>
@@ -758,28 +760,28 @@ const PaymentScreen = () => {
         {/* ── BODY ── */}
         <View style={s.body}>
           {/* Rental Period */}
-          <SectionCard title="Rental Period" icon="calendar-outline">
+          <SectionCard title={t('paymentScreen.rentalPeriodTitle')} icon="calendar-outline">
             <View style={s.timelineWrap}>
               <TimelineLocation
-                label="Pick-up"
+                label={t('paymentScreen.pickupLabel')}
                 icon="location" color={GREEN}
-                date={pickupAt ? `${formatDate(pickupAt)} at ${formatTime(pickupAt)}` : ''}
+                date={pickupAt ? t('paymentScreen.dateAtTime', { date: formatDate(pickupAt), time: formatTime(pickupAt) }) : ''}
                 place={pickupLocationName || locationName}
-                address={locationAddress || 'Pickup location'}
+                address={locationAddress || t('paymentScreen.pickupLocationFallback')}
               />
               <TimelineLocation
-                label="Drop-off"
+                label={t('paymentScreen.dropoffLabel')}
                 icon="location" color="#F59E0B"
-                date={returnAt ? `${formatDate(returnAt)} at ${formatTime(returnAt)}` : ''}
+                date={returnAt ? t('paymentScreen.dateAtTime', { date: formatDate(returnAt), time: formatTime(returnAt) }) : ''}
                 place={dropoffLocationName || locationName}
-                address={locationAddress || 'Drop-off location'}
+                address={locationAddress || t('paymentScreen.dropoffLocationFallback')}
                 isLast
               />
             </View>
           </SectionCard>
 
           {/* Protection Plan */}
-          <SectionCard title="Protection Plan" icon="shield-checkmark-outline">
+          <SectionCard title={t('paymentScreen.protectionPlanTitle')} icon="shield-checkmark-outline">
             <View style={s.insuranceRow}>
               <View
                 style={[
@@ -798,7 +800,7 @@ const PaymentScreen = () => {
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Typo style={[s.insuranceName, { color: colors.textPrimary }]}>
-                    {selectedInsurance?.name || 'No Protection'}
+                    {selectedInsurance?.name || t('paymentScreen.noProtectionTitle')}
                   </Typo>
                   {selectedInsurance?.tier && (
                     <View
@@ -816,11 +818,11 @@ const PaymentScreen = () => {
                   )}
                 </View>
                 <Typo style={[s.insuranceDesc, { color: colors.textSecondary }]}>
-                  {selectedInsurance?.description || 'Skip protection — you cover the full excess'}
+                  {selectedInsurance?.description || t('paymentScreen.noProtectionDescription')}
                 </Typo>
                 {selectedInsurance?.deductibleAmount ? (
                   <Typo style={[s.insuranceDesc, { color: colors.textSecondary, marginTop: 2 }]}>
-                    Deductible {fmtAmount(selectedInsurance.deductibleAmount)}
+                    {t('paymentScreen.deductibleLabel', { amount: fmtAmount(selectedInsurance.deductibleAmount) })}
                   </Typo>
                 ) : null}
               </View>
@@ -838,7 +840,7 @@ const PaymentScreen = () => {
 
           {/* Add-ons */}
           {addonCatalog.length > 0 && (
-            <SectionCard title="Add-ons (Optional)" icon="add-circle-outline">
+            <SectionCard title={t('paymentScreen.addonsSectionTitle')} icon="add-circle-outline">
               {addonCatalog.map(item => {
                 const qty = selectedAddons[item.id] ?? 0;
                 const isSelected = qty > 0;
@@ -899,13 +901,8 @@ const PaymentScreen = () => {
           )}
 
           {/* Important Notes */}
-          <SectionCard title="Important Notes" icon="information-circle-outline">
-            {[
-              'Valid driver\'s license required (min. 2 years)',
-              'Verification documents must be approved',
-              'Fuel policy: Full to Full',
-              'Free cancellation up to 24hrs before pickup',
-            ].map((note, i) => (
+          <SectionCard title={t('paymentScreen.importantNotesTitle')} icon="information-circle-outline">
+            {(t('paymentScreen.importantNotesList', { returnObjects: true }) as string[]).map((note, i) => (
               <View key={i} style={s.noteRow}>
                 <View style={s.noteDot} />
                 <Typo style={[s.noteText, { color: colors.textSecondary }]}>{note}</Typo>
@@ -914,7 +911,7 @@ const PaymentScreen = () => {
           </SectionCard>
 
           {/* Payment Summary */}
-          <SectionCard title="Payment Summary" icon="receipt-outline">
+          <SectionCard title={t('paymentScreen.paymentSummaryTitle')} icon="receipt-outline">
             <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
               <PriceBreakdown
                 pricing={pricing}
@@ -929,7 +926,7 @@ const PaymentScreen = () => {
 
           {/* Payment method */}
           {paymentMethod === 'COLLECTION' ? (
-            <SectionCard title="Payment Method" icon="wallet-outline">
+            <SectionCard title={t('paymentScreen.paymentMethodTitle')} icon="wallet-outline">
               <View
                 style={[
                   s.collectionBox,
@@ -942,37 +939,35 @@ const PaymentScreen = () => {
                 <Icon name="wallet-outline" size={22} color={colors.textSecondary} />
                 <View style={{ flex: 1, gap: 3 }}>
                   <Typo style={[s.collectionTitle, { color: colors.textPrimary }]}>
-                    Pay on Collection
+                    {t('paymentScreen.payOnCollectionTitle')}
                   </Typo>
                   <Typo style={[s.collectionHint, { color: colors.textSecondary }]}>
-                    Pay in cash when you arrive to pick up the car. A collection code will be
-                    sent to you upon confirmation.
+                    {t('paymentScreen.payOnCollectionHint')}
                   </Typo>
                 </View>
               </View>
             </SectionCard>
           ) : (
-            <SectionCard title="Payment Gateway" icon="card-outline">
+            <SectionCard title={t('paymentScreen.paymentGatewayTitle')} icon="card-outline">
               {gatewaysStatus === 'idle' ? (
                 <View style={{ padding: 16 }}>
                   <Typo style={{ color: colors.textSecondary, fontSize: 13 }}>
-                    Loading payment methods…
+                    {t('paymentScreen.loadingPaymentMethods')}
                   </Typo>
                 </View>
               ) : gatewaysStatus === 'error' ? (
                 <View style={{ padding: 16 }}>
                   <Typo style={{ color: '#F87171', fontSize: 13, fontWeight: '600' }}>
-                    Couldn't load payment methods
+                    {t('paymentScreen.couldNotLoadPaymentMethods')}
                   </Typo>
                   <Typo style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
-                    {gatewaysError || 'Pull down to try again.'}
+                    {gatewaysError || t('paymentScreen.pullDownToTryAgain')}
                   </Typo>
                 </View>
               ) : gateways.length === 0 ? (
                 <View style={{ padding: 16 }}>
                   <Typo style={{ color: colors.textSecondary, fontSize: 13 }}>
-                    No online payment methods are enabled. Ask support to
-                    finish setting up your region's payment provider.
+                    {t('paymentScreen.noOnlinePaymentMethods')}
                   </Typo>
                 </View>
               ) : (
@@ -1016,11 +1011,11 @@ const PaymentScreen = () => {
                           </Typo>
                           {!supported ? (
                             <Typo style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                              Coming soon in-app
+                              {t('paymentScreen.comingSoonInApp')}
                             </Typo>
                           ) : selected ? (
                             <Typo style={{ fontSize: 11, color: GREEN, marginTop: 2, fontWeight: '700' }}>
-                              Selected
+                              {t('paymentScreen.selectedLabel')}
                             </Typo>
                           ) : null}
                         </View>
@@ -1057,25 +1052,25 @@ const PaymentScreen = () => {
         ]}
       >
         <View style={s.bottomLeft}>
-          <Typo style={[s.totalLabel, { color: colors.textSecondary }]}>Total</Typo>
+          <Typo style={[s.totalLabel, { color: colors.textSecondary }]}>{t('paymentScreen.totalLabel')}</Typo>
           {pricingLoading ? (
-            <Typo style={[s.totalValue, { fontSize: 15, color: colors.textSecondary }]}>Calculating…</Typo>
+            <Typo style={[s.totalValue, { fontSize: 15, color: colors.textSecondary }]}>{t('paymentScreen.calculatingLabel')}</Typo>
           ) : (
             <Typo style={s.totalValue}>{fmtAmount(totalPrice)}</Typo>
           )}
           {depositAmount > 0 && !pricingLoading && (
-            <Typo style={[s.depositHint, { color: colors.textSecondary }]}>+ {fmtAmount(depositAmount)} security deposit</Typo>
+            <Typo style={[s.depositHint, { color: colors.textSecondary }]}>{t('paymentScreen.securityDepositNote', { amount: fmtAmount(depositAmount) })}</Typo>
           )}
           {isConverted && !pricingLoading && (
             <Typo style={[s.depositHint, { color: colors.textSecondary }]}>
-              Charged in {currency.toUpperCase()} at checkout
+              {t('paymentScreen.chargedInCurrency', { currency: currency.toUpperCase() })}
             </Typo>
           )}
         </View>
         <AppButton
           title={
-            processingPayment ? 'Processing...' :
-            paymentMethod === 'COLLECTION' ? 'Confirm Booking' : 'Pay Now'
+            processingPayment ? t('paymentScreen.processingLabel') :
+            paymentMethod === 'COLLECTION' ? t('paymentScreen.confirmBookingButton') : t('paymentScreen.payNowButton')
           }
           loading={processingPayment}
           onPress={paymentMethod === 'COLLECTION' ? handlePayOnCollection : handleBookVehicle}
@@ -1090,16 +1085,16 @@ const PaymentScreen = () => {
             <View style={[s.kycIconWrap, { backgroundColor: mode === 'dark' ? '#0F3027' : '#F0FDF4' }]}>
               <Icon name="person-outline" size={28} color={GREEN} />
             </View>
-            <Typo style={[s.kycTitle, { color: colors.textPrimary }]}>Complete Your KYC</Typo>
+            <Typo style={[s.kycTitle, { color: colors.textPrimary }]}>{t('paymentScreen.completeKycTitle')}</Typo>
             <Typo style={[s.kycHint, { color: colors.textSecondary }]}>
-              You need to verify your identity before making a booking. It only takes a few minutes.
+              {t('paymentScreen.completeKycHint')}
             </Typo>
             <AppButton
-              title="Upload Documents"
+              title={t('paymentScreen.uploadDocumentsButton')}
               onPress={() => { setShowKycModal(false); navigation.navigate('KYCFlow'); }}
             />
             <AppButton
-              title="Skip for now"
+              title={t('paymentScreen.skipForNowButton')}
               variant="outline"
               onPress={() => setShowKycModal(false)}
             />
@@ -1134,7 +1129,7 @@ const PaymentScreen = () => {
               <Icon name="close" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
             <Typo style={[s.fwTitle, { color: colors.textPrimary }]}>
-              Complete Payment
+              {t('paymentScreen.completePaymentTitle')}
             </Typo>
             <View style={{ width: 32 }} />
           </View>

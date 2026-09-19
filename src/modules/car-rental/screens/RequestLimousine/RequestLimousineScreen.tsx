@@ -21,6 +21,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -45,18 +46,6 @@ type FormState = {
   notes: string;
 };
 
-const EVENT_TYPES: Array<{
-  label: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-}> = [
-  { label: 'Airport pickup', icon: 'airplane-outline' },
-  { label: 'Wedding', icon: 'heart-outline' },
-  { label: 'Corporate event', icon: 'briefcase-outline' },
-  { label: 'Birthday', icon: 'gift-outline' },
-  { label: 'Prom / Graduation', icon: 'school-outline' },
-  { label: 'Other', icon: 'ellipsis-horizontal-outline' },
-];
-
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
@@ -77,6 +66,19 @@ export default function RequestLimousineScreen() {
   const insets = useSafeAreaInsets();
   const { colors, mode } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation('carRental');
+
+  const EVENT_TYPES: Array<{
+    label: string;
+    icon: React.ComponentProps<typeof Ionicons>['name'];
+  }> = [
+    { label: t('requestLimousineScreen.eventAirportPickup'), icon: 'airplane-outline' },
+    { label: t('requestLimousineScreen.eventWedding'), icon: 'heart-outline' },
+    { label: t('requestLimousineScreen.eventCorporate'), icon: 'briefcase-outline' },
+    { label: t('requestLimousineScreen.eventBirthday'), icon: 'gift-outline' },
+    { label: t('requestLimousineScreen.eventPromGraduation'), icon: 'school-outline' },
+    { label: t('requestLimousineScreen.eventOther'), icon: 'ellipsis-horizontal-outline' },
+  ];
 
   const [form, setForm] = useState<FormState>({
     customerName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
@@ -101,14 +103,14 @@ export default function RequestLimousineScreen() {
   );
 
   const validate = (): string | null => {
-    if (!form.customerName.trim()) return 'Please enter your name';
-    if (!form.contactEmail.includes('@')) return 'Enter a valid email';
+    if (!form.customerName.trim()) return t('requestLimousineScreen.validateNameRequired');
+    if (!form.contactEmail.includes('@')) return t('requestLimousineScreen.validateEmailInvalid');
     if (form.contactPhone.replace(/\D/g, '').length < 7)
-      return 'Enter a valid phone';
-    if (!form.pickupAt) return 'Pick a pickup date and time';
+      return t('requestLimousineScreen.validatePhoneInvalid');
+    if (!form.pickupAt) return t('requestLimousineScreen.validatePickupDateTimeRequired');
     if (form.pickupAt.getTime() < Date.now() - 60 * 1000)
-      return 'Pickup time must be in the future';
-    if (!form.pickupLocation.trim()) return 'Please enter pickup location';
+      return t('requestLimousineScreen.validatePickupFuture');
+    if (!form.pickupLocation.trim()) return t('requestLimousineScreen.validatePickupLocationRequired');
     return null;
   };
 
@@ -135,15 +137,15 @@ export default function RequestLimousineScreen() {
       });
       Toast.show({
         type: 'success',
-        text1: 'Request received',
-        text2: 'Our team will reach out shortly.',
+        text1: t('requestLimousineScreen.requestReceivedTitle'),
+        text2: t('requestLimousineScreen.requestReceivedMessage'),
       });
       navigation.goBack();
     } catch (e: any) {
       Toast.show({
         type: 'error',
-        text1: 'Could not submit',
-        text2: e?.response?.data?.message ?? 'Please try again.',
+        text1: t('requestLimousineScreen.couldNotSubmitTitle'),
+        text2: e?.response?.data?.message ?? t('requestLimousineScreen.couldNotSubmitFallback'),
       });
     } finally {
       setSubmitting(false);
@@ -187,7 +189,7 @@ export default function RequestLimousineScreen() {
           </TouchableOpacity>
           <View style={[s.tierChip, { borderColor: `${GOLD}66` }]}>
             <View style={[s.tierDot, { backgroundColor: GOLD }]} />
-            <Typo style={s.tierChipText}>Concierge</Typo>
+            <Typo style={s.tierChipText}>{t('requestLimousineScreen.concierge')}</Typo>
           </View>
         </View>
 
@@ -195,11 +197,9 @@ export default function RequestLimousineScreen() {
           <View style={[s.heroIcon, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
             <Ionicons name="car-sport" size={30} color={GOLD} />
           </View>
-          <Typo style={s.heroTitle}>Request a Limousine</Typo>
+          <Typo style={s.heroTitle}>{t('requestLimousineScreen.heroTitle')}</Typo>
           <Typo style={s.heroSubtitle}>
-            Chauffeur service for airports, weddings, corporate events, and
-            special occasions. Our concierge team confirms availability and
-            pricing within a few hours.
+            {t('requestLimousineScreen.heroSubtitle')}
           </Typo>
         </View>
       </View>
@@ -217,77 +217,77 @@ export default function RequestLimousineScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* ── CONTACT ── */}
-          <SectionHeader icon="person-outline" title="Contact details" colors={colors} />
+          <SectionHeader icon="person-outline" title={t('requestLimousineScreen.contactSectionTitle')} colors={colors} />
           <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <AppInput
-              label="Full name"
+              label={t('requestLimousineScreen.fullNameLabel')}
               value={form.customerName}
-              onChangeText={t => set('customerName', t)}
-              placeholder="Your name"
+              onChangeText={v => set('customerName', v)}
+              placeholder={t('requestLimousineScreen.fullNamePlaceholder')}
             />
             <AppInput
-              label="Email"
+              label={t('requestLimousineScreen.emailLabel')}
               value={form.contactEmail}
-              onChangeText={t => set('contactEmail', t)}
-              placeholder="email@example.com"
+              onChangeText={v => set('contactEmail', v)}
+              placeholder={t('requestLimousineScreen.emailPlaceholder')}
               keyboardType="email-address"
               autoCapitalize="none"
             />
             <AppInput
-              label="Phone"
+              label={t('requestLimousineScreen.phoneLabel')}
               value={form.contactPhone}
-              onChangeText={t => set('contactPhone', t)}
-              placeholder="+234..."
+              onChangeText={v => set('contactPhone', v)}
+              placeholder={t('requestLimousineScreen.phonePlaceholder')}
               keyboardType="phone-pad"
             />
           </View>
 
           {/* ── TRIP ── */}
-          <SectionHeader icon="location-outline" title="Trip details" colors={colors} />
+          <SectionHeader icon="location-outline" title={t('requestLimousineScreen.tripSectionTitle')} colors={colors} />
           <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {/* Date + time row */}
             <View style={s.row2}>
               <PickerField
                 icon="calendar-outline"
-                label="Pickup date"
+                label={t('requestLimousineScreen.pickupDateLabel')}
                 value={form.pickupAt ? formatDate(form.pickupAt) : ''}
-                placeholder="Select date"
+                placeholder={t('requestLimousineScreen.selectDatePlaceholder')}
                 onPress={() => setPickerMode('date')}
                 colors={colors}
               />
               <PickerField
                 icon="time-outline"
-                label="Pickup time"
+                label={t('requestLimousineScreen.pickupTimeLabel')}
                 value={form.pickupAt ? formatTime(form.pickupAt) : ''}
                 placeholder="—"
                 onPress={() =>
                   form.pickupAt
                     ? setPickerMode('time')
-                    : Toast.show({ type: 'info', text1: 'Pick a date first' })
+                    : Toast.show({ type: 'info', text1: t('requestLimousineScreen.pickDateFirstToast') })
                 }
                 colors={colors}
               />
             </View>
 
             <AppInput
-              label="Pickup location"
+              label={t('requestLimousineScreen.pickupLocationLabel')}
               value={form.pickupLocation}
-              onChangeText={t => set('pickupLocation', t)}
-              placeholder="Address, hotel, or landmark"
+              onChangeText={v => set('pickupLocation', v)}
+              placeholder={t('requestLimousineScreen.pickupLocationPlaceholder')}
               leftIcon={<Ionicons name="pin-outline" size={18} color={colors.textSecondary} />}
             />
             <AppInput
-              label="Drop-off location (optional)"
+              label={t('requestLimousineScreen.dropoffLocationLabel')}
               value={form.dropoffLocation}
-              onChangeText={t => set('dropoffLocation', t)}
-              placeholder="Address or venue"
+              onChangeText={v => set('dropoffLocation', v)}
+              placeholder={t('requestLimousineScreen.dropoffLocationPlaceholder')}
               leftIcon={<Ionicons name="flag-outline" size={18} color={colors.textSecondary} />}
             />
 
             {/* Passengers stepper */}
             <View style={{ marginTop: 6 }}>
               <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>
-                Number of passengers
+                {t('requestLimousineScreen.passengersLabel')}
               </Typo>
               <View style={[s.stepper, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <TouchableOpacity
@@ -313,7 +313,7 @@ export default function RequestLimousineScreen() {
           </View>
 
           {/* ── OCCASION ── */}
-          <SectionHeader icon="sparkles-outline" title="Occasion (optional)" colors={colors} />
+          <SectionHeader icon="sparkles-outline" title={t('requestLimousineScreen.occasionSectionTitle')} colors={colors} />
           <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={s.chipsRow}>
               {EVENT_TYPES.map(opt => {
@@ -354,7 +354,7 @@ export default function RequestLimousineScreen() {
 
             <View style={{ marginTop: 16 }}>
               <Typo style={[s.fieldLabel, { color: colors.textSecondary }]}>
-                Anything else we should know?
+                {t('requestLimousineScreen.notesLabel')}
               </Typo>
               <TextInput
                 style={[
@@ -366,8 +366,8 @@ export default function RequestLimousineScreen() {
                   },
                 ]}
                 value={form.notes}
-                onChangeText={t => set('notes', t)}
-                placeholder="Preferred vehicle style, event dress code, luggage, VIP requirements…"
+                onChangeText={v => set('notes', v)}
+                placeholder={t('requestLimousineScreen.notesPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={4}
@@ -388,12 +388,10 @@ export default function RequestLimousineScreen() {
             <Ionicons name="information-circle" size={16} color={GOLD} style={{ marginTop: 1 }} />
             <View style={{ flex: 1 }}>
               <Typo style={[s.infoTitle, { color: mode === 'dark' ? '#F5D373' : '#7C5E00' }]}>
-                What happens next
+                {t('requestLimousineScreen.howItWorksTitle')}
               </Typo>
               <Typo style={[s.infoText, { color: colors.textSecondary }]}>
-                Your request goes to our concierge queue. A team member
-                confirms vehicle availability, final pricing, and payment
-                details by call or WhatsApp within a few hours.
+                {t('requestLimousineScreen.howItWorksText')}
               </Typo>
             </View>
           </View>
@@ -412,7 +410,7 @@ export default function RequestLimousineScreen() {
         ]}
       >
         <AppButton
-          title={submitting ? 'Sending…' : 'Send Request'}
+          title={submitting ? t('requestLimousineScreen.sendingLabel') : t('requestLimousineScreen.sendRequestButton')}
           onPress={onSubmit}
           loading={submitting}
         />
