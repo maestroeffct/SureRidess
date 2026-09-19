@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -25,22 +26,23 @@ import { AuthStackParamList } from '@/navigation/Auth/AuthNavigator';
 export function ForgotPasswordScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const { t } = useTranslation('auth');
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (!isValidEmail(email)) {
-      showError('Please enter a valid email address');
+      showError(t('forgotPasswordScreen.invalidEmail'));
       return;
     }
     try {
       setLoading(true);
       await forgotPassword({ email });
-      showSuccess('Verification code sent to your email');
+      showSuccess(t('forgotPasswordScreen.codeSentSuccess'));
       navigation.navigate('ForgotPasswordOtp', { email });
     } catch (err: any) {
-      showError(err?.response?.data?.message || 'Failed to send reset code');
+      showError(err?.response?.data?.message || t('forgotPasswordScreen.sendCodeFailed'));
     } finally {
       setLoading(false);
     }
@@ -59,9 +61,9 @@ export function ForgotPasswordScreen() {
         <View style={s.iconCircle}>
           <Icon name="key-outline" size={36} color="#fff" />
         </View>
-        <Typo style={s.heroTitle}>Reset Password</Typo>
+        <Typo style={s.heroTitle}>{t('forgotPasswordScreen.heroTitle')}</Typo>
         <Typo style={s.heroSub}>
-          Enter your email and we'll send you{'\n'}a verification code to reset your password
+          {t('forgotPasswordScreen.heroSubtitle')}
         </Typo>
       </View>
 
@@ -78,16 +80,16 @@ export function ForgotPasswordScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Typo style={[s.formTitle, { color: colors.textPrimary }]}>
-            Forgot Password?
+            {t('forgotPasswordScreen.title')}
           </Typo>
           <Typo style={[s.formSub, { color: colors.textSecondary }]}>
-            No worries — it happens. Enter your registered email address below.
+            {t('forgotPasswordScreen.subtitle')}
           </Typo>
 
           <View style={s.form}>
             <AppInput
-              label="Email Address"
-              placeholder="you@example.com"
+              label={t('forgotPasswordScreen.emailLabel')}
+              placeholder={t('forgotPasswordScreen.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -99,7 +101,7 @@ export function ForgotPasswordScreen() {
           </View>
 
           <AppButton
-            title="Send Reset Code"
+            title={t('forgotPasswordScreen.sendCode')}
             onPress={handleSubmit}
             loading={loading}
             disabled={!email || loading}
@@ -108,16 +110,16 @@ export function ForgotPasswordScreen() {
           <View style={s.hintBox}>
             <Icon name="information-circle-outline" size={15} color={colors.textSecondary} />
             <Typo style={[s.hintText, { color: colors.textSecondary }]}>
-              Check your spam or junk folder if you don't receive the email within a few minutes.
+              {t('forgotPasswordScreen.spamHint')}
             </Typo>
           </View>
 
           <View style={s.footer}>
             <Typo style={[s.footerText, { color: colors.textSecondary }]}>
-              Remember your password?{' '}
+              {t('forgotPasswordScreen.rememberPassword')}
             </Typo>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Typo style={s.footerLink}>Sign In</Typo>
+              <Typo style={s.footerLink}>{t('forgotPasswordScreen.signIn')}</Typo>
             </TouchableOpacity>
           </View>
         </ScrollView>

@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -33,6 +34,7 @@ type Props = {
 export function ForgotPasswordOtpScreen({ route }: Props) {
   const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const { t } = useTranslation('auth');
   const { email } = route.params;
 
   const [code, setCode] = useState(['', '', '', '']);
@@ -71,16 +73,16 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
   const handleVerify = async (otp?: string) => {
     const finalOtp = otp ?? code.join('');
     if (finalOtp.length !== 4) {
-      showError('Enter the 4-digit code');
+      showError(t('forgotPasswordOtpScreen.enterCode'));
       return;
     }
     try {
       setLoading(true);
       await verifyResetOtp({ email, otp: finalOtp });
-      showSuccess('Email verified');
+      showSuccess(t('forgotPasswordOtpScreen.emailVerifiedSuccess'));
       navigation.navigate('ResetPassword', { email, otp: finalOtp });
     } catch (err: any) {
-      showError(err?.response?.data?.message || 'Invalid code');
+      showError(err?.response?.data?.message || t('forgotPasswordOtpScreen.invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -89,10 +91,10 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
   const handleResend = async () => {
     try {
       await resendForgotPasswordOtp(email);
-      showSuccess('Verification code resent');
+      showSuccess(t('forgotPasswordOtpScreen.codeResentSuccess'));
       setCounter(60);
     } catch (err: any) {
-      showError(err?.response?.data?.message || 'Failed to resend');
+      showError(err?.response?.data?.message || t('forgotPasswordOtpScreen.resendFailed'));
     }
   };
 
@@ -109,9 +111,9 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
         <View style={s.iconCircle}>
           <Icon name="mail-open-outline" size={36} color="#fff" />
         </View>
-        <Typo style={s.heroTitle}>Check Your Email</Typo>
+        <Typo style={s.heroTitle}>{t('forgotPasswordOtpScreen.heroTitle')}</Typo>
         <Typo style={s.heroSub}>
-          We sent a 4-digit code to{'\n'}
+          {t('forgotPasswordOtpScreen.heroSubtitle')}{'\n'}
           <Typo style={s.heroEmail}>{maskEmail(email)}</Typo>
         </Typo>
       </View>
@@ -129,10 +131,10 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           <Typo style={[s.formTitle, { color: colors.textPrimary }]}>
-            Verify Email Address
+            {t('forgotPasswordOtpScreen.title')}
           </Typo>
           <Typo style={[s.formSub, { color: colors.textSecondary }]}>
-            Enter the 6-digit verification code to continue resetting your password
+            {t('forgotPasswordOtpScreen.subtitle')}
           </Typo>
 
           {/* OTP Boxes */}
@@ -158,7 +160,7 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
           </View>
 
           <AppButton
-            title="Verify & Continue"
+            title={t('forgotPasswordOtpScreen.verifyButton')}
             onPress={() => handleVerify()}
             loading={loading}
             disabled={!otpComplete || loading}
@@ -167,12 +169,12 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
           <View style={s.timerRow}>
             {counter > 0 ? (
               <Typo style={[s.timerText, { color: colors.textSecondary }]}>
-                Resend code in{' '}
+                {t('forgotPasswordOtpScreen.resendCountdown')}{' '}
                 <Typo style={s.timerCount}>{counter}s</Typo>
               </Typo>
             ) : (
               <TouchableOpacity onPress={handleResend}>
-                <Typo style={s.resendLink}>Resend Code</Typo>
+                <Typo style={s.resendLink}>{t('forgotPasswordOtpScreen.resendLink')}</Typo>
               </TouchableOpacity>
             )}
           </View>
@@ -180,7 +182,7 @@ export function ForgotPasswordOtpScreen({ route }: Props) {
           <View style={s.hintBox}>
             <Icon name="information-circle-outline" size={15} color={colors.textSecondary} />
             <Typo style={[s.hintText, { color: colors.textSecondary }]}>
-              Didn't get the email? Check your spam folder or tap "Resend Code" above.
+              {t('forgotPasswordOtpScreen.resendHint')}
             </Typo>
           </View>
         </ScrollView>

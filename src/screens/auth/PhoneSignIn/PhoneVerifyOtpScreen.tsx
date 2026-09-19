@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -54,29 +56,36 @@ function inspectError(prefix: string, err: any) {
   if (stack) console.log(`[PhoneVerifyOtp] ${prefix} stack`, stack);
 }
 
+// Module-level helper (not a component) — can't use the useTranslation hook,
+// so it calls the shared i18next instance's t() directly with an explicit
+// namespace.
 function describeError(err: any): string {
+  const t = (key: string, options?: Record<string, unknown>) =>
+    i18n.t(key, { ns: 'auth', ...options });
+
   const code = err?.code as string | undefined;
   if (code === 'auth/invalid-verification-code')
-    return 'That code is incorrect. Try again.';
+    return t('phoneVerifyOtpScreen.invalidCode');
   if (code === 'auth/code-expired')
-    return 'Code expired — request a new one.';
+    return t('phoneVerifyOtpScreen.codeExpired');
   if (code === 'auth/session-expired')
-    return 'Session expired — request a new code.';
+    return t('phoneVerifyOtpScreen.sessionExpired');
   if (code === 'auth/too-many-requests')
-    return 'Too many attempts — try again later.';
+    return t('phoneVerifyOtpScreen.tooManyAttempts');
   if (code === 'auth/network-request-failed')
-    return 'Network error. Check your connection.';
+    return t('phoneVerifyOtpScreen.networkError');
 
   const backendMsg = err?.response?.data?.message;
-  if (backendMsg) return `Backend: ${backendMsg}`;
+  if (backendMsg) return t('phoneVerifyOtpScreen.backendError', { message: backendMsg });
 
   if (code) return `${code}${err?.message ? ` · ${err.message}` : ''}`;
-  return err?.message || 'Verification failed';
+  return err?.message || t('phoneVerifyOtpScreen.verificationFailedFallback');
 }
 
 export function PhoneVerifyOtpScreen({ route }: Props) {
   const { colors } = useTheme();
   const { login } = useAuth();
+  const { t } = useTranslation('auth');
   const { phone, firstName, lastName, email } = route.params;
 
   // Held in state so the Resend flow can swap in a fresh verificationId
@@ -108,8 +117,8 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
         email,
       });
       const greeting = res.user.isNewUser
-        ? 'Account created — welcome to SureRide!'
-        : 'Signed in successfully';
+        ? t('phoneVerifyOtpScreen.welcomeNewUser')
+        : t('phoneVerifyOtpScreen.signedInSuccess');
       showSuccess(greeting);
       await login(res.token, {
         id: res.user.id,
@@ -132,7 +141,7 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
       const newVerificationId = await sendPhoneOtp(phone);
       setVerificationId(newVerificationId);
       setCounter(60);
-      showSuccess('A new code is on the way');
+      showSuccess(t('phoneVerifyOtpScreen.newCodeSent'));
     } catch (err) {
       inspectError('resend failed', err);
       showError(describeError(err));
@@ -179,9 +188,9 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
         <View style={s.iconCircle}>
           <Icon name="phone-portrait-outline" size={36} color="#fff" />
         </View>
-        <Typo style={s.heroTitle}>Verify Your Phone</Typo>
+        <Typo style={s.heroTitle}>{t('phoneVerifyOtpScreen.heroTitle')}</Typo>
         <Typo style={s.heroSub}>
-          We sent a 6-digit code to{'\n'}
+          {t('phoneVerifyOtpScreen.heroSubtitle')}{'\n'}
           <Typo style={s.heroPhone}>{phone}</Typo>
         </Typo>
       </View>
@@ -199,10 +208,10 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           <Typo style={[s.formTitle, { color: colors.textPrimary }]}>
-            Enter OTP Code
+            {t('phoneVerifyOtpScreen.title')}
           </Typo>
           <Typo style={[s.formSub, { color: colors.textSecondary }]}>
-            Enter the verification code sent to your phone
+            {t('phoneVerifyOtpScreen.subtitle')}
           </Typo>
 
           {/* OTP Boxes */}
@@ -228,7 +237,7 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
           </View>
 
           <AppButton
-            title="Verify & Continue"
+            title={t('phoneVerifyOtpScreen.verifyButton')}
             loading={loading}
             disabled={!otpComplete}
             onPress={() => handleVerify(code.join(''))}
@@ -237,12 +246,12 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
           <View style={s.timerRow}>
             {counter > 0 ? (
               <Typo style={[s.timerText, { color: colors.textSecondary }]}>
-                Resend code in <Typo style={s.timerCount}>{counter}s</Typo>
+                {t('phoneVerifyOtpScreen.resendCountdown')} <Typo style={s.timerCount}>{counter}s</Typo>
               </Typo>
             ) : (
               <TouchableOpacity onPress={handleResend} disabled={resending}>
                 <Typo style={s.resendLink}>
-                  {resending ? 'Sending…' : 'Resend Code'}
+                  {resending ? t('phoneVerifyOtpScreen.sendingLabel') : t('phoneVerifyOtpScreen.resendLink')}
                 </Typo>
               </TouchableOpacity>
             )}
@@ -255,7 +264,7 @@ export function PhoneVerifyOtpScreen({ route }: Props) {
               color={colors.textSecondary}
             />
             <Typo style={[s.hintText, { color: colors.textSecondary }]}>
-              Didn't receive the code? Check your SMS inbox or try resending.
+              {t('phoneVerifyOtpScreen.resendHint')}
             </Typo>
           </View>
         </ScrollView>

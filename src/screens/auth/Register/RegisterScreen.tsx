@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -43,6 +44,7 @@ export function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const { login } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('auth');
 
   const [showPassword, setShowPassword] = useState(false);
   const [countries, setCountries] = useState<Country[]>([]);
@@ -68,13 +70,13 @@ export function RegisterScreen() {
   useEffect(() => {
     fetchCountries()
       .then(setCountries)
-      .catch(() => showError('Failed to load country list'));
+      .catch(() => showError(t('registerScreen.loadCountriesFailed')));
   }, []);
 
   const handleRegister = async () => {
-    if (!isValidEmail(email)) { showError('Invalid email'); return; }
-    if (passwordStrength === 'weak') { showError('Password too weak'); return; }
-    if (!dob || !selectedCountry) { showError('Please complete all required fields'); return; }
+    if (!isValidEmail(email)) { showError(t('registerScreen.invalidEmailToast')); return; }
+    if (passwordStrength === 'weak') { showError(t('registerScreen.passwordTooWeak')); return; }
+    if (!dob || !selectedCountry) { showError(t('registerScreen.completeRequiredFields')); return; }
 
     try {
       setLoading(true);
@@ -87,10 +89,10 @@ export function RegisterScreen() {
         country: selectedCountry.name,
         dob: dob.toISOString(),
       });
-      showSuccess('Account created successfully');
+      showSuccess(t('registerScreen.accountCreatedSuccess'));
       setTimeout(() => navigation.replace('Login'), 500);
     } catch (err: any) {
-      showError(err?.response?.data?.message || 'Registration failed');
+      showError(err?.response?.data?.message || t('registerScreen.registrationFailed'));
     } finally {
       setLoading(false);
     }
@@ -102,10 +104,10 @@ export function RegisterScreen() {
       const res = await signInWithGoogle();
       await login(res.token, res.user);
       if (res.isNewUser || res.needsProfileCompletion) {
-        showSuccess('Account created with Google. Complete your profile to continue.');
+        showSuccess(t('registerScreen.googleAccountCreated'));
         return;
       }
-      showSuccess('Signed in with Google');
+      showSuccess(t('registerScreen.googleSignInSuccess'));
     } catch (error) {
       showError(getGoogleAuthErrorMessage(error));
     } finally {
@@ -144,38 +146,38 @@ export function RegisterScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Typo style={[s.formTitle, { color: colors.textPrimary }]}>Create Account</Typo>
+          <Typo style={[s.formTitle, { color: colors.textPrimary }]}>{t('registerScreen.title')}</Typo>
           <Typo style={[s.formSub, { color: colors.textSecondary }]}>
-            Sign up to start renting verified cars
+            {t('registerScreen.subtitle')}
           </Typo>
 
           <View style={s.form}>
             {/* Name row */}
             <View style={s.nameRow}>
               <View style={{ flex: 1 }}>
-                <AppInput label="First Name" placeholder="John" value={firstName} onChangeText={setFirstName} />
+                <AppInput label={t('registerScreen.firstNameLabel')} placeholder={t('registerScreen.firstNamePlaceholder')} value={firstName} onChangeText={setFirstName} />
               </View>
               <View style={{ flex: 1 }}>
-                <AppInput label="Last Name" placeholder="Doe" value={lastName} onChangeText={setLastName} />
+                <AppInput label={t('registerScreen.lastNameLabel')} placeholder={t('registerScreen.lastNamePlaceholder')} value={lastName} onChangeText={setLastName} />
               </View>
             </View>
 
             <AppInput
-              label="Email Address"
-              placeholder="you@example.com"
+              label={t('registerScreen.emailLabel')}
+              placeholder={t('registerScreen.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              error={email.length > 0 && !isValidEmail(email) ? 'Invalid email address' : undefined}
+              error={email.length > 0 && !isValidEmail(email) ? t('registerScreen.invalidEmailError') : undefined}
             />
 
             {/* Date of Birth */}
             <TouchableOpacity activeOpacity={0.8} onPress={() => setShowDatePicker(true)}>
               <View pointerEvents="none">
                 <AppInput
-                  label="Date of Birth"
-                  placeholder="Select date"
+                  label={t('registerScreen.dobLabel')}
+                  placeholder={t('registerScreen.selectDatePlaceholder')}
                   value={dob ? dob.toDateString() : ''}
                   editable={false}
                   rightIcon={<Icon name="calendar-outline" size={20} color={colors.textSecondary} />}
@@ -195,8 +197,8 @@ export function RegisterScreen() {
             <TouchableOpacity activeOpacity={0.8} onPress={() => setShowCountryModal(true)}>
               <View pointerEvents="none">
                 <AppInput
-                  label="Nationality"
-                  placeholder="Select country"
+                  label={t('registerScreen.nationalityLabel')}
+                  placeholder={t('registerScreen.selectCountryPlaceholder')}
                   value={selectedCountry ? selectedCountry.name : ''}
                   editable={false}
                   leftIcon={selectedCountry ? <Text style={{ fontSize: 18 }}>{getFlagEmoji(selectedCountry.code)}</Text> : undefined}
@@ -207,7 +209,7 @@ export function RegisterScreen() {
 
             {/* Phone */}
             <View>
-              <Typo style={[s.phoneLabel, { color: colors.textSecondary }]}>Phone Number</Typo>
+              <Typo style={[s.phoneLabel, { color: colors.textSecondary }]}>{t('registerScreen.phoneLabel')}</Typo>
               <View style={s.phoneRow}>
                 <TouchableOpacity
                   style={[s.codeBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
@@ -220,15 +222,15 @@ export function RegisterScreen() {
                   <Icon name="chevron-down" size={14} color={colors.textSecondary} />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
-                  <AppInput placeholder="8012345678" value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" />
+                  <AppInput placeholder={t('registerScreen.phoneNumberPlaceholder')} value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" />
                 </View>
               </View>
             </View>
 
             {/* Password */}
             <AppInput
-              label="Password"
-              placeholder="Min 8 characters"
+              label={t('registerScreen.passwordLabel')}
+              placeholder={t('registerScreen.passwordPlaceholder')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -259,18 +261,18 @@ export function RegisterScreen() {
 
           {/* Terms */}
           <Typo style={[s.terms, { color: colors.textSecondary }]}>
-            By signing up you agree to our{' '}
-            <Typo style={s.termsLink}>Privacy Policy</Typo>
-            {' '}and{' '}
-            <Typo style={s.termsLink}>Terms of Service</Typo>
+            {t('registerScreen.termsIntro')}{' '}
+            <Typo style={s.termsLink}>{t('registerScreen.privacyPolicy')}</Typo>
+            {' '}{t('registerScreen.and')}{' '}
+            <Typo style={s.termsLink}>{t('registerScreen.termsOfService')}</Typo>
           </Typo>
 
-          <AppButton title={loading ? 'Creating Account…' : 'Create Account'} loading={loading} onPress={handleRegister} />
+          <AppButton title={loading ? t('registerScreen.creatingAccount') : t('registerScreen.createAccountButton')} loading={loading} onPress={handleRegister} />
 
           {/* Divider */}
           <View style={s.dividerRow}>
             <View style={[s.dividerLine, { backgroundColor: colors.border }]} />
-            <Typo style={[s.dividerText, { color: colors.textSecondary }]}>or</Typo>
+            <Typo style={[s.dividerText, { color: colors.textSecondary }]}>{t('registerScreen.orDivider')}</Typo>
             <View style={[s.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
@@ -282,14 +284,14 @@ export function RegisterScreen() {
           >
             <Image source={require('@/assets/images/google-logo.png')} style={s.googleIcon} />
             <Typo style={[s.googleText, { color: colors.textPrimary }]}>
-              {googleLoading ? 'Please wait…' : 'Continue with Google'}
+              {googleLoading ? t('registerScreen.pleaseWait') : t('registerScreen.continueWithGoogle')}
             </Typo>
           </TouchableOpacity>
 
           <View style={s.footer}>
-            <Typo style={[s.footerText, { color: colors.textSecondary }]}>Already have an account? </Typo>
+            <Typo style={[s.footerText, { color: colors.textSecondary }]}>{t('registerScreen.alreadyHaveAccount')}</Typo>
             <TouchableOpacity onPress={() => navigation.replace('Login')}>
-              <Typo style={s.footerLink}>Sign In</Typo>
+              <Typo style={s.footerLink}>{t('registerScreen.signIn')}</Typo>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -299,7 +301,7 @@ export function RegisterScreen() {
       <Modal visible={showCountryModal} animationType="slide">
         <SafeAreaView style={[s.modalSafe, { backgroundColor: colors.background }]}>
           <View style={[s.modalHeader, { borderBottomColor: colors.border }]}>
-            <Typo style={[s.modalTitle, { color: colors.textPrimary }]}>Select Country</Typo>
+            <Typo style={[s.modalTitle, { color: colors.textPrimary }]}>{t('registerScreen.selectCountryModalTitle')}</Typo>
             <TouchableOpacity onPress={() => { setShowCountryModal(false); setSearch(''); }}>
               <Icon name="close" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -307,7 +309,7 @@ export function RegisterScreen() {
           <View style={[s.modalSearch, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon name="search-outline" size={18} color={colors.textSecondary} />
             <TextInput
-              placeholder="Search country"
+              placeholder={t('registerScreen.searchCountryPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={search}
               onChangeText={setSearch}

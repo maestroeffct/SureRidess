@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -34,6 +35,7 @@ type Props = {
 export function ResetPasswordScreen({ route }: Props) {
   const navigation =
     useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const { t } = useTranslation('auth');
 
   const { email } = route.params;
 
@@ -45,20 +47,20 @@ export function ResetPasswordScreen({ route }: Props) {
 
   const handleSubmit = async () => {
     if (password.length < 8) {
-      showError('Password must be at least 8 characters');
+      showError(t('resetPasswordScreen.passwordTooShort'));
       return;
     }
     if (password !== confirmPassword) {
-      showError('Passwords do not match');
+      showError(t('resetPasswordScreen.passwordsMismatch'));
       return;
     }
     try {
       setLoading(true);
       await resetPassword({ email, password });
-      showSuccess('Password reset successful');
+      showSuccess(t('resetPasswordScreen.resetSuccess'));
       navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     } catch (err: any) {
-      showError(err?.response?.data?.message || 'Reset failed');
+      showError(err?.response?.data?.message || t('resetPasswordScreen.resetFailed'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +73,13 @@ export function ResetPasswordScreen({ route }: Props) {
     /[A-Z]/.test(password) && /[0-9]/.test(password) ? 4 : 3;
 
   const strengthColor = ['#E5E7EB', '#EF4444', '#F59E0B', '#3B82F6', '#0A6A4B'][strength];
-  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength];
+  const strengthLabel = [
+    '',
+    t('resetPasswordScreen.strengthWeak'),
+    t('resetPasswordScreen.strengthFair'),
+    t('resetPasswordScreen.strengthGood'),
+    t('resetPasswordScreen.strengthStrong'),
+  ][strength];
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -89,9 +97,9 @@ export function ResetPasswordScreen({ route }: Props) {
         <View style={s.heroIconWrap}>
           <Icon name="lock-closed" size={34} color="#fff" />
         </View>
-        <Typo style={s.heroTitle}>New Password</Typo>
+        <Typo style={s.heroTitle}>{t('resetPasswordScreen.heroTitle')}</Typo>
         <Typo style={s.heroSub}>
-          Create a strong password for{'\n'}
+          {t('resetPasswordScreen.heroSubtitle')}{'\n'}
           <Typo style={s.heroEmail}>{email}</Typo>
         </Typo>
       </View>
@@ -111,15 +119,14 @@ export function ResetPasswordScreen({ route }: Props) {
           <View style={s.hintBox}>
             <Icon name="information-circle-outline" size={16} color={GREEN} />
             <Typo style={s.hintText}>
-              At least 8 characters. Use uppercase, numbers, and symbols for a
-              stronger password.
+              {t('resetPasswordScreen.passwordHint')}
             </Typo>
           </View>
 
           {/* New Password */}
           <AppInput
-            label="New Password"
-            placeholder="Enter new password"
+            label={t('resetPasswordScreen.newPasswordLabel')}
+            placeholder={t('resetPasswordScreen.newPasswordPlaceholder')}
             secureTextEntry={!showPass}
             value={password}
             onChangeText={setPassword}
@@ -160,8 +167,8 @@ export function ResetPasswordScreen({ route }: Props) {
           {/* Confirm Password */}
           <View style={{ marginTop: 16 }}>
             <AppInput
-              label="Confirm Password"
-              placeholder="Re-enter new password"
+              label={t('resetPasswordScreen.confirmPasswordLabel')}
+              placeholder={t('resetPasswordScreen.confirmPasswordPlaceholder')}
               secureTextEntry={!showConfirm}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -181,19 +188,19 @@ export function ResetPasswordScreen({ route }: Props) {
             {confirmPassword.length > 0 && password !== confirmPassword && (
               <View style={s.matchRow}>
                 <Icon name="close-circle" size={14} color="#EF4444" />
-                <Typo style={s.matchError}>Passwords don't match</Typo>
+                <Typo style={s.matchError}>{t('resetPasswordScreen.passwordsDontMatch')}</Typo>
               </View>
             )}
             {confirmPassword.length > 0 && password === confirmPassword && (
               <View style={s.matchRow}>
                 <Icon name="checkmark-circle" size={14} color={GREEN} />
-                <Typo style={s.matchOk}>Passwords match</Typo>
+                <Typo style={s.matchOk}>{t('resetPasswordScreen.passwordsMatch')}</Typo>
               </View>
             )}
           </View>
 
           <AppButton
-            title="Set New Password"
+            title={t('resetPasswordScreen.setNewPasswordButton')}
             loading={loading}
             onPress={handleSubmit}
             style={s.btn}

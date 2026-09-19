@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 import { fetchCountries, type Country } from '@/services/country.service';
 import { getFlagEmoji } from '@/helpers/countryFlag';
 import { useNavigation } from '@react-navigation/native';
@@ -41,6 +42,7 @@ export function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const { login } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('auth');
 
   const [mode, setMode] = useState<LoginMode>('email');
   const [email, setEmail] = useState('');
@@ -97,7 +99,7 @@ export function LoginScreen() {
         password === DEV_TEST_CREDENTIALS.password
       ) {
         login(DEV_TEST_CREDENTIALS.token, DEV_TEST_CREDENTIALS.user);
-        showSuccess('Logged in with test account');
+        showSuccess(t('loginScreen.testAccountLoggedIn'));
         return;
       }
 
@@ -108,14 +110,14 @@ export function LoginScreen() {
         err?.response?.status === 403 &&
         err?.response?.data?.status === 'verification_required'
       ) {
-        setTimeout(() => showSuccess('Please verify your email to continue'), 500);
+        setTimeout(() => showSuccess(t('loginScreen.verifyEmailPrompt')), 500);
         navigation.navigate('VerifyOtp', {
           userId: err.response.data.userId,
           email,
         });
         return;
       }
-      showError(err?.response?.data?.message || 'Login failed');
+      showError(err?.response?.data?.message || t('loginScreen.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -127,10 +129,10 @@ export function LoginScreen() {
       const res = await signInWithGoogle();
       await login(res.token, res.user);
       if (res.isNewUser || res.needsProfileCompletion) {
-        showSuccess('Signed in with Google. Complete your profile to continue.');
+        showSuccess(t('loginScreen.googleNewUserSuccess'));
         return;
       }
-      showSuccess('Signed in with Google');
+      showSuccess(t('loginScreen.googleSignInSuccess'));
     } catch (error) {
       showError(getGoogleAuthErrorMessage(error));
     } finally {
@@ -141,12 +143,12 @@ export function LoginScreen() {
   const handleSendPhoneOtp = async () => {
     const localPart = phoneNumber.replace(/\D/g, '');
     if (!localPart || localPart.length < 6) {
-      showError('Enter your phone number');
+      showError(t('loginScreen.enterPhoneNumber'));
       return;
     }
     const fullPhone = `${phoneCode}${localPart}`;
     if (!/^\+\d{8,15}$/.test(fullPhone)) {
-      showError('Phone number format is invalid');
+      showError(t('loginScreen.invalidPhoneNumber'));
       return;
     }
     try {
@@ -159,13 +161,13 @@ export function LoginScreen() {
     } catch (e: any) {
       const code = e?.code as string | undefined;
       if (code === 'auth/too-many-requests') {
-        showError('Too many attempts — try again in a few minutes.');
+        showError(t('loginScreen.tooManyAttempts'));
       } else if (code === 'auth/invalid-phone-number') {
-        showError('Phone number format is invalid.');
+        showError(t('loginScreen.invalidPhoneNumber'));
       } else if (code === 'auth/network-request-failed') {
-        showError('Network error. Check your connection.');
+        showError(t('loginScreen.networkError'));
       } else {
-        showError(e?.message || 'Failed to send code');
+        showError(e?.message || t('loginScreen.sendCodeFailed'));
       }
     } finally {
       setSendingOtp(false);
@@ -184,7 +186,7 @@ export function LoginScreen() {
           resizeMode="contain"
         />
         <Typo style={s.logoName}>SURERIDE</Typo>
-        <Typo style={s.logoTagline}>Your complete mobility partner</Typo>
+        <Typo style={s.logoTagline}>{t('loginScreen.tagline')}</Typo>
       </View>
 
       {/* ── FORM CARD ── */}
@@ -199,26 +201,26 @@ export function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Typo style={[s.formTitle, { color: colors.textPrimary }]}>Welcome back</Typo>
+          <Typo style={[s.formTitle, { color: colors.textPrimary }]}>{t('loginScreen.title')}</Typo>
           <Typo style={[s.formSub, { color: colors.textSecondary }]}>
-            Sign in to continue your journey
+            {t('loginScreen.subtitle')}
           </Typo>
 
           <View style={s.form}>
             {mode === 'email' ? (
               <>
                 <AppInput
-                  label="Email Address"
+                  label={t('loginScreen.emailLabel')}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="you@example.com"
+                  placeholder={t('loginScreen.emailPlaceholder')}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
 
                 <AppInput
-                  label="Password"
-                  placeholder="Enter your password"
+                  label={t('loginScreen.passwordLabel')}
+                  placeholder={t('loginScreen.passwordPlaceholder')}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
@@ -237,13 +239,13 @@ export function LoginScreen() {
                   style={s.forgotRow}
                   onPress={() => navigation.navigate('ForgotPassword')}
                 >
-                  <Typo style={s.forgotText}>Forgot Password?</Typo>
+                  <Typo style={s.forgotText}>{t('loginScreen.forgotPassword')}</Typo>
                 </TouchableOpacity>
               </>
             ) : (
               <View>
                 <Typo style={[s.phoneLabel, { color: colors.textSecondary }]}>
-                  Phone Number
+                  {t('loginScreen.phoneLabel')}
                 </Typo>
                 <View style={s.phoneRow}>
                   <TouchableOpacity
@@ -267,7 +269,7 @@ export function LoginScreen() {
                   </TouchableOpacity>
                   <View style={{ flex: 1 }}>
                     <AppInput
-                      placeholder="8012345678"
+                      placeholder={t('loginScreen.phoneNumberPlaceholder')}
                       value={phoneNumber}
                       onChangeText={setPhoneNumber}
                       keyboardType="phone-pad"
@@ -279,7 +281,7 @@ export function LoginScreen() {
           </View>
 
           <AppButton
-            title={mode === 'email' ? 'Sign In' : 'Send Code'}
+            title={mode === 'email' ? t('loginScreen.signInButton') : t('loginScreen.sendCodeButton')}
             loading={mode === 'email' ? loading : sendingOtp}
             onPress={mode === 'email' ? handleLogin : handleSendPhoneOtp}
           />
@@ -287,7 +289,7 @@ export function LoginScreen() {
           {/* Divider */}
           <View style={s.dividerRow}>
             <View style={[s.dividerLine, { backgroundColor: colors.border }]} />
-            <Typo style={[s.dividerText, { color: colors.textSecondary }]}>or</Typo>
+            <Typo style={[s.dividerText, { color: colors.textSecondary }]}>{t('loginScreen.orDivider')}</Typo>
             <View style={[s.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
@@ -302,7 +304,7 @@ export function LoginScreen() {
               style={s.googleIcon}
             />
             <Typo style={[s.googleText, { color: colors.textPrimary }]}>
-              {googleLoading ? 'Signing in…' : 'Continue with Google'}
+              {googleLoading ? t('loginScreen.signingInGoogle') : t('loginScreen.continueWithGoogle')}
             </Typo>
           </TouchableOpacity>
 
@@ -318,16 +320,16 @@ export function LoginScreen() {
               style={s.googleIcon}
             />
             <Typo style={[s.googleText, { color: colors.textPrimary }]}>
-              {mode === 'email' ? 'Continue with phone' : 'Continue with email'}
+              {mode === 'email' ? t('loginScreen.continueWithPhone') : t('loginScreen.continueWithEmail')}
             </Typo>
           </TouchableOpacity>
 
           <View style={s.footer}>
             <Typo style={[s.footerText, { color: colors.textSecondary }]}>
-              Don't have an account?{' '}
+              {t('loginScreen.noAccountText')}
             </Typo>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Typo style={s.footerLink}>Sign Up</Typo>
+              <Typo style={s.footerLink}>{t('loginScreen.signUp')}</Typo>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -338,7 +340,7 @@ export function LoginScreen() {
         <SafeAreaView style={[s.modalSafe, { backgroundColor: colors.background }]}>
           <View style={[s.modalHeader, { borderBottomColor: colors.border }]}>
             <Typo style={[s.modalTitle, { color: colors.textPrimary }]}>
-              Select Country
+              {t('loginScreen.selectCountry')}
             </Typo>
             <TouchableOpacity
               onPress={() => {
@@ -357,7 +359,7 @@ export function LoginScreen() {
           >
             <Icon name="search-outline" size={18} color={colors.textSecondary} />
             <TextInput
-              placeholder="Search country"
+              placeholder={t('loginScreen.searchCountryPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={countrySearch}
               onChangeText={setCountrySearch}

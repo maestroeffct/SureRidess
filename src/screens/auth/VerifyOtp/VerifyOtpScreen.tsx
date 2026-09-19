@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
 import { AppInput } from '@/components/AppInput/Input';
@@ -33,6 +34,7 @@ type Props = {
 export function VerifyOtpScreen({ route }: Props) {
   const { colors } = useTheme();
   const { login } = useAuth();
+  const { t } = useTranslation('auth');
   const { userId, email } = route.params;
 
   const [code, setCode] = useState(['', '', '', '']);
@@ -54,10 +56,10 @@ export function VerifyOtpScreen({ route }: Props) {
     try {
       setLoading(true);
       const res = await verifyOtp({ userId, code: otp });
-      setTimeout(() => showSuccess('Email verified successfully'), 500);
+      setTimeout(() => showSuccess(t('verifyOtpScreen.emailVerifiedSuccess')), 500);
       login(res.token, res.user);
     } catch (err: any) {
-      showError(err?.response?.data?.message || 'Invalid code');
+      showError(err?.response?.data?.message || t('verifyOtpScreen.invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -89,9 +91,9 @@ export function VerifyOtpScreen({ route }: Props) {
         <View style={s.iconCircle}>
           <Icon name="shield-checkmark-outline" size={36} color="#fff" />
         </View>
-        <Typo style={s.heroTitle}>Verify Your Account</Typo>
+        <Typo style={s.heroTitle}>{t('verifyOtpScreen.heroTitle')}</Typo>
         <Typo style={s.heroSub}>
-          We sent a 4-digit code to{'\n'}
+          {t('verifyOtpScreen.heroSubtitle')}{'\n'}
           <Typo style={s.heroPhone}>{email}</Typo>
         </Typo>
       </View>
@@ -109,10 +111,10 @@ export function VerifyOtpScreen({ route }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           <Typo style={[s.formTitle, { color: colors.textPrimary }]}>
-            Enter OTP Code
+            {t('verifyOtpScreen.title')}
           </Typo>
           <Typo style={[s.formSub, { color: colors.textSecondary }]}>
-            Enter the verification code sent to your email
+            {t('verifyOtpScreen.subtitle')}
           </Typo>
 
           {/* OTP Boxes */}
@@ -138,7 +140,7 @@ export function VerifyOtpScreen({ route }: Props) {
           </View>
 
           <AppButton
-            title="Verify Account"
+            title={t('verifyOtpScreen.verifyButton')}
             loading={loading}
             disabled={!otpComplete}
             onPress={() => handleVerify(code.join(''))}
@@ -147,12 +149,12 @@ export function VerifyOtpScreen({ route }: Props) {
           <View style={s.timerRow}>
             {counter > 0 ? (
               <Typo style={[s.timerText, { color: colors.textSecondary }]}>
-                Resend code in{' '}
+                {t('verifyOtpScreen.resendCountdown')}{' '}
                 <Typo style={s.timerCount}>{counter}s</Typo>
               </Typo>
             ) : (
               <TouchableOpacity onPress={() => setCounter(56)}>
-                <Typo style={s.resendLink}>Resend Code</Typo>
+                <Typo style={s.resendLink}>{t('verifyOtpScreen.resendLink')}</Typo>
               </TouchableOpacity>
             )}
           </View>
@@ -160,7 +162,7 @@ export function VerifyOtpScreen({ route }: Props) {
           <View style={s.hintRow}>
             <Icon name="information-circle-outline" size={15} color={colors.textSecondary} />
             <Typo style={[s.hintText, { color: colors.textSecondary }]}>
-              Didn't receive the code? Check your SMS inbox or try resending.
+              {t('verifyOtpScreen.resendHint')}
             </Typo>
           </View>
         </ScrollView>
