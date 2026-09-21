@@ -152,7 +152,7 @@
   },
   "kycStepHeader": {
     "topBarTitle": "Document Verification",
-    "stepProgress": "{{step}} of 3 steps completed"
+    "stepProgress": "{{step}} of 4 steps completed"
   },
   "kycBanner": {
     "unverifiedTitle": "Verify your identity to book",

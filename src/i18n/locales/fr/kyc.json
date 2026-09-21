@@ -152,7 +152,7 @@
   },
   "kycStepHeader": {
     "topBarTitle": "Vérification des documents",
-    "stepProgress": "Étape {{step}} sur 3 terminée(s)"
+    "stepProgress": "Étape {{step}} sur 4 terminée(s)"
   },
   "kycBanner": {
     "unverifiedTitle": "Vérifiez votre identité pour réserver",

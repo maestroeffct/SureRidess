@@ -189,7 +189,7 @@ export default function DocumentsScreen() {
   return (
     <ScreenWrapper padded={false}>
       <KYCStepHeader
-        step={3}
+        step={4}
         title={t('documentsScreen.title')}
         onBack={() => navigation.goBack()}
       />
