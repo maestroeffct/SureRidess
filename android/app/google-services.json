@@ -14,7 +14,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "542436190217-segmvusa67tnk9ev006u1he6sksn75ni.apps.googleusercontent.com",
+          "client_id": "542436190217-mf04q52i14dc5uh6mrnjfah35v1p38nq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.surerideautoservices.sureride",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "542436190217-99n7jhr31oakee3r8jklcfp249ni0t23.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,7 +35,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "542436190217-segmvusa67tnk9ev006u1he6sksn75ni.apps.googleusercontent.com",
+              "client_id": "542436190217-99n7jhr31oakee3r8jklcfp249ni0t23.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
