@@ -6,17 +6,22 @@
     "signIn": "I already have an account",
     "legal": "By continuing you agree to our Terms and Privacy Policy."
   },
-  "languageSelect": {
-    "title": "Choose your language",
-    "subtitle": "You can change this anytime from your profile.",
-    "continue": "Continue",
-    "english": "English",
-    "french": "Français"
-  },
   "countrySelect": {
     "skip": "Skip",
     "title": "Where to?",
     "subtitle": "Pick the country you want to rent in. You can change this anytime from the home screen.",
     "continueWith": "Continue with {{name}}"
+  },
+  "welcomeWalkthrough": {
+    "slide1Title": "Welcome to SureRide",
+    "slide1Body": "Your complete mobility partner across Nigeria and West Africa — verified cars, transparent pricing, no surprises.",
+    "slide2Title": "Browse & book in minutes",
+    "slide2Body": "Search by location and dates, compare verified vehicles, and lock in your booking — all from your phone.",
+    "slide3Title": "Verify your identity",
+    "slide3Body": "A quick face check and document upload unlocks booking. Most people finish it in about 2 minutes.",
+    "next": "Next",
+    "verifyNow": "Verify Now",
+    "exploreFirst": "Explore First",
+    "skip": "Skip"
   }
 }

@@ -154,6 +154,12 @@
     "comingSoonMessage": "This feature will be available in a future update.",
     "ok": "OK"
   },
+  "kycPromptModal": {
+    "title": "Complete Your KYC",
+    "message": "You can browse now, but payment requires verified documents.",
+    "uploadDocuments": "Upload Documents",
+    "skipForNow": "Skip for now"
+  },
   "updateRequiredScreen": {
     "title": "Update Required",
     "message": "A newer version of SureRide is available. Please update to continue.",

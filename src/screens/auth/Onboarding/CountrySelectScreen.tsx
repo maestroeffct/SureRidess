@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@react-native-vector-icons/ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
 import { Typo } from '@/components/AppText/Typo';
@@ -26,10 +26,14 @@ const GREEN = '#0A6A4B';
 const GREEN_DARK = '#064030';
 
 // Same visual language as the marketing OnboardingScreen — solid colour
-// background, big centred type, prominent CTA. Lives between that screen
-// and Auth so it's the LAST thing new users see before signing up.
+// background, big centred type, prominent CTA. Runs right after signup
+// (see RootNavigator), before the welcome walkthrough — the `nextScreen`
+// route param says where to go once a country is picked, so this stays
+// reusable rather than hardcoding one destination.
 export function CountrySelectScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const nextScreen = route.params?.nextScreen ?? 'PostAuthWalkthrough';
   const { t } = useTranslation('onboarding');
   const { country: currentCountry, setCountry, markets, refreshMarkets } =
     useBrowseCountry();
@@ -48,11 +52,11 @@ export function CountrySelectScreen() {
     const target = markets.find(m => m.code === code);
     if (target) setCurrency(target.currency);
     // Togo (and any other Francophone market added later) overrides
-    // whatever the user picked on LanguageSelect — no reason to keep
-    // showing English once they've told us they're renting there.
+    // whatever language was auto-detected — no reason to keep showing
+    // English once they've told us they're renting there.
     const forcedLang = forcedLanguageForCountry(code);
     if (forcedLang) setLanguage(forcedLang);
-    navigation.replace('Auth');
+    navigation.replace(nextScreen);
   };
 
   const skip = () => finish(DEFAULT_COUNTRY);

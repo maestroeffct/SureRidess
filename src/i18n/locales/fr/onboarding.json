@@ -6,17 +6,22 @@
     "signIn": "J'ai déjà un compte",
     "legal": "En continuant, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité."
   },
-  "languageSelect": {
-    "title": "Choisissez votre langue",
-    "subtitle": "Vous pouvez modifier ce choix à tout moment depuis votre profil.",
-    "continue": "Continuer",
-    "english": "English",
-    "french": "Français"
-  },
   "countrySelect": {
     "skip": "Passer",
     "title": "Où allez-vous ?",
     "subtitle": "Choisissez le pays dans lequel vous souhaitez louer. Vous pouvez modifier ce choix à tout moment depuis l'écran d'accueil.",
     "continueWith": "Continuer avec {{name}}"
+  },
+  "welcomeWalkthrough": {
+    "slide1Title": "Bienvenue sur SureRide",
+    "slide1Body": "Votre partenaire mobilité au quotidien au Nigeria et en Afrique de l'Ouest — véhicules vérifiés, tarifs transparents, sans mauvaise surprise.",
+    "slide2Title": "Réservez en quelques minutes",
+    "slide2Body": "Recherchez par lieu et par dates, comparez des véhicules vérifiés, et confirmez votre réservation — le tout depuis votre téléphone.",
+    "slide3Title": "Vérifiez votre identité",
+    "slide3Body": "Une vérification faciale rapide et l'envoi de vos documents suffisent pour débloquer la réservation. La plupart des utilisateurs terminent en environ 2 minutes.",
+    "next": "Suivant",
+    "verifyNow": "Vérifier maintenant",
+    "exploreFirst": "Explorer d'abord",
+    "skip": "Passer"
   }
 }

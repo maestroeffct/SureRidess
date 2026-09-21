@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Modal, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SplashScreen } from '@/screens/branding/Splashscreen';
 import { UpdateRequiredScreen } from '@/screens/branding/UpdateRequiredScreen';
 import { AuthNavigator } from './Auth/AuthNavigator';
 import { MainDrawerNavigator } from './MainDrawerNavigator';
 import { KYCFlowNavigator } from '@/modules/kyc/navigation/KYCFlowNavigator';
 import { OnboardingScreen } from '@/screens/auth/Onboarding/OnboardingScreen';
-import { LanguageSelectScreen } from '@/screens/auth/Onboarding/LanguageSelectScreen';
 import { CountrySelectScreen } from '@/screens/auth/Onboarding/CountrySelectScreen';
+import { WelcomeWalkthroughScreen } from '@/screens/auth/Onboarding/WelcomeWalkthroughScreen';
 import { useAuth } from '@/providers/AuthProvider';
 import { Typo } from '@/components/AppText/Typo';
 import { AppButton } from '@/components/AppButton/CustomButton';
@@ -26,8 +27,13 @@ const Stack = createNativeStackNavigator();
 export function RootNavigator() {
   const { status, user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation('main');
   const [ready, setReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // null = "haven't checked yet for this authenticated session". Kept
+  // separate from `ready` so a fresh login always re-checks rather than
+  // reusing a stale value from a previous session in the same app run.
+  const [postAuthOnboardingSeen, setPostAuthOnboardingSeen] = useState<boolean | null>(null);
   const [showKycPrompt, setShowKycPrompt] = useState(false);
   const [kycPromptDismissed, setKycPromptDismissed] = useState(false);
   const [updateDecision, setUpdateDecision] = useState<UpdateDecision>({
@@ -54,8 +60,20 @@ export function RootNavigator() {
     if (status === 'unauthenticated') {
       setKycPromptDismissed(false);
       setShowKycPrompt(false);
+      setPostAuthOnboardingSeen(null);
+      return;
     }
+    if (status !== 'authenticated') return;
+    let cancelled = false;
+    getItem<boolean>(StorageKeys.HAS_COMPLETED_POST_AUTH_ONBOARDING).then(seen => {
+      if (!cancelled) setPostAuthOnboardingSeen(!!seen);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [status]);
+
+  const showPostAuthOnboarding = status === 'authenticated' && postAuthOnboardingSeen === false;
 
   const profileStatus = useMemo(() => {
     return (
@@ -75,15 +93,24 @@ export function RootNavigator() {
 
   useEffect(() => {
     if (status !== 'authenticated') return;
+    // The walkthrough's own last slide already offers a "Verify Now" CTA —
+    // don't stack this modal on top of it for brand-new users.
+    if (showPostAuthOnboarding) return;
     if (needsKycPrompt && !kycPromptDismissed) {
       setShowKycPrompt(true);
     } else {
       setShowKycPrompt(false);
     }
-  }, [status, needsKycPrompt, kycPromptDismissed]);
+  }, [status, needsKycPrompt, kycPromptDismissed, showPostAuthOnboarding]);
 
-  // Show splash while loading
-  if (!ready || status === 'initializing') {
+  // Show splash while loading — including the brief gap right after a fresh
+  // login while we check whether this account still needs the post-auth
+  // onboarding, so Main never flashes before the walkthrough does.
+  if (
+    !ready ||
+    status === 'initializing' ||
+    (status === 'authenticated' && postAuthOnboardingSeen === null)
+  ) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
@@ -113,11 +140,7 @@ export function RootNavigator() {
           <>
             {/* Onboarding is first screen when unseen — React Navigation picks first as initial */}
             {showOnboarding && (
-              <>
-                <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-                <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} />
-                <Stack.Screen name="CountrySelect" component={CountrySelectScreen} />
-              </>
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             )}
             <Stack.Screen name="Auth" component={AuthNavigator} />
           </>
@@ -125,6 +148,19 @@ export function RootNavigator() {
 
         {status === 'authenticated' && (
           <>
+            {/* First-launch-after-signup only: country pick + feature
+                walkthrough, declared first so they're the initial route
+                whenever this becomes true. */}
+            {showPostAuthOnboarding && (
+              <>
+                <Stack.Screen
+                  name="PostAuthCountrySelect"
+                  component={CountrySelectScreen}
+                  initialParams={{ nextScreen: 'PostAuthWalkthrough' }}
+                />
+                <Stack.Screen name="PostAuthWalkthrough" component={WelcomeWalkthroughScreen} />
+              </>
+            )}
             <Stack.Screen name="Main" component={MainDrawerNavigator} />
             <Stack.Screen name="KYCFlow" component={KYCFlowNavigator} />
           </>
@@ -149,12 +185,12 @@ export function RootNavigator() {
             padding: 20,
             gap: 12,
           }}>
-            <Typo variant="subheading">Complete Your KYC</Typo>
+            <Typo variant="subheading">{t('kycPromptModal.title')}</Typo>
             <Typo variant="caption">
-              You can browse now, but payment requires verified documents.
+              {t('kycPromptModal.message')}
             </Typo>
             <AppButton
-              title="Upload Documents"
+              title={t('kycPromptModal.uploadDocuments')}
               onPress={() => {
                 setShowKycPrompt(false);
                 setKycPromptDismissed(true);
@@ -162,7 +198,7 @@ export function RootNavigator() {
               }}
             />
             <AppButton
-              title="Skip for now"
+              title={t('kycPromptModal.skipForNow')}
               variant="outline"
               onPress={() => {
                 setShowKycPrompt(false);

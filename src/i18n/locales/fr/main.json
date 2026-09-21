@@ -154,6 +154,12 @@
     "comingSoonMessage": "Cette fonctionnalité sera disponible dans une prochaine mise à jour.",
     "ok": "OK"
   },
+  "kycPromptModal": {
+    "title": "Finalisez votre vérification d'identité",
+    "message": "Vous pouvez explorer l'application dès maintenant, mais le paiement nécessite des documents vérifiés.",
+    "uploadDocuments": "Envoyer les documents",
+    "skipForNow": "Plus tard"
+  },
   "updateRequiredScreen": {
     "title": "Mise à jour requise",
     "message": "Une nouvelle version de SureRide est disponible. Veuillez la mettre à jour pour continuer.",

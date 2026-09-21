@@ -24,8 +24,12 @@ const LOGO = require('@/assets/images/logo-text.png');
 
 /**
  * One-screen onboarding: full-bleed car hero, brand mark, one tagline,
- * two CTAs. New users hit Get Started (goes to CountrySelect, then Auth);
- * returning users hit Sign In (jumps straight to Auth).
+ * two CTAs. Language is auto-detected from the device (see
+ * LanguageProvider) and country selection + the feature walkthrough now
+ * happen AFTER signup (see RootNavigator) so nothing blocks the signup
+ * form itself. Get Started drops straight into Register; Sign In drops
+ * straight into Login — both skip the Auth stack's own default landing
+ * so intent (new vs returning) is preserved.
  */
 export function OnboardingScreen() {
   const navigation = useNavigation<any>();
@@ -37,12 +41,12 @@ export function OnboardingScreen() {
 
   const getStarted = useCallback(async () => {
     await markSeen();
-    navigation.replace('LanguageSelect');
+    navigation.replace('Auth', { screen: 'Register' });
   }, [markSeen, navigation]);
 
   const signIn = useCallback(async () => {
     await markSeen();
-    navigation.replace('Auth');
+    navigation.replace('Auth', { screen: 'Login' });
   }, [markSeen, navigation]);
 
   return (
