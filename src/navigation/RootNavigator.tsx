@@ -8,6 +8,7 @@ import { AuthNavigator } from './Auth/AuthNavigator';
 import { MainDrawerNavigator } from './MainDrawerNavigator';
 import { KYCFlowNavigator } from '@/modules/kyc/navigation/KYCFlowNavigator';
 import { OnboardingScreen } from '@/screens/auth/Onboarding/OnboardingScreen';
+import { LanguageSelectScreen } from '@/screens/auth/Onboarding/LanguageSelectScreen';
 import { CountrySelectScreen } from '@/screens/auth/Onboarding/CountrySelectScreen';
 import { WelcomeWalkthroughScreen } from '@/screens/auth/Onboarding/WelcomeWalkthroughScreen';
 import { useAuth } from '@/providers/AuthProvider';
@@ -148,11 +149,16 @@ export function RootNavigator() {
 
         {status === 'authenticated' && (
           <>
-            {/* First-launch-after-signup only: country pick + feature
-                walkthrough, declared first so they're the initial route
-                whenever this becomes true. */}
+            {/* First-launch-after-signup only: language confirm -> country
+                pick -> feature walkthrough, declared first so they're the
+                initial route whenever this becomes true. */}
             {showPostAuthOnboarding && (
               <>
+                <Stack.Screen
+                  name="PostAuthLanguageSelect"
+                  component={LanguageSelectScreen}
+                  initialParams={{ nextScreen: 'PostAuthCountrySelect' }}
+                />
                 <Stack.Screen
                   name="PostAuthCountrySelect"
                   component={CountrySelectScreen}

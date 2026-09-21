@@ -6,6 +6,13 @@
     "signIn": "I already have an account",
     "legal": "By continuing you agree to our Terms and Privacy Policy."
   },
+  "languageSelect": {
+    "title": "Choose your language",
+    "subtitle": "We guessed this from your phone's settings — feel free to change it. You can always update it later from your profile.",
+    "continue": "Continue",
+    "english": "English",
+    "french": "Français"
+  },
   "countrySelect": {
     "skip": "Skip",
     "title": "Where to?",
