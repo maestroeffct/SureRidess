@@ -77,6 +77,20 @@ export async function signInWithGoogle(): Promise<GoogleBackendAuthResponse> {
   return response.data;
 }
 
+// The native Google SDK keeps its own signed-in session on-device,
+// independent of the app's auth token. If this is never called on logout,
+// a later signIn() silently returns whichever account was used last
+// instead of showing the account picker. Safe to call unconditionally
+// (e.g. on every logout) — it's a no-op if there's no cached Google
+// session to clear.
+export async function signOutGoogle(): Promise<void> {
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // Not configured / never signed in with Google — nothing to clear.
+  }
+}
+
 export function getGoogleAuthErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     if (error.message === 'GOOGLE_SIGN_IN_CANCELLED') {

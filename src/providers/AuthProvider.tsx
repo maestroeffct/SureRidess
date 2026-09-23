@@ -8,6 +8,7 @@ import React, {
 import { getItem, setItem, removeItem, StorageKeys } from '@/helpers/storage';
 import { fetchMe } from '@/services/user.service';
 import { setAuthErrorHandler, type AuthErrorReason } from '@/services/api';
+import { signOutGoogle } from '@/services/socialAuth.service';
 import { showError } from '@/helpers/toast';
 import {
   initNotifications,
@@ -53,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearAuthState = useCallback(async () => {
     await removeItem(StorageKeys.AUTH_TOKEN);
     await removeItem(StorageKeys.AUTH_USER);
+    await signOutGoogle();
     teardownNotificationHandlers();
     setUser(null);
     setStatus('unauthenticated');
