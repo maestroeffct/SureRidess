@@ -101,6 +101,12 @@ export async function uploadKycDocuments(payload: UploadKycDocumentsPayload) {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    // 5 images in one request, plus the backend may be cold-starting
+    // (Render free tier sleeps after 15min idle and can take 30-50s+ to
+    // wake) — the global 10s api.ts timeout is far too short for this
+    // specific call and was causing false "failed to submit" errors on
+    // uploads that actually succeeded server-side moments later.
+    timeout: 90000,
   });
 
   return response.data;

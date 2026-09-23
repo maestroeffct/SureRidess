@@ -20,7 +20,7 @@ import { UploadField } from '@/components/kyc/UploadField/UploadField';
 import { useTheme } from '@/theme/ThemeProvider';
 import { AppSelectSheet } from '@/components/AppSelectSheet/AppSelectSheet';
 import { showError, showSuccess } from '@/helpers/toast';
-import { uploadKycDocuments } from '@/services/kyc.service';
+import { fetchKycStatus, uploadKycDocuments } from '@/services/kyc.service';
 import { useAuth } from '@/providers/AuthProvider';
 import { PassportCameraModal } from '@/modules/kyc/components/PassportCameraModal';
 
@@ -180,6 +180,29 @@ export default function DocumentsScreen() {
         parent.goBack();
       }
     } catch (error: any) {
+      // A slow/cold-starting backend can finish the upload server-side
+      // even after the client gives up waiting (network error / timeout,
+      // i.e. no error.response at all). Before reporting failure, check
+      // whether it actually went through rather than showing a false
+      // negative while the submission silently succeeded.
+      if (!error?.response) {
+        try {
+          const status = await fetchKycStatus();
+          if (status.profileStatus !== 'INCOMPLETE') {
+            await refreshUser();
+            showSuccess(t('documentsScreen.submitted'));
+            navigation.popToTop();
+            const parent = navigation.getParent();
+            if (parent?.canGoBack()) {
+              parent.goBack();
+            }
+            return;
+          }
+        } catch {
+          // Status check itself failed — fall through to the error below.
+        }
+      }
+
       showError(error?.response?.data?.message || t('documentsScreen.errorSubmit'));
     } finally {
       setSubmitting(false);
