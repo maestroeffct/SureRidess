@@ -8,5 +8,8 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  // hot-updater.config.ts runs under the hot-updater CLI's own Node
+  // context (has its own tooling/types), not inside the RN app bundle —
+  // excluded here the same way metro.config.js/jest.config.js are.
+  "exclude": ["**/node_modules", "**/Pods", "hot-updater.config.ts"]
 }

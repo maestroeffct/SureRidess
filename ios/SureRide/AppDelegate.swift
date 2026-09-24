@@ -3,6 +3,7 @@ import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import FirebaseCore
+import HotUpdater
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -45,7 +46,9 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 #if DEBUG
     RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
 #else
-    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+    // Loads whatever OTA bundle hot-updater has staged, falling back to
+    // the bundle shipped in the .ipa if none has been downloaded yet.
+    HotUpdater.bundleURL()
 #endif
   }
 }

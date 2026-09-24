@@ -1,4 +1,7 @@
 import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { HotUpdater } from '@hot-updater/react-native';
+import { HOT_UPDATER_BASE_URL } from '@env';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   DarkTheme as NavDarkTheme,
@@ -47,7 +50,7 @@ function ThemedNavigation() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
@@ -65,3 +68,23 @@ export default function App() {
     </LanguageProvider>
   );
 }
+
+// Self-hosted OTA JS-bundle updates. In DEBUG builds the native side always
+// loads straight from Metro regardless of this wrapper. In release builds,
+// if HOT_UPDATER_BASE_URL isn't configured yet, checkForUpdate just fails
+// silently and the app runs its embedded bundle — this is safe to ship
+// ahead of standing up the update server itself.
+export default HotUpdater.wrap({
+  baseURL: HOT_UPDATER_BASE_URL,
+  updateStrategy: 'appVersion',
+  fallbackComponent: () => (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator size="large" />
+    </View>
+  ),
+  onError: error => {
+    if (__DEV__) {
+      console.log('[HotUpdater] update check failed', error);
+    }
+  },
+})(App);

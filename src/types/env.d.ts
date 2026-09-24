@@ -5,4 +5,5 @@ declare module '@env' {
   export const STRIPE_URL_SCHEME: string;
   export const RESTCOUNTRIES_API_KEY: string;
   export const GOOGLE_WEB_CLIENT_ID: string;
+  export const HOT_UPDATER_BASE_URL: string;
 }
